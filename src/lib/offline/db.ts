@@ -1,0 +1,96 @@
+﻿import Dexie, { type Table } from "dexie";
+import { MATERIALS, RNE_CARDS, SEED_VERSION, type Material, type RneCard } from "@/data/seed-rne";
+
+export type SyncState = "local" | "pending" | "synced";
+export type ProjectStatus = "activo" | "pausado" | "cerrado";
+
+export interface Project {
+  id: string;
+  name: string;
+  location: string;
+  typology: string;
+  status: ProjectStatus;
+  updatedAt: string;
+  syncState: SyncState;
+}
+
+export interface Takeoff {
+  id: string;
+  projectId: string;
+  partName: string;
+  materialCode: string;
+  length: number;
+  width: number;
+  height: number;
+  quantity: number;
+  wastePct: number;
+  total: number;
+  subtotalPen: number;
+  updatedAt: string;
+  syncState: SyncState;
+}
+
+export interface Meta {
+  key: string;
+  value: string;
+}
+
+export type OutboxTable = "projects" | "takeoffs";
+export type OutboxOperation = "upsert" | "delete";
+
+export interface Outbox {
+  id?: number;
+  table: OutboxTable;
+  op: OutboxOperation;
+  payload: unknown;
+  createdAt: string;
+}
+
+export class TrazzoDB extends Dexie {
+  rneCards!: Table<RneCard, string>;
+  materials!: Table<Material, string>;
+  projects!: Table<Project, string>;
+  takeoffs!: Table<Takeoff, string>;
+  meta!: Table<Meta, string>;
+  outbox!: Table<Outbox, number>;
+
+  constructor() {
+    super("TrazzoDB");
+    this.version(1).stores({
+      rneCards: "slug,norm_code,category,*keywords",
+      materials: "code,category",
+      projects: "id,updatedAt,syncState",
+      takeoffs: "id,projectId,updatedAt,syncState",
+      meta: "key",
+      outbox: "++id,table,createdAt",
+    });
+  }
+}
+
+export const db: TrazzoDB | null = typeof window === "undefined" ? null : new TrazzoDB();
+
+export function createLocalUuid(): string {
+  return crypto.randomUUID();
+}
+
+/**
+ * Seeds the local cache only when its semantic version is stale.
+ * Projects, takeoffs and the outbox are deliberately preserved.
+ */
+export async function ensureSeeded(): Promise<void> {
+  if (!db) return;
+
+  const current = await db.meta.get("seedVersion");
+  if (Number(current?.value ?? 0) >= SEED_VERSION) return;
+
+  await db.transaction("rw", [db.rneCards, db.materials, db.meta], async () => {
+    await db.rneCards.clear();
+    await db.materials.clear();
+    await db.rneCards.bulkPut(RNE_CARDS);
+    await db.materials.bulkPut(MATERIALS);
+    await db.meta.put({
+      key: "seedVersion",
+      value: String(SEED_VERSION),
+    });
+  });
+}
