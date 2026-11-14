@@ -1,4 +1,4 @@
-﻿# TRAZZO · RNE Pro Perú
+# TRAZZO · RNE Pro Perú
 
 TRAZZO es una herramienta técnica offline-first para arquitectura y obra en Perú. Reúne fichas navegables del Reglamento Nacional de Edificaciones, calculadoras paramétricas, metrados por proyecto y un asistente RAG con citas verificables.
 
@@ -75,6 +75,8 @@ Copia las variables a .env.local. El repositorio no incluye secretos ni un archi
 4. Genera embeddings RNE con OPENAI_API_KEY:
 
    npm run embed:rne
+
+Los scripts `seed:supabase` y `embed:rne` leen `.env.local` automáticamente; si el archivo no existe, avisan y omiten la carga sin fallar.
 
 La migración activa vector, pgcrypto, RLS, políticas de Storage y el RPC match_rne_documents. Las políticas de perfil protegen los campos de plan, verificación, vencimiento y cuota de IA.
 
