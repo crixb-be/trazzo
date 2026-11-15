@@ -256,6 +256,8 @@ Orden propuesto por valor para el usuario frente a esfuerzo.
 - [x] Hoja de ruta por fases y bloques (sección 6).
 - [x] Trabajo previo a este plan: foto de perfil en Cuenta — commit `35f7176`.
 - [x] Plan aprobado y decisiones registradas (sección 7).
+- [x] Bloque 1.1: plan único con caché sin conexión, vencimiento y reglas coherentes — commit `93b411e`.
+- [x] Bloque 1.2: sincronización real (envío con columnas correctas, cola que conserva fallos, descarga de proyectos, partidas y cotizaciones, mensajes honestos) — commit `bdebc49`.
 
 ### En curso o a medias
 
@@ -272,6 +274,6 @@ Orden propuesto por valor para el usuario frente a esfuerzo.
 
 1. Trabaja en la rama `claude/wonderful-noether-6eoymr` del repo `crixb-be/trazzo`. Ejecuta `npm ci`.
 2. Comprueba el punto de partida: `npm run typecheck && npm run lint && npm test` deben pasar (156 pruebas al cierre de la auditoría).
-3. Si el usuario ya aprobó, empieza por el **bloque 1.1** de la sección 6: crea el `usePlan` único en `src/lib/plans/use-current-plan.ts` con caché en IndexedDB (tabla `meta` de `src/lib/offline/db.ts`), sustituye las consultas de plan copiadas en `MetradosWorkspace.tsx:61-74`, `NormativaCatalog.tsx`, `NormativeDetail.tsx`, `AccountWorkspace.tsx` y `sync.ts:19-30`, y cambia `MetradosWorkspace.tsx:100` para usar `canCreateProject`.
+3. Siguiente paso: ejecutar el **bloque 1.3** de la sección 6 (sin conexión de verdad: precarga de rutas y respaldo `/~offline` en `src/app/sw.ts` y `next.config.mjs`).
 4. Si el usuario no ha aprobado, no modifiques código: pide la aprobación y las respuestas de la sección 7.
 5. Tras cada bloque: verifica, haz commit y push, y actualiza esta sección con el hash del commit y, si algo queda a medias, el archivo y la línea exactos.

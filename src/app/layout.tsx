@@ -34,20 +34,11 @@ const noFlashTheme = [
   "} catch (_) {}",
 ].join("\n");
 
-const registerServiceWorker = [
-  'if ("serviceWorker" in navigator && location.hostname !== "localhost") {',
-  '  window.addEventListener("load", function () {',
-  '    navigator.serviceWorker.register("/sw.js").catch(function () {});',
-  "  });",
-  "}",
-].join("\n");
-
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" className="dark" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: noFlashTheme }} />
-        <script dangerouslySetInnerHTML={{ __html: registerServiceWorker }} />
       </head>
       <body className={inter.variable + " " + mono.variable}>{children}</body>
     </html>
