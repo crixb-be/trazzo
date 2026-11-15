@@ -16,6 +16,7 @@ import {
   type FeeQuoteResult,
 } from "@/lib/calculators/fees";
 import { buildProposalPdf, exportProposalPdf } from "@/lib/pdf/export-proposal";
+import { defaultSigner } from "@/lib/pdf/signatures";
 import { canExportCleanProposal } from "@/lib/plans/plans";
 import { useCurrentPlan } from "@/lib/plans/use-current-plan";
 import {
@@ -37,7 +38,10 @@ function initialDraft(): FeeQuoteDraft {
     documentType: "propuesta",
     projectName: "",
     clientName: "",
+    clientDocument: "",
     location: "",
+    signerName: "",
+    signerDocument: "",
     input,
     deliverables: defaultDeliverables(input),
     schedule: defaultSchedule(input),
@@ -56,7 +60,10 @@ function draftFromQuote(quote: FeeQuote): FeeQuoteDraft {
     documentType: quote.documentType ?? "propuesta",
     projectName: quote.projectName,
     clientName: quote.clientName,
+    clientDocument: quote.clientDocument ?? "",
     location: quote.location,
+    signerName: quote.signerName ?? "",
+    signerDocument: quote.signerDocument ?? "",
     input: quote.input,
     deliverables: [...quote.deliverables],
     schedule: [...quote.schedule],
@@ -137,7 +144,10 @@ export function FeeQuoteWorkspace() {
     documentType: draft.documentType,
     projectName: draft.projectName || "Propuesta sin nombre",
     clientName: draft.clientName,
+    clientDocument: draft.clientDocument,
     location: draft.location,
+    signerName: draft.signerName,
+    signerDocument: draft.signerDocument,
     input: draft.input,
     deliverables: draft.deliverables,
     schedule: draft.schedule,
@@ -265,6 +275,7 @@ export function FeeQuoteWorkspace() {
             }
             onTouchSchedule={() => setTouched((current) => ({ ...current, schedule: true }))}
             hasCustomRates={hasCustomRates}
+            signerDefaults={defaultSigner(studio)}
             onResetRates={() => {
               void import("@/lib/offline/fee-rates").then(({ clearCustomFeeRates }) =>
                 clearCustomFeeRates(),

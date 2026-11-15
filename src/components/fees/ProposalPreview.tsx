@@ -4,11 +4,13 @@ import { X } from "lucide-react";
 import {
   FEE_TYPOLOGIES,
   formatPen,
+  lineDetailForProposal,
   formatWeekRange,
   groupDeliverables,
   paymentAmounts,
   type FeeQuoteResult,
 } from "@/lib/calculators/fees";
+import { signatureParties } from "@/lib/pdf/signatures";
 import type { FeeQuote, StudioProfile } from "@/lib/offline/db";
 
 interface ProposalPreviewProps {
@@ -139,7 +141,7 @@ export function ProposalPreview({
                 {result.lines.map((line) => (
                   <tr key={line.key}>
                     <td>{line.label}</td>
-                    <td>{line.detail}</td>
+                    <td>{lineDetailForProposal(line)}</td>
                     <td>{formatPen(line.amount)}</td>
                   </tr>
                 ))}
@@ -241,19 +243,20 @@ export function ProposalPreview({
                 <li key={item}>{item}</li>
               ))}
             </ol>
+            <p className="proposal-signatures-intro">
+              En señal de conformidad, ambas partes suscriben la presente propuesta.
+            </p>
             <div className="proposal-signatures">
-              <div>
-                <strong>EL CONTRATANTE</strong>
-                <span>{quote.clientName || "________________"}</span>
-                <small>DNI / RUC: ____________</small>
-              </div>
-              <div>
-                <strong>EL PROYECTISTA</strong>
-                <span>Arq. {studio.fullName || "________________"}</span>
-                <small>
-                  CAP N° {studio.capNumber || "________________"} · {studio.studioName || "TRAZZO"}
-                </small>
-              </div>
+              {signatureParties(quote, studio).map((party) => (
+                <div className="proposal-signature" key={party.role}>
+                  <div className="proposal-signature-space" aria-hidden="true" />
+                  <strong>{party.role}</strong>
+                  {party.name && <span>{party.name}</span>}
+                  {party.details.map((detail) => (
+                    <small key={detail}>{detail}</small>
+                  ))}
+                </div>
+              ))}
             </div>
           </section>
           {watermark && <div className="preview-watermark">VISTA PREVIA · TRAZZO GRATIS</div>}

@@ -3206,6 +3206,81 @@ ol.chat-md-list {
   margin: 0 2px;
 }
 
+/* Manual amount per fee line with its discount versus the calculated price */
+.line-amount-editor {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+}
+.line-adjustment {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 12px;
+  font-size: 12px;
+}
+.line-discount {
+  color: var(--ok);
+  font-weight: 600;
+}
+.link-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.link-button:hover {
+  text-decoration: underline;
+}
+
+/* Signature block: blank signing space, the line, then role, name and ID */
+.proposal-signatures-intro {
+  margin: 34px 0 0;
+  color: #6b6d75;
+  font-size: 10px;
+}
+.proposal-content-sheet .proposal-signatures {
+  margin-top: 6px;
+  padding-top: 0;
+  column-gap: 40px;
+}
+.proposal-content-sheet .proposal-signatures > .proposal-signature {
+  border-top: 0;
+  padding-top: 0;
+  justify-items: center;
+  text-align: center;
+  gap: 4px;
+}
+.proposal-signature-space {
+  width: 100%;
+  height: 64px;
+  margin-bottom: 6px;
+  border-bottom: 1.5px solid var(--proposal-secondary, #c59b27);
+}
+.proposal-signature strong {
+  color: var(--proposal-primary, #13294b);
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
+}
+.proposal-signature span {
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+.proposal-signature small {
+  font-size: 10px;
+  line-height: 1.4;
+}
+
 /*
  * Responsive overrides for component rules declared after the base media
  * queries above; they must come last to win the cascade.

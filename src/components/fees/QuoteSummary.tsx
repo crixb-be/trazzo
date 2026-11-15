@@ -2,7 +2,12 @@
 
 import { Download, Eye, Save } from "lucide-react";
 import { Button, Card } from "@/components/ui";
-import { formatPen, type FeeQuoteResult, type TaxMode } from "@/lib/calculators/fees";
+import {
+  formatPen,
+  lineAdjustmentPct,
+  type FeeQuoteResult,
+  type TaxMode,
+} from "@/lib/calculators/fees";
 
 interface QuoteSummaryProps {
   result: FeeQuoteResult;
@@ -36,6 +41,12 @@ export function QuoteSummary({
             <div>
               <strong>{line.label}</strong>
               <small>{line.detail}</small>
+              {line.overridden && lineAdjustmentPct(line) < 0 && (
+                <small className="line-discount">
+                  Descuento {Math.abs(lineAdjustmentPct(line)).toFixed(1)}% sobre{" "}
+                  {formatPen(line.baseAmount)}
+                </small>
+              )}
             </div>
             <span className="mono">{formatPen(line.amount)}</span>
           </div>

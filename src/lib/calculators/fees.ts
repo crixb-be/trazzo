@@ -71,6 +71,11 @@ export interface FeeQuoteInput {
   constructionBudget: number | null;
   rates: FeeRates;
   tax: TaxMode;
+  /**
+   * Amounts typed by the architect for a line, replacing the calculated one.
+   * The calculated amount is still reported as `baseAmount` to show discounts.
+   */
+  lineOverrides?: Partial<Record<FeeLineKey, number>>;
 }
 
 export type FeeLineKey =
@@ -80,7 +85,20 @@ export interface FeeLine {
   key: FeeLineKey;
   label: string;
   detail: string;
+  /** Amount billed: the manual override when there is one, else the calculated amount. */
   amount: number;
+  /** Calculated amount (area × rate × factor, etc.), kept even when overridden. */
+  baseAmount: number;
+  overridden: boolean;
+}
+
+/**
+ * Percentage change of a line versus its calculated amount, rounded to 0.1:
+ * negative for a discount, positive for a surcharge, 0 when not overridden.
+ */
+export function lineAdjustmentPct(line: Pick<FeeLine, "amount" | "baseAmount">): number {
+  if (line.baseAmount <= 0) return 0;
+  return Math.round(((line.amount - line.baseAmount) / line.baseAmount) * 1000) / 10;
 }
 
 export interface FeeQuoteResult {
@@ -93,6 +111,19 @@ export interface FeeQuoteResult {
   netReceived: number;
   constructionBudget: number;
   warnings: string[];
+}
+
+/**
+ * Detail text for proposals: the calculation, plus the calculated price and
+ * the discount when the architect typed a lower amount.
+ */
+export function lineDetailForProposal(line: FeeLine): string {
+  if (!line.overridden) return line.detail;
+  const adjustment = lineAdjustmentPct(line);
+  if (adjustment >= 0) return line.detail;
+  return `${line.detail} · Precio calculado ${formatPen(line.baseAmount)}, descuento ${Math.abs(
+    adjustment,
+  ).toFixed(1)}%`;
 }
 
 export function roundPen(value: number): number {
@@ -171,8 +202,22 @@ export function calculateFeeQuote(input: FeeQuoteInput): FeeQuoteResult {
   }
 
   const lines: FeeLine[] = [];
-  const addLine = (line: FeeLine, keep = false): void => {
-    if (line.amount > 0 || keep) lines.push({ ...line, amount: roundPen(line.amount) });
+  const addLine = (line: Omit<FeeLine, "baseAmount" | "overridden">, keep = false): void => {
+    const baseAmount = roundPen(line.amount);
+    const override = input.lineOverrides?.[line.key];
+    const overridden =
+      typeof override === "number" &&
+      Number.isFinite(override) &&
+      override >= 0 &&
+      Math.abs(override - baseAmount) >= 0.005;
+    if (baseAmount > 0 || keep || overridden) {
+      lines.push({
+        ...line,
+        amount: overridden ? roundPen(override) : baseAmount,
+        baseAmount,
+        overridden,
+      });
+    }
   };
 
   if (scope.design) {

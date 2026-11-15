@@ -43,7 +43,7 @@ describe("proposal PDF", () => {
     const cleanOutput = clean.output();
     expect(clean.getNumberOfPages()).toBeGreaterThanOrEqual(1);
     expect(cleanOutput).toContain(quote.code);
-    expect(cleanOutput).toContain("PROPUESTA DE HONORARIOS");
+    expect(cleanOutput).toContain("PROPUESTA DE SERVICIOS");
     expect(cleanOutput).toContain(formatPen(result.total));
     expect(cleanOutput).not.toContain("VISTA PREVIA");
     expect(

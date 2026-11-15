@@ -19,7 +19,9 @@ import {
   type LicenseModality,
   type PaymentInstallment,
 } from "@/lib/calculators/fees";
+import type { FeeLineKey } from "@/lib/calculators/fees";
 import type { FeeQuoteDraft } from "@/lib/offline/fee-quotes";
+import { LineAmountEditor } from "./LineAmountEditor";
 
 interface QuoteFormProps {
   draft: FeeQuoteDraft;
@@ -29,6 +31,8 @@ interface QuoteFormProps {
   onTouchSchedule: () => void;
   onResetRates: () => void;
   hasCustomRates: boolean;
+  /** Signer taken from the studio profile, shown as placeholder for the overrides. */
+  signerDefaults: { name: string; document: string };
 }
 
 const specialtyLabels = {
@@ -53,14 +57,25 @@ export function QuoteForm({
   onTouchSchedule,
   onResetRates,
   hasCustomRates,
+  signerDefaults,
 }: QuoteFormProps) {
   const [showRates, setShowRates] = useState(false);
   const input = draft.input;
   const scope = input.scope;
-  const lineAmount = (key: string): number =>
-    result.lines.find((line) => line.key === key)?.amount ?? 0;
+  const lineFor = (key: FeeLineKey) => result.lines.find((line) => line.key === key);
+  const lineAmount = (key: FeeLineKey): number => lineFor(key)?.amount ?? 0;
   const changeInput = (next: Partial<typeof input>): void =>
     onChange({ ...draft, input: { ...input, ...next } });
+  // null removes the manual amount so the line goes back to its calculated value.
+  const setLineOverride = (key: FeeLineKey, amount: number | null): void => {
+    const next = { ...input.lineOverrides };
+    if (amount === null) delete next[key];
+    else next[key] = amount;
+    changeInput({ lineOverrides: next });
+  };
+  const amountEditor = (key: FeeLineKey) => (
+    <LineAmountEditor line={lineFor(key)} onOverride={(amount) => setLineOverride(key, amount)} />
+  );
   const changeScope = (next: Partial<FeeScope>): void =>
     changeInput({ scope: { ...scope, ...next } });
   const changeDeliverable = (index: number, value: string): void => {
@@ -123,11 +138,39 @@ export function QuoteForm({
             />
           </div>
           <div className="field">
+            <label htmlFor="quote-client-document">DNI / RUC del cliente (opcional)</label>
+            <Input
+              id="quote-client-document"
+              inputMode="numeric"
+              value={draft.clientDocument}
+              onChange={(event) => onChange({ ...draft, clientDocument: event.target.value })}
+              placeholder="Aparece bajo la firma del contratante"
+            />
+          </div>
+          <div className="field">
             <label>Ubicación</label>
             <Input
               value={draft.location}
               onChange={(event) => onChange({ ...draft, location: event.target.value })}
               placeholder="Distrito, ciudad"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="quote-signer-name">Firma del proyectista</label>
+            <Input
+              id="quote-signer-name"
+              value={draft.signerName}
+              onChange={(event) => onChange({ ...draft, signerName: event.target.value })}
+              placeholder={signerDefaults.name || "Arq. Nombre Apellido"}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="quote-signer-document">N° CAP / RUC del proyectista</label>
+            <Input
+              id="quote-signer-document"
+              value={draft.signerDocument}
+              onChange={(event) => onChange({ ...draft, signerDocument: event.target.value })}
+              placeholder={signerDefaults.document || "CAP N° 00000"}
             />
           </div>
           <Select
@@ -177,17 +220,20 @@ export function QuoteForm({
             </label>
             <strong className="mono">{formatPen(lineAmount("design"))}</strong>
             {scope.design && (
-              <NumberField
-                label="S/ por m²"
-                value={input.rates.designPerM2[input.typology]}
-                onValueChange={(value) =>
-                  changeInput({
-                    rates: updateRates(input.rates, {
-                      designPerM2: { ...input.rates.designPerM2, [input.typology]: value ?? 0 },
-                    }),
-                  })
-                }
-              />
+              <div className="scope-sub-fields">
+                <NumberField
+                  label="S/ por m²"
+                  value={input.rates.designPerM2[input.typology]}
+                  onValueChange={(value) =>
+                    changeInput({
+                      rates: updateRates(input.rates, {
+                        designPerM2: { ...input.rates.designPerM2, [input.typology]: value ?? 0 },
+                      }),
+                    })
+                  }
+                />
+                {amountEditor("design")}
+              </div>
             )}
           </div>
           <div className="scope-option">
@@ -251,6 +297,7 @@ export function QuoteForm({
                     ),
                   )}
                 </div>
+                {amountEditor("expediente")}
               </div>
             )}
           </div>
@@ -307,6 +354,7 @@ export function QuoteForm({
                     }
                   />
                 )}
+                {amountEditor("renders")}
               </div>
             )}
           </div>
@@ -340,6 +388,21 @@ export function QuoteForm({
                     })
                   }
                 />
+                <NumberField
+                  label={"S/ modalidad " + scope.license.modality}
+                  value={input.rates.licenseByModality[scope.license.modality]}
+                  onValueChange={(value) =>
+                    changeInput({
+                      rates: updateRates(input.rates, {
+                        licenseByModality: {
+                          ...input.rates.licenseByModality,
+                          [scope.license.modality]: value ?? 0,
+                        },
+                      }),
+                    })
+                  }
+                />
+                {amountEditor("license")}
               </div>
             )}
           </div>
@@ -407,6 +470,19 @@ export function QuoteForm({
                     }
                   />
                 )}
+                {scope.supervision.mode === "percent" && (
+                  <NumberField
+                    label="% del presupuesto de obra"
+                    value={(input.rates.supervisionPct ?? 0) * 100}
+                    min={0}
+                    max={100}
+                    onValueChange={(value) =>
+                      changeInput({
+                        rates: updateRates(input.rates, { supervisionPct: (value ?? 0) / 100 }),
+                      })
+                    }
+                  />
+                )}
                 <NumberField
                   label="Semanas de supervisión"
                   value={scope.supervision.weeks}
@@ -415,6 +491,7 @@ export function QuoteForm({
                     changeScope({ supervision: { ...scope.supervision, weeks: value ?? 0 } })
                   }
                 />
+                {amountEditor("supervision")}
               </div>
             )}
           </div>
@@ -454,6 +531,7 @@ export function QuoteForm({
                   hint={"Por defecto: " + formatPen(result.constructionBudget)}
                   onValueChange={(value) => changeInput({ constructionBudget: value })}
                 />
+                {amountEditor("execution")}
               </div>
             )}
           </div>

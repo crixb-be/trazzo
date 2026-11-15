@@ -1,8 +1,8 @@
 "use client";
 
 export async function prepareLogo(file: File): Promise<string> {
-  if (!["image/png", "image/jpeg", "image/svg+xml"].includes(file.type)) {
-    throw new Error("El logo debe ser PNG, JPEG o SVG.");
+  if (!["image/png", "image/jpeg", "image/webp", "image/svg+xml"].includes(file.type)) {
+    throw new Error("El logo debe ser PNG, JPG, WebP o SVG.");
   }
   if (file.size > 2 * 1024 * 1024) {
     throw new Error("El logo no puede superar 2 MB.");

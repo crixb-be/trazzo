@@ -3,12 +3,14 @@ import { autoTable } from "jspdf-autotable";
 import {
   FEE_TYPOLOGIES,
   formatPen,
+  lineDetailForProposal,
   formatWeekRange,
   groupDeliverables,
   paymentAmounts,
   type FeeQuoteResult,
 } from "@/lib/calculators/fees";
 import type { FeeQuote, StudioProfile } from "@/lib/offline/db";
+import { signatureParties, type SignatureParty } from "./signatures";
 import { DEFAULT_STUDIO_PROFILE } from "@/lib/offline/profile";
 
 export interface ProposalOptions {
@@ -80,6 +82,14 @@ function studioFrom(options: ProposalOptions): StudioProfile {
   };
 }
 
+/** jsPDF needs the real image format; logos are PNG today but older ones may be JPEG/WebP. */
+function imageFormat(dataUrl: string): "PNG" | "JPEG" | "WEBP" {
+  const mime = /^data:image\/([a-z+]+);/i.exec(dataUrl)?.[1]?.toLowerCase() ?? "png";
+  if (mime === "jpeg" || mime === "jpg") return "JPEG";
+  if (mime === "webp") return "WEBP";
+  return "PNG";
+}
+
 function addLogoOrMonogram(
   pdf: jsPDF,
   studio: StudioProfile,
@@ -95,7 +105,7 @@ function addLogoOrMonogram(
       const ratio = Math.min(maxWidth / properties.width, maxHeight / properties.height);
       pdf.addImage(
         studio.logoDataUrl,
-        "PNG",
+        imageFormat(studio.logoDataUrl),
         x,
         y,
         properties.width * ratio,
@@ -239,7 +249,12 @@ function addCover(
   pdf.text((studio.studioName || "TRAZZO").toUpperCase(), 30, 65);
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(8);
-  pdf.text(studio.studioName ? "ARQUITECTURA · RNE PRO · PERÚ" : "RNE PRO · PERÚ", 30, 71);
+  // Under the studio name: its address when known; TRAZZO keeps its tagline.
+  pdf.text(
+    studio.studioName ? studio.address || "Arquitectura y proyectos" : "RNE PRO · PERÚ",
+    30,
+    71,
+  );
   const title =
     quote.documentType === "cotizacion"
       ? "COTIZACIÓN DE DISEÑO Y PROYECTO"
@@ -260,10 +275,6 @@ function addCover(
   pdf.text(quote.location || "Ubicación por confirmar", 30, 166);
   pdf.setFontSize(9);
   pdf.text(quote.code + " · " + date, 30, 176);
-  if (quote.documentType !== "cotizacion") {
-    pdf.setFontSize(8);
-    pdf.text("PROPUESTA DE HONORARIOS", 30, 185);
-  }
   pdf.setFillColor(...tint(secondary, 0.06));
   pdf.rect(30, 198, 150, 39, "F");
   pdf.setFillColor(...secondary);
@@ -339,34 +350,78 @@ function proposalTable(
   return (pdf as PdfWithTable).lastAutoTable?.finalY ?? startY + 20;
 }
 
+/** Signature block geometry (mm). */
+const SIGNATURE = {
+  /** Blank space above the line reserved for the handwritten signature (~62 pt). */
+  signingSpace: 22,
+  columnWidth: 64,
+  leftX: 22,
+  rightX: 124,
+  /** Total height needed: intro + signing space + role, name and two detail lines. */
+  blockHeight: 62,
+};
+
+function drawSignatureParty(
+  pdf: jsPDF,
+  party: SignatureParty,
+  x: number,
+  lineY: number,
+  primary: Rgb,
+  secondary: Rgb,
+): void {
+  const center = x + SIGNATURE.columnWidth / 2;
+  pdf.setDrawColor(...secondary);
+  pdf.setLineWidth(0.4);
+  pdf.line(x, lineY, x + SIGNATURE.columnWidth, lineY);
+
+  let y = lineY + 6;
+  pdf.setTextColor(...primary);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(7.5);
+  pdf.text(party.role, center, y, { align: "center", charSpace: 0.4 });
+
+  if (party.name) {
+    y += 6;
+    pdf.setTextColor(...INK);
+    pdf.setFontSize(10.5);
+    const nameLines = pdf.splitTextToSize(party.name, SIGNATURE.columnWidth) as string[];
+    pdf.text(nameLines, center, y, { align: "center" });
+    y += (nameLines.length - 1) * 4.6;
+  }
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(8.5);
+  pdf.setTextColor(...MUTED);
+  for (const detail of party.details) {
+    y += 5;
+    pdf.text(detail, center, y, { align: "center" });
+  }
+}
+
 function addSignatures(
   pdf: jsPDF,
   quote: FeeQuote,
   studio: StudioProfile,
   primary: Rgb,
+  secondary: Rgb,
   y: number,
   startNewPage: () => void,
 ): void {
-  if (y > 242) {
+  const footerTop = pdf.internal.pageSize.getHeight() - 17;
+  if (y + SIGNATURE.blockHeight > footerTop - 4) {
     startNewPage();
-    y = 44;
+    y = 40;
   }
-  pdf.setDrawColor(...primary);
-  pdf.setLineWidth(0.3);
-  pdf.line(25, y, 88, y);
-  pdf.line(122, y, 185, y);
-  pdf.setTextColor(...INK);
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(8.5);
-  pdf.text("EL CONTRATANTE", 25, y + 7);
-  pdf.text("EL PROYECTISTA", 122, y + 7);
+
   pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(8);
-  pdf.text(quote.clientName || "________________", 25, y + 14);
-  pdf.text("DNI / RUC: ____________", 25, y + 20);
-  pdf.text("Arq. " + (studio.fullName || "________________"), 122, y + 14);
-  pdf.text("CAP N° " + (studio.capNumber || "________________"), 122, y + 20);
-  pdf.text(studio.studioName || "TRAZZO", 122, y + 26);
+  pdf.setFontSize(9);
+  pdf.setTextColor(...MUTED);
+  pdf.text("En señal de conformidad, ambas partes suscriben la presente propuesta.", 18, y);
+
+  const lineY = y + 6 + SIGNATURE.signingSpace;
+  const [contractor, designer] = signatureParties(quote, studio);
+  drawSignatureParty(pdf, contractor, SIGNATURE.leftX, lineY, primary, secondary);
+  drawSignatureParty(pdf, designer, SIGNATURE.rightX, lineY, primary, secondary);
 }
 
 export function buildProposalPdf(
@@ -422,7 +477,7 @@ export function buildProposalPdf(
       pdf,
       y,
       [["Ítem", "Detalle", "Subtotal"]],
-      result.lines.map((line) => [line.label, line.detail, formatPen(line.amount)]),
+      result.lines.map((line) => [line.label, lineDetailForProposal(line), formatPen(line.amount)]),
       foot,
       primary,
       soft,
@@ -531,7 +586,7 @@ export function buildProposalPdf(
     pdf.text(lines, 21, y);
     y += lines.length * 4.5 + 3;
   }
-  addSignatures(pdf, quote, studio, primary, y + 8, () => {
+  addSignatures(pdf, quote, studio, primary, secondary, y + 10, () => {
     pdf.addPage();
     addContentHeader(pdf, studio, date, primary, secondary);
   });

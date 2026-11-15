@@ -166,13 +166,23 @@ export function AccountWorkspace() {
     );
   }
 
+  // The logo is saved as soon as it changes: the proposal PDF reads it from
+  // IndexedDB, so it must not depend on pressing "Guardar perfil" afterwards.
   async function changeLogo(file: File): Promise<void> {
     try {
-      setLogoDataUrl(await prepareLogo(file));
-      setNotice("");
+      const dataUrl = await prepareLogo(file);
+      setLogoDataUrl(dataUrl);
+      await saveStudioProfile({ logoDataUrl: dataUrl });
+      setNotice("Logo guardado. Aparecerá en la portada de tus propuestas.");
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "No se pudo preparar el logo.");
     }
+  }
+
+  async function removeLogo(): Promise<void> {
+    setLogoDataUrl(null);
+    await saveStudioProfile({ logoDataUrl: null });
+    setNotice("Logo quitado.");
   }
 
   async function choosePlan(plan: Plan): Promise<void> {
@@ -311,7 +321,7 @@ export function AccountWorkspace() {
                 Subir logo
               </Button>
               {logoDataUrl && (
-                <Button size="sm" variant="ghost" onClick={() => setLogoDataUrl(null)}>
+                <Button size="sm" variant="ghost" onClick={() => void removeLogo()}>
                   Quitar
                 </Button>
               )}
@@ -320,7 +330,7 @@ export function AccountWorkspace() {
               ref={logoInputRef}
               hidden
               type="file"
-              accept="image/png,image/jpeg,image/svg+xml"
+              accept="image/png,image/jpeg,image/webp,image/svg+xml"
               onChange={(event) => {
                 const file = event.target.files?.[0];
                 if (file) void changeLogo(file);

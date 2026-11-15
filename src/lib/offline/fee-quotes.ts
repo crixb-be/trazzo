@@ -12,7 +12,10 @@ export interface FeeQuoteDraft {
   documentType: "propuesta" | "cotizacion";
   projectName: string;
   clientName: string;
+  clientDocument: string;
   location: string;
+  signerName: string;
+  signerDocument: string;
   input: FeeQuoteInput;
   deliverables: string[];
   schedule: Milestone[];
@@ -66,6 +69,9 @@ export async function duplicateFeeQuote(id: string): Promise<FeeQuote> {
     {
       ...original,
       documentType: original.documentType ?? "propuesta",
+      clientDocument: original.clientDocument ?? "",
+      signerName: original.signerName ?? "",
+      signerDocument: original.signerDocument ?? "",
       projectName: original.projectName + " (copia)",
     },
     { createdAt: new Date().toISOString() },

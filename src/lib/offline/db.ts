@@ -64,7 +64,12 @@ export interface FeeQuote {
   documentType?: "propuesta" | "cotizacion";
   projectName: string;
   clientName: string;
+  /** DNI or RUC of the client, shown under their signature. */
+  clientDocument?: string;
   location: string;
+  /** Signer overrides; empty means "take it from the studio profile". */
+  signerName?: string;
+  signerDocument?: string;
   input: FeeQuoteInput;
   deliverables: string[];
   schedule: Milestone[];
