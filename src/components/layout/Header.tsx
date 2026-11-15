@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { GlobalSearch, OfflineBadge, ThemeToggle } from "@/components/ui";
+import { useStudioProfile } from "@/lib/offline/hooks";
 
 const titles: Record<string, string> = {
   "/": "Espacio de trabajo",
@@ -25,6 +26,7 @@ function pageTitle(pathname: string): string {
 export function Header() {
   const pathname = usePathname();
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const { avatarDataUrl } = useStudioProfile();
 
   // Close the mobile search sheet whenever the route changes.
   useEffect(() => {
@@ -54,7 +56,11 @@ export function Header() {
         <OfflineBadge />
         <ThemeToggle />
         <Link className="account-avatar" href="/cuenta" aria-label="Abrir cuenta">
-          <UserRound size={17} aria-hidden="true" />
+          {avatarDataUrl ? (
+            <img src={avatarDataUrl} alt="" />
+          ) : (
+            <UserRound size={17} aria-hidden="true" />
+          )}
         </Link>
       </div>
 
