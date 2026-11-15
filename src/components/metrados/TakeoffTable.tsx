@@ -1,7 +1,7 @@
-﻿"use client";
+"use client";
 
 import { Edit3, Plus, Save, Trash2, X } from "lucide-react";
-import { Button, Card, Input } from "@/components/ui";
+import { Button, Card, Input, NumberField } from "@/components/ui";
 import type { Material } from "@/data/seed-rne";
 import type { Takeoff } from "@/lib/offline/db";
 import { computeTakeoffLine } from "@/lib/calculators/takeoff";
@@ -15,6 +15,7 @@ export interface TakeoffDraft {
   height: number;
   quantity: number;
   wastePct: number;
+  unitPricePen: number;
 }
 
 export interface TakeoffTableProps {
@@ -42,7 +43,7 @@ function derivedLine(draft: TakeoffDraft, materials: Material[]) {
     quantity: draft.quantity,
     yieldFactor: material.yield_factor,
     wastePct: draft.wastePct,
-    unitPrice: material.ref_price_pen,
+    unitPrice: draft.unitPricePen,
   }).values;
 }
 
@@ -97,6 +98,7 @@ export function TakeoffTable({
                     ...draft,
                     materialCode: event.target.value,
                     wastePct: material.default_waste_pct,
+                    unitPricePen: material.ref_price_pen,
                   });
                 }}
               >
@@ -134,11 +136,30 @@ export function TakeoffTable({
               value={draft.quantity}
               onChange={(value) => setDraft({ ...draft, quantity: value })}
             />
-            <NumberInput
+            <NumberField
               label="% desperdicio"
               value={draft.wastePct}
-              onChange={(value) => setDraft({ ...draft, wastePct: value })}
+              min={0}
+              onValueChange={(value) => setDraft({ ...draft, wastePct: value ?? 0 })}
             />
+            <NumberField
+              label="Precio unitario (S/)"
+              value={draft.unitPricePen}
+              min={0}
+              onValueChange={(value) => setDraft({ ...draft, unitPricePen: value ?? 0 })}
+            />
+            <button
+              className="btn btn-ghost"
+              type="button"
+              onClick={() =>
+                setDraft({
+                  ...draft,
+                  unitPricePen: materialFor(draft.materialCode, materials).ref_price_pen,
+                })
+              }
+            >
+              Usar precio referencial
+            </button>
             <div className="takeoff-preview">
               <span className="muted small">Total con desperdicio</span>
               <strong className="mono">
@@ -168,6 +189,7 @@ export function TakeoffTable({
                     <th>H</th>
                     <th>Cant.</th>
                     <th>Merma</th>
+                    <th>P. unit.</th>
                     <th>Total</th>
                     <th>Subtotal</th>
                     <th />
@@ -188,6 +210,9 @@ export function TakeoffTable({
                         <td>{takeoff.height.toFixed(2)}</td>
                         <td>{takeoff.quantity.toFixed(2)}</td>
                         <td>{takeoff.wastePct}%</td>
+                        <td className="mono">
+                          S/ {(takeoff.unitPricePen ?? material.ref_price_pen).toFixed(2)}
+                        </td>
                         <td className="mono">
                           {takeoff.total.toFixed(2)} {material.unit}
                         </td>
@@ -233,15 +258,11 @@ function NumberInput({
   onChange: (value: number) => void;
 }) {
   return (
-    <div className="field compact-field">
-      <label>{label}</label>
-      <Input
-        type="number"
-        min={0}
-        step="0.01"
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-      />
-    </div>
+    <NumberField
+      label={label}
+      value={value}
+      min={0}
+      onValueChange={(next) => onChange(next ?? 0)}
+    />
   );
 }

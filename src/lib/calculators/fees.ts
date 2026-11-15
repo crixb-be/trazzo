@@ -424,32 +424,85 @@ export function formatWeekRange(milestone: Milestone): string {
     : milestone.fromWeek + "–" + milestone.toWeek;
 }
 
+export interface DeliverableGroup {
+  group: string;
+  items: string[];
+}
+
+/** Default deliverables per enabled scope; the single source for lists and PDF grouping. */
+export function defaultDeliverableGroups(input: FeeQuoteInput): DeliverableGroup[] {
+  const { scope } = input;
+  const groups: DeliverableGroup[] = [];
+  if (scope.design)
+    groups.push({
+      group: "Diseño arquitectónico",
+      items: [
+        "Planos de distribución, cortes y elevaciones",
+        "Memoria descriptiva",
+        "Archivo editable (DWG/RVT)",
+      ],
+    });
+  if (scope.expediente.enabled) {
+    if (scope.expediente.estructuras)
+      groups.push({
+        group: "Expediente técnico — Estructuras",
+        items: ["Planos y memoria de estructuras"],
+      });
+    if (scope.expediente.sanitarias)
+      groups.push({
+        group: "Expediente técnico — Inst. Sanitarias",
+        items: ["Planos y memoria de instalaciones sanitarias"],
+      });
+    if (scope.expediente.electricas)
+      groups.push({
+        group: "Expediente técnico — Inst. Eléctricas",
+        items: ["Planos y memoria de instalaciones eléctricas"],
+      });
+  }
+  if (scope.renders.enabled)
+    groups.push({
+      group: "Modelado 3D y renders",
+      items: [
+        scope.renders.count + " renders HD",
+        ...(scope.renders.virtualTour ? ["Recorrido virtual"] : []),
+      ],
+    });
+  if (scope.license.enabled)
+    groups.push({
+      group: "Licencia municipal",
+      items: ["Expediente para licencia municipal (Modalidad " + scope.license.modality + ")"],
+    });
+  if (scope.supervision.enabled)
+    groups.push({ group: "Supervisión de obra", items: ["Informes de supervisión por visita"] });
+  if (scope.execution.enabled)
+    groups.push({ group: "Dirección técnica", items: ["Informes de avance y valorizaciones"] });
+  return groups;
+}
+
 export function defaultDeliverables(input: FeeQuoteInput): string[] {
-  const deliverables: string[] = [];
-  if (input.scope.design)
-    deliverables.push(
-      "Planos de distribución, cortes y elevaciones",
-      "Memoria descriptiva",
-      "Archivo editable (DWG/RVT)",
-    );
-  if (input.scope.expediente.enabled) {
-    if (input.scope.expediente.estructuras) deliverables.push("Planos y memoria de estructuras");
-    if (input.scope.expediente.sanitarias)
-      deliverables.push("Planos y memoria de instalaciones sanitarias");
-    if (input.scope.expediente.electricas)
-      deliverables.push("Planos y memoria de instalaciones eléctricas");
+  return defaultDeliverableGroups(input).flatMap((group) => group.items);
+}
+
+/**
+ * Groups the (possibly edited) deliverables by specialty: items that match a default
+ * deliverable keep its group, anything the architect wrote goes to "Adicionales".
+ */
+export function groupDeliverables(
+  input: FeeQuoteInput,
+  deliverables: string[],
+): DeliverableGroup[] {
+  const defaults = defaultDeliverableGroups(input);
+  const groupOf = new Map<string, string>();
+  for (const { group, items } of defaults) for (const item of items) groupOf.set(item, group);
+
+  const order = [...defaults.map((group) => group.group), "Adicionales"];
+  const buckets = new Map<string, string[]>(order.map((group) => [group, []]));
+  for (const item of deliverables) {
+    buckets.get(groupOf.get(item) ?? "Adicionales")?.push(item);
   }
-  if (input.scope.renders.enabled) {
-    deliverables.push(input.scope.renders.count + " renders HD");
-    if (input.scope.renders.virtualTour) deliverables.push("Recorrido virtual");
-  }
-  if (input.scope.license.enabled)
-    deliverables.push(
-      "Expediente para licencia municipal (Modalidad " + input.scope.license.modality + ")",
-    );
-  if (input.scope.supervision.enabled) deliverables.push("Informes de supervisión por visita");
-  if (input.scope.execution.enabled) deliverables.push("Informes de avance y valorizaciones");
-  return deliverables;
+  return order
+    .map((group) => ({ group, items: buckets.get(group) ?? [] }))
+    .filter((group) => group.items.length > 0);
 }
 
 export const DEFAULT_CONDITIONS: string[] = [

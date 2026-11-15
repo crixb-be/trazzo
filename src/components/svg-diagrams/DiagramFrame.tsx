@@ -1,4 +1,4 @@
-﻿import { createContext, useContext, useId, type ReactNode } from "react";
+import { createContext, useContext, useId, type ReactNode } from "react";
 
 /** Converts metres into SVG px for one diagram instance. */
 export type DiagramScale = (meters: number) => number;
@@ -63,11 +63,13 @@ export function createDiagramScale(widthMeters: number, heightMeters: number): D
 interface DiagramContextValue {
   scale: DiagramScale;
   arrowMarkerId: string;
+  highlightMarkerId: string;
 }
 
 const DiagramContext = createContext<DiagramContextValue>({
   scale: createDiagramScale(1, 1),
   arrowMarkerId: "diagram-arrow",
+  highlightMarkerId: "diagram-arrow-highlight",
 });
 
 /** Scale of the enclosing DiagramFrame (for annotation components). */
@@ -117,7 +119,8 @@ export function DiagramFrame({
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const minorGridId = `diagram-grid-minor-${id}`;
   const majorGridId = `diagram-grid-major-${id}`;
-  const arrowMarkerId = `diagram-arrow-${id}`;
+  const arrowMarkerId = "diagram-arrow-" + id;
+  const highlightMarkerId = "diagram-arrow-highlight-" + id;
 
   const pxPerMeter = scale(1) || 1;
   const contentWidth = scale(positive(widthMeters));
@@ -137,7 +140,7 @@ export function DiagramFrame({
   const notesTop = contentY + contentHeight + PADDING + 6;
 
   return (
-    <DiagramContext.Provider value={{ scale, arrowMarkerId }}>
+    <DiagramContext.Provider value={{ scale, arrowMarkerId, highlightMarkerId }}>
       <div className="diagram-frame">
         <svg
           className="diagram-svg"
@@ -185,6 +188,17 @@ export function DiagramFrame({
               markerUnits="userSpaceOnUse"
             >
               <path d="M 0 0 L 8 4 L 0 8 z" fill="var(--accent)" />
+            </marker>
+            <marker
+              id={highlightMarkerId}
+              markerWidth="8"
+              markerHeight="8"
+              refX="8"
+              refY="4"
+              orient="auto-start-reverse"
+              markerUnits="userSpaceOnUse"
+            >
+              <path d="M 0 0 L 8 4 L 0 8 z" fill="var(--highlight)" />
             </marker>
           </defs>
 

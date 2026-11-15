@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { RNE_CARDS } from "@/data/seed-rne";
 import { normalize } from "./normalize";
 import { searchCards } from "./search";
@@ -35,5 +35,24 @@ describe("tolerant RNE search", () => {
 
   it("returns every card for an empty query", () => {
     expect(searchCards(RNE_CARDS, "")).toHaveLength(RNE_CARDS.length);
+  });
+  it("keeps baño away from vano", () => {
+    const results = searchCards(RNE_CARDS, "baño");
+    expect(results.slice(0, 3).some((card) => card.slug === "vano-puerta-altura")).toBe(false);
+    expect(["giro-silla-ruedas", "puerta-accesible-ancho", "pozo-luz-servicios"]).toContain(
+      results[0]?.slug,
+    );
+  });
+
+  it("ranks exact architectural intent first", () => {
+    expect(searchCards(RNE_CARDS, "vano")[0]?.slug).toBe("vano-puerta-altura");
+    expect(searchCards(RNE_CARDS, "ancho de puerta de baño")[0]?.slug).toBe(
+      "puerta-accesible-ancho",
+    );
+    expect(searchCards(RNE_CARDS, "puerta baño accesible")[0]?.slug).toBe("puerta-accesible-ancho");
+  });
+
+  it("treats a stopword-only query as empty", () => {
+    expect(searchCards(RNE_CARDS, "de la")).toHaveLength(RNE_CARDS.length);
   });
 });

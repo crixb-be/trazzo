@@ -1,43 +1,45 @@
-﻿import { useDiagramContext } from "./DiagramFrame";
+import { useDiagramContext } from "./DiagramFrame";
 
 export interface DimensionProps {
-  /** Measured points, in metres. */
   x1: number;
   y1: number;
   x2: number;
   y2: number;
   label: string;
-  /**
-   * Distance in px from the measured points to the dimension line. Negative
-   * values place it above (horizontal) or to the left (vertical).
-   */
   offset?: number;
   orientation?: "horizontal" | "vertical";
+  tone?: "default" | "highlight";
 }
 
 const EXTENSION_GAP = 3;
 const EXTENSION_OVERSHOOT = 4;
 
-/** Architectural dimension line: extension lines, arrows and a mono label. */
-export function Dimension({ x1, y1, x2, y2, label, offset = 18, orientation }: DimensionProps) {
-  const { scale, arrowMarkerId } = useDiagramContext();
+export function Dimension({
+  x1,
+  y1,
+  x2,
+  y2,
+  label,
+  offset = 18,
+  orientation,
+  tone = "default",
+}: DimensionProps) {
+  const { scale, arrowMarkerId, highlightMarkerId } = useDiagramContext();
   const horizontal = orientation
     ? orientation === "horizontal"
     : Math.abs(y2 - y1) <= Math.abs(x2 - x1);
   const direction = offset < 0 ? -1 : 1;
-
+  const stroke = tone === "highlight" ? "var(--highlight)" : "var(--accent)";
+  const markerId = tone === "highlight" ? highlightMarkerId : arrowMarkerId;
   const ax = scale(x1);
   const ay = scale(y1);
   const bx = scale(x2);
   const by = scale(y2);
-
-  // Dimension line sits on a common baseline beyond the outermost point.
   const lineCoordinate = horizontal
     ? (direction < 0 ? Math.min(ay, by) : Math.max(ay, by)) + offset
     : (direction < 0 ? Math.min(ax, bx) : Math.max(ax, bx)) + offset;
   const start = horizontal ? { x: ax, y: lineCoordinate } : { x: lineCoordinate, y: ay };
   const end = horizontal ? { x: bx, y: lineCoordinate } : { x: lineCoordinate, y: by };
-
   const extension = (px: number, py: number, qx: number, qy: number) =>
     horizontal ? (
       <line
@@ -45,7 +47,7 @@ export function Dimension({ x1, y1, x2, y2, label, offset = 18, orientation }: D
         y1={py + direction * EXTENSION_GAP}
         x2={qx}
         y2={qy + direction * EXTENSION_OVERSHOOT}
-        stroke="var(--accent)"
+        stroke={stroke}
         strokeWidth="0.75"
       />
     ) : (
@@ -54,15 +56,14 @@ export function Dimension({ x1, y1, x2, y2, label, offset = 18, orientation }: D
         y1={py}
         x2={qx + direction * EXTENSION_OVERSHOOT}
         y2={qy}
-        stroke="var(--accent)"
+        stroke={stroke}
         strokeWidth="0.75"
       />
     );
-
   const textX = (start.x + end.x) / 2;
   const textY = (start.y + end.y) / 2;
-  // Labels go on the outer side of the dimension line so they never cover geometry.
   const labelShift = direction < 0 ? -6 : 14;
+  const labelClass = tone === "highlight" ? "diagram-mono diagram-highlight-label" : "diagram-mono";
 
   return (
     <g className="diagram-dimension">
@@ -73,13 +74,13 @@ export function Dimension({ x1, y1, x2, y2, label, offset = 18, orientation }: D
         y1={start.y}
         x2={end.x}
         y2={end.y}
-        stroke="var(--accent)"
-        strokeWidth="1"
-        markerStart={`url(#${arrowMarkerId})`}
-        markerEnd={`url(#${arrowMarkerId})`}
+        stroke={stroke}
+        strokeWidth={tone === "highlight" ? 1.5 : 1}
+        markerStart={`url(#${markerId})`}
+        markerEnd={`url(#${markerId})`}
       />
       {horizontal ? (
-        <text x={textX} y={textY + labelShift} textAnchor="middle" className="diagram-mono">
+        <text x={textX} y={textY + labelShift} textAnchor="middle" className={labelClass}>
           {label}
         </text>
       ) : (
@@ -89,7 +90,7 @@ export function Dimension({ x1, y1, x2, y2, label, offset = 18, orientation }: D
           dy={labelShift}
           textAnchor="middle"
           transform={`rotate(-90 ${textX} ${textY})`}
-          className="diagram-mono"
+          className={labelClass}
         >
           {label}
         </text>

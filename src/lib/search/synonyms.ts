@@ -1,6 +1,6 @@
-﻿import { normalize, tokenize } from "./normalize";
+import { normalize, tokenize } from "./normalize";
 
-const SYNONYM_GROUPS: string[][] = [
+export const SYNONYM_GROUPS: string[][] = [
   ["contrapaso", "garganta", "peldaño", "paso", "huella", "escalera"],
   ["vano", "puerta", "ventana", "dintel", "marco"],
   ["alfeizar", "antepecho", "ventana"],
@@ -14,53 +14,118 @@ const SYNONYM_GROUPS: string[][] = [
   ["meseta", "descanso", "landing"],
   ["aforo", "ocupante", "capacidad"],
   ["losa", "techo", "vigueta", "aligerada"],
-  ["baño", "servicios higiénicos", "servicios"],
 ];
 
-export const SYNONYMS: Record<string, string[]> = {};
+export const RELATED_TERMS: Record<string, string[]> = {
+  baño: [
+    "servicios higienicos",
+    "ss.hh",
+    "inodoro",
+    "lavatorio",
+    "aparatos sanitarios",
+    "accesibilidad",
+    "giro",
+    "silla de ruedas",
+    "ventilacion",
+    "servicios",
+  ],
+  "ss.hh": [
+    "baño",
+    "servicios higienicos",
+    "inodoro",
+    "lavatorio",
+    "aparatos sanitarios",
+    "servicios",
+  ],
+  "servicios higienicos": [
+    "baño",
+    "ss.hh",
+    "inodoro",
+    "lavatorio",
+    "aparatos sanitarios",
+    "accesibilidad",
+    "giro",
+    "silla de ruedas",
+    "ventilacion",
+    "servicios",
+  ],
+  vano: ["puerta", "ventana", "alfeizar", "dintel"],
+  puerta: ["vano", "ancho libre"],
+  ventana: ["vano", "alfeizar", "iluminacion"],
+  cocina: ["servicios", "ventilacion", "pozo de luz"],
+  escalera: ["contrapaso", "paso", "huella", "tramo"],
+  rampa: ["pendiente", "accesibilidad", "descanso"],
+  cochera: ["estacionamiento"],
+  aforo: ["ocupante", "evacuacion"],
+  tanque: ["dotacion", "agua"],
+  cisterna: ["dotacion", "agua"],
+};
 
-for (const group of SYNONYM_GROUPS) {
-  const normalizedGroup = group.map(normalize);
-  for (const term of normalizedGroup) {
-    SYNONYMS[term] = normalizedGroup.filter((candidate) => candidate !== term);
+export interface WeightedToken {
+  token: string;
+  weight: number;
+  original: boolean;
+}
+
+function addToken(
+  map: Map<string, WeightedToken>,
+  token: string,
+  weight: number,
+  original: boolean,
+): void {
+  const normalized = normalize(token);
+  if (!normalized) return;
+  const current = map.get(normalized);
+  if (!current || weight > current.weight || (original && !current.original)) {
+    map.set(normalized, {
+      token: normalized,
+      weight,
+      original: original || current?.original === true,
+    });
   }
 }
 
-function matchingPhrase(tokens: string[], index: number, phrase: string): boolean {
-  const phraseTokens = tokenize(phrase);
-  return phraseTokens.every((token, phraseIndex) => tokens[index + phraseIndex] === token);
+function phraseMatches(tokens: string[], start: number, phrase: string): boolean {
+  const phraseTokens = tokenize(phrase, true);
+  return (
+    phraseTokens.length > 0 && phraseTokens.every((token, index) => tokens[start + index] === token)
+  );
 }
 
-/**
- * Expands user jargon in both directions, retaining the original terms.
- * Multiword terms are kept as phrases and also contribute their individual tokens.
- */
-export function expandedTokens(query: string): string[] {
-  const normalizedQuery = normalize(query);
-  if (!normalizedQuery) return [];
+function termsForQuery(queryTokens: string[]): string[] {
+  const terms = new Set<string>(queryTokens);
+  for (const phrase of [...Object.keys(RELATED_TERMS), ...SYNONYM_GROUPS.flat()]) {
+    if (
+      phrase.includes(" ") &&
+      queryTokens.some((_, index) => phraseMatches(queryTokens, index, phrase))
+    ) {
+      terms.add(phrase);
+    }
+  }
+  return [...terms];
+}
 
-  const queryTokens = tokenize(normalizedQuery);
-  const output = new Set<string>();
+export function weightedTokens(query: string): WeightedToken[] {
+  const tokens = tokenize(query, true);
+  if (tokens.length === 0) return [];
 
-  for (let index = 0; index < queryTokens.length; index += 1) {
-    const token = queryTokens[index];
-    output.add(token);
+  const output = new Map<string, WeightedToken>();
+  for (const token of tokens) addToken(output, token, 1, true);
 
-    for (const phrase of Object.keys(SYNONYMS)) {
-      if (!phrase.includes(" ") || !matchingPhrase(queryTokens, index, phrase)) continue;
-      output.add(phrase);
-      for (const phraseToken of tokenize(phrase)) output.add(phraseToken);
-      for (const synonym of SYNONYMS[phrase]) {
-        output.add(synonym);
-        for (const synonymToken of tokenize(synonym)) output.add(synonymToken);
+  const normalizedGroups = SYNONYM_GROUPS.map((group) => group.map(normalize));
+  for (const term of termsForQuery(tokens)) {
+    for (const group of normalizedGroups) {
+      if (!group.includes(term)) continue;
+      for (const synonym of group) {
+        if (synonym !== term) addToken(output, synonym, 0.6, false);
       }
     }
-
-    for (const synonym of SYNONYMS[token] ?? []) {
-      output.add(synonym);
-      for (const synonymToken of tokenize(synonym)) output.add(synonymToken);
-    }
+    for (const related of RELATED_TERMS[term] ?? []) addToken(output, related, 0.35, false);
   }
 
-  return [...output];
+  return [...output.values()];
+}
+
+export function expandedTokens(query: string): string[] {
+  return weightedTokens(query).map(({ token }) => token);
 }

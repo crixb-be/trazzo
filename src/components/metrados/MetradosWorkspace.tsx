@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Download, FileText, RefreshCw } from "lucide-react";
 import { jsPDF } from "jspdf";
@@ -24,6 +24,7 @@ const emptyDraft: TakeoffDraft = {
   height: 1,
   quantity: 1,
   wastePct: MATERIALS[0]?.default_waste_pct ?? 5,
+  unitPricePen: MATERIALS[0]?.ref_price_pen ?? 0,
 };
 
 export function MetradosWorkspace() {
@@ -83,7 +84,7 @@ export function MetradosWorkspace() {
           quantity: takeoff.quantity,
           total: takeoff.total,
           subtotalPen: takeoff.subtotalPen,
-          unitPrice: material?.ref_price_pen ?? 0,
+          unitPrice: takeoff.unitPricePen ?? material?.ref_price_pen ?? 0,
         };
       }),
     [catalog, takeoffs],
@@ -143,7 +144,7 @@ export function MetradosWorkspace() {
       quantity: draft.quantity,
       yieldFactor: material.yield_factor,
       wastePct: draft.wastePct,
-      unitPrice: material.ref_price_pen,
+      unitPrice: draft.unitPricePen,
     }).values;
 
     await saveTakeoff({
@@ -158,9 +159,15 @@ export function MetradosWorkspace() {
       wastePct: draft.wastePct,
       total: line.total,
       subtotalPen: line.subtotalPen,
+      unitPricePen: draft.unitPricePen,
     });
 
-    setDraft({ ...emptyDraft, materialCode: material.code, wastePct: material.default_waste_pct });
+    setDraft({
+      ...emptyDraft,
+      materialCode: material.code,
+      wastePct: material.default_waste_pct,
+      unitPricePen: material.ref_price_pen,
+    });
     setNotice(null);
   }
 
@@ -174,6 +181,10 @@ export function MetradosWorkspace() {
       height: takeoff.height,
       quantity: takeoff.quantity,
       wastePct: takeoff.wastePct,
+      unitPricePen:
+        takeoff.unitPricePen ??
+        catalog.find((item) => item.code === takeoff.materialCode)?.ref_price_pen ??
+        0,
     });
   }
 
@@ -195,6 +206,7 @@ export function MetradosWorkspace() {
       "Alto",
       "Cantidad",
       "Desperdicio",
+      "Precio unitario",
       "Total",
       "Subtotal PEN",
     ];
@@ -210,6 +222,7 @@ export function MetradosWorkspace() {
         takeoff.height.toFixed(2),
         takeoff.quantity.toFixed(2),
         takeoff.wastePct + "%",
+        (takeoff.unitPricePen ?? material?.ref_price_pen ?? 0).toFixed(2),
         takeoff.total.toFixed(2),
         takeoff.subtotalPen.toFixed(2),
       ];
@@ -253,6 +266,7 @@ export function MetradosWorkspace() {
           material?.unit ?? "",
           takeoff.quantity.toFixed(2),
           takeoff.wastePct.toFixed(1) + "%",
+          "S/ " + (takeoff.unitPricePen ?? material?.ref_price_pen ?? 0).toFixed(2),
           takeoff.total.toFixed(2),
           takeoff.subtotalPen.toFixed(2),
         ];

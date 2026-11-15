@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { MoveUpRight } from "lucide-react";
@@ -10,13 +10,13 @@ import { CalculatorResult } from "./CalculatorResult";
 export function RampCalculator() {
   const [rise, setRise] = useState(0.6);
   const [width, setWidth] = useState(1);
-  const [proposedSlope, setProposedSlope] = useState("");
-  const [availableLength, setAvailableLength] = useState("");
+  const [proposedSlope, setProposedSlope] = useState<number | null>(null);
+  const [availableLength, setAvailableLength] = useState<number | null>(null);
   const result = computeRamp({
     rise,
     width,
-    proposedSlope: proposedSlope ? Number(proposedSlope) / 100 : undefined,
-    length: availableLength ? Number(availableLength) : undefined,
+    proposedSlope: proposedSlope === null ? undefined : proposedSlope / 100,
+    length: availableLength ?? undefined,
   });
 
   return (
@@ -33,14 +33,14 @@ export function RampCalculator() {
             unit="m"
             value={rise}
             min={0}
-            onChange={(e) => setRise(Number(e.target.value))}
+            onValueChange={(value) => setRise(value ?? 0)}
           />
           <NumberField
             label="Ancho libre"
             unit="m"
             value={width}
             min={0}
-            onChange={(e) => setWidth(Number(e.target.value))}
+            onValueChange={(value) => setWidth(value ?? 0)}
           />
           <NumberField
             label="Pendiente propuesta"
@@ -48,14 +48,14 @@ export function RampCalculator() {
             value={proposedSlope}
             min={0}
             step={0.1}
-            onChange={(e) => setProposedSlope(e.target.value)}
+            onValueChange={setProposedSlope}
           />
           <NumberField
             label="Longitud disponible"
             unit="m"
             value={availableLength}
             min={0}
-            onChange={(e) => setAvailableLength(e.target.value)}
+            onValueChange={setAvailableLength}
           />
         </div>
         <div className="input-note">

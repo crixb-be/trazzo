@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
 import { Plus, Trash2, Waves } from "lucide-react";
@@ -54,7 +54,7 @@ export function WaterCalculator() {
             unit="m²"
             value={area}
             min={0}
-            onChange={(e) => setArea(Number(e.target.value))}
+            onValueChange={(value) => setArea(value ?? 0)}
           />
         )}
         {mode === "oficinas" && (
@@ -63,7 +63,7 @@ export function WaterCalculator() {
             unit="m²"
             value={officeArea}
             min={0}
-            onChange={(e) => setOfficeArea(Number(e.target.value))}
+            onValueChange={(value) => setOfficeArea(value ?? 0)}
           />
         )}
         {mode === "multifamiliar" && (
@@ -76,7 +76,7 @@ export function WaterCalculator() {
                   min={1}
                   max={5}
                   step={1}
-                  onChange={(e) => updateUnit(index, { ...unit, bedrooms: Number(e.target.value) })}
+                  onValueChange={(value) => updateUnit(index, { ...unit, bedrooms: value ?? 1 })}
                 />
                 <NumberField
                   label="Cantidad"
@@ -84,7 +84,7 @@ export function WaterCalculator() {
                   value={unit.count}
                   min={1}
                   step={1}
-                  onChange={(e) => updateUnit(index, { ...unit, count: Number(e.target.value) })}
+                  onValueChange={(value) => updateUnit(index, { ...unit, count: value ?? 1 })}
                 />
                 <button
                   className="icon-btn"

@@ -32,6 +32,7 @@ export interface Takeoff {
   wastePct: number;
   total: number;
   subtotalPen: number;
+  unitPricePen?: number;
   updatedAt: string;
   syncState: SyncState;
 }
@@ -41,12 +42,26 @@ export interface Meta {
   value: string;
 }
 
+export interface StudioProfile {
+  id: "default";
+  fullName: string;
+  capNumber: string;
+  studioName: string;
+  ruc: string;
+  address: string;
+  brandPrimary: string;
+  brandSecondary: string;
+  logoDataUrl: string | null;
+  updatedAt: string;
+}
+
 export type OutboxTable = "projects" | "takeoffs" | "fee_quotes";
 export type OutboxOperation = "upsert" | "delete";
 
 export interface FeeQuote {
   id: string;
   code: string;
+  documentType?: "propuesta" | "cotizacion";
   projectName: string;
   clientName: string;
   location: string;
@@ -77,6 +92,7 @@ export class TrazzoDB extends Dexie {
   meta!: Table<Meta, string>;
   outbox!: Table<Outbox, number>;
   fee_quotes!: Table<FeeQuote, string>;
+  studio_profile!: Table<StudioProfile, string>;
 
   constructor() {
     super("TrazzoDB");
@@ -97,6 +113,16 @@ export class TrazzoDB extends Dexie {
       outbox: "++id,table,createdAt",
       fee_quotes: "id,code,updatedAt,syncState",
     });
+    this.version(3).stores({
+      rneCards: "slug,norm_code,category,*keywords",
+      materials: "code,category",
+      projects: "id,updatedAt,syncState",
+      takeoffs: "id,projectId,updatedAt,syncState",
+      meta: "key",
+      outbox: "++id,table,createdAt",
+      fee_quotes: "id,code,updatedAt,syncState",
+      studio_profile: "id",
+    });
   }
 }
 
@@ -106,13 +132,8 @@ export function createLocalUuid(): string {
   return crypto.randomUUID();
 }
 
-/**
- * Seeds the local cache only when its semantic version is stale.
- * Projects, takeoffs and the outbox are deliberately preserved.
- */
 export async function ensureSeeded(): Promise<void> {
   if (!db) return;
-
   const current = await db.meta.get("seedVersion");
   if (Number(current?.value ?? 0) >= SEED_VERSION) return;
 
@@ -121,9 +142,6 @@ export async function ensureSeeded(): Promise<void> {
     await db.materials.clear();
     await db.rneCards.bulkPut(RNE_CARDS);
     await db.materials.bulkPut(MATERIALS);
-    await db.meta.put({
-      key: "seedVersion",
-      value: String(SEED_VERSION),
-    });
+    await db.meta.put({ key: "seedVersion", value: String(SEED_VERSION) });
   });
 }

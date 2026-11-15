@@ -79,4 +79,14 @@ describe("SVG diagrams", () => {
     expect(ids.length).toBeGreaterThan(0);
     expect(new Set(ids).size).toBe(ids.length);
   });
+  it.each(["height", "tread", "width"] as const)("renders the %s highlight label", (highlight) => {
+    const html = renderToStaticMarkup(<StairStep highlight={highlight} />);
+    expect(html).toContain(
+      highlight === "height"
+        ? "Altura piso a piso"
+        : highlight === "tread"
+          ? "Paso (p)"
+          : "Ancho libre",
+    );
+  });
 });

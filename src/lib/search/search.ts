@@ -1,10 +1,9 @@
-﻿import type { RneCard } from "@/data/seed-rne";
+import type { RneCard } from "@/data/seed-rne";
 import { normalize, tokenize } from "./normalize";
-import { expandedTokens } from "./synonyms";
+import { weightedTokens, type WeightedToken } from "./synonyms";
 
 export function editDistance(left: string, right: string): number {
   const previous = Array.from({ length: right.length + 1 }, (_, index) => index);
-
   for (let leftIndex = 1; leftIndex <= left.length; leftIndex += 1) {
     const current = [leftIndex];
     for (let rightIndex = 1; rightIndex <= right.length; rightIndex += 1) {
@@ -18,7 +17,6 @@ export function editDistance(left: string, right: string): number {
     }
     for (let index = 0; index < current.length; index += 1) previous[index] = current[index];
   }
-
   return previous[right.length];
 }
 
@@ -36,48 +34,78 @@ function transposedOnce(left: string, right: string): boolean {
   return false;
 }
 
-function tokenMatches(fieldTokens: string[], queryToken: string): boolean {
+function phraseMatch(fieldTokens: string[], token: string): boolean {
+  const phraseTokens = tokenize(token);
+  if (phraseTokens.length === 1) return fieldTokens.includes(phraseTokens[0]);
+  return fieldTokens.some((_, index) =>
+    phraseTokens.every(
+      (phraseToken, phraseIndex) => fieldTokens[index + phraseIndex] === phraseToken,
+    ),
+  );
+}
+
+function prefixMatch(fieldTokens: string[], token: string): boolean {
+  const phraseTokens = tokenize(token);
+  if (phraseTokens.length !== 1) return false;
+  return fieldTokens.some((fieldToken) => fieldToken.startsWith(phraseTokens[0]));
+}
+
+function typoMatch(fieldTokens: string[], token: string): boolean {
+  const normalized = tokenize(token)[0] ?? token;
   return fieldTokens.some(
     (fieldToken) =>
-      fieldToken === queryToken ||
-      fieldToken.startsWith(queryToken) ||
-      (queryToken.length >= 5 &&
-        fieldToken.length >= 5 &&
-        (editDistance(fieldToken, queryToken) <= 1 || transposedOnce(fieldToken, queryToken))),
+      editDistance(fieldToken, normalized) <= 1 || transposedOnce(fieldToken, normalized),
   );
 }
 
-function fieldScore(field: string, queryTokens: string[]): number {
-  const fieldTokens = tokenize(field);
-  return queryTokens.reduce(
-    (score, queryToken) => score + (tokenMatches(fieldTokens, queryToken) ? 1 : 0),
-    0,
-  );
+function scoreToken(token: WeightedToken, fields: Array<[string, number, boolean]>): number {
+  let score = 0;
+  let hadExactOrPrefix = false;
+  for (const [field, weight, exactOnly] of fields) {
+    const fieldTokens = tokenize(field);
+    if (phraseMatch(fieldTokens, token.token)) {
+      score += token.weight * weight;
+      hadExactOrPrefix = true;
+    } else if (
+      !exactOnly &&
+      token.original &&
+      token.token.length >= 4 &&
+      prefixMatch(fieldTokens, token.token)
+    ) {
+      score += token.weight * weight * 0.8;
+      hadExactOrPrefix = true;
+    }
+  }
+
+  if (!hadExactOrPrefix && token.original && token.token.length >= 7) {
+    for (const [field, weight] of fields) {
+      const fieldTokens = tokenize(field);
+      if (typoMatch(fieldTokens, token.token)) {
+        score += 0.3 * weight;
+        break;
+      }
+    }
+  }
+  return score;
 }
 
-/**
- * Searches RNE cards with weighted fields, prefix matches and one typo for long tokens.
- * Weights follow ARCHITECTURE.md section 7: title ×4, keywords ×3, code/article ×5,
- * and summary ×1.
- */
-export function searchCards(cards: RneCard[], query: string): RneCard[] {
-  const tokens = expandedTokens(query);
-  if (tokens.length === 0) return [...cards];
+export function searchCardsScored(
+  cards: RneCard[],
+  query: string,
+): Array<{ card: RneCard; score: number }> {
+  const tokens = weightedTokens(query);
+  if (tokens.length === 0) return cards.map((card) => ({ card, score: 0 }));
 
   return cards
     .map((card, originalIndex) => {
-      const normalizedCode = normalize(card.norm_code + " " + card.article);
-      const exactCodeTokens = tokenize(normalizedCode);
-      const codeExactMatches = tokens.reduce(
-        (score, token) => score + (exactCodeTokens.includes(token) ? 1 : 0),
-        0,
-      );
-      const score =
-        fieldScore(card.title, tokens) * 4 +
-        fieldScore(card.keywords.join(" "), tokens) * 3 +
-        codeExactMatches * 5 +
-        fieldScore(card.summary, tokens);
-
+      const fields: Array<[string, number, boolean]> = [
+        [card.title, 4, false],
+        [card.keywords.join(" "), 3, false],
+        [card.norm_code + " " + card.article, 5, true],
+        [card.summary, 1, false],
+        [card.body, 0.5, false],
+      ];
+      const score = tokens.reduce((total, token) => total + scoreToken(token, fields), 0);
       return { card, score, originalIndex };
     })
     .filter((result) => result.score > 0)
@@ -87,5 +115,9 @@ export function searchCards(cards: RneCard[], query: string): RneCard[] {
         left.card.title.localeCompare(right.card.title, "es") ||
         left.originalIndex - right.originalIndex,
     )
-    .map((result) => result.card);
+    .map(({ card, score }) => ({ card, score }));
+}
+
+export function searchCards(cards: RneCard[], query: string): RneCard[] {
+  return searchCardsScored(cards, query).map(({ card }) => card);
 }

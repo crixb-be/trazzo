@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { computeProjectTotals, computeTakeoffLine } from "./takeoff";
 
 describe("takeoff calculators", () => {
@@ -83,5 +83,15 @@ describe("takeoff calculators", () => {
       unitPrice: 10,
     });
     expect(result.ok).toBe(false);
+  });
+  it("uses a custom unit price for the subtotal", () => {
+    const result = computeTakeoffLine({
+      unit: "und",
+      quantity: 2,
+      yieldFactor: 1,
+      wastePct: 0,
+      unitPrice: 28,
+    });
+    expect(result.values.subtotalPen).toBe(56);
   });
 });

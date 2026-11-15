@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { Card, NumberField, Select } from "@/components/ui";
@@ -9,11 +9,11 @@ import { CalculatorResult } from "./CalculatorResult";
 export function LightWellCalculator() {
   const [wallHeight, setWallHeight] = useState(6);
   const [kind, setKind] = useState<"habitable" | "servicios">("habitable");
-  const [proposedSide, setProposedSide] = useState("");
+  const [proposedSide, setProposedSide] = useState<number | null>(null);
   const result = computeLightWell({
     wallHeight,
     kind,
-    proposedSide: proposedSide ? Number(proposedSide) : undefined,
+    proposedSide: proposedSide ?? undefined,
   });
 
   return (
@@ -28,7 +28,7 @@ export function LightWellCalculator() {
             unit="m"
             value={wallHeight}
             min={0}
-            onChange={(e) => setWallHeight(Number(e.target.value))}
+            onValueChange={(value) => setWallHeight(value ?? 0)}
           />
           <Select
             label="Tipo de ambiente"
@@ -44,7 +44,7 @@ export function LightWellCalculator() {
             unit="m"
             value={proposedSide}
             min={0}
-            onChange={(e) => setProposedSide(e.target.value)}
+            onValueChange={setProposedSide}
           />
         </div>
       </Card>

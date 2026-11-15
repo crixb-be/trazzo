@@ -1,4 +1,4 @@
-﻿export type RneCategory =
+export type RneCategory =
   "Accesibilidad" | "Circulación" | "Seguridad" | "Sanitarias" | "Estacionamientos";
 
 export type SvgType =
@@ -40,7 +40,7 @@ export interface Material {
   notes: string;
 }
 
-export const SEED_VERSION = 2;
+export const SEED_VERSION = 3;
 
 const LEGAL_NOTE =
   "Valores referenciales según la edición indicada del RNE. Verifica la versión vigente publicada por el MVCS antes de usar en expedientes.";
@@ -234,6 +234,8 @@ export const RNE_CARDS: RneCard[] = [
     category: "Accesibilidad",
     keywords: [
       "giro",
+      "baño",
+      "ss.hh",
       "silla de ruedas",
       "accesibilidad",
       "Conadis",
@@ -259,7 +261,17 @@ export const RNE_CARDS: RneCard[] = [
     norm_code: "A.120",
     article: "Art. 9 - Accesibilidad",
     category: "Accesibilidad",
-    keywords: ["puerta", "accesible", "vano", "ancho", "luz libre", "hoja", "silla de ruedas"],
+    keywords: [
+      "puerta",
+      "accesible",
+      "vano",
+      "ancho",
+      "luz libre",
+      "hoja",
+      "silla de ruedas",
+      "baño",
+      "ss.hh",
+    ],
     min_value: 0.9,
     unit: "m",
     summary: "El ancho libre de paso de una puerta accesible es 0.90 m.",

@@ -1,4 +1,4 @@
-﻿import {
+import {
   createUIMessageStream,
   createUIMessageStreamResponse,
   streamText,
@@ -9,7 +9,7 @@ import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { retrieve } from "@/lib/rag/retrieve";
-import { buildExtractiveAnswer, buildSystemPrompt, NO_RESULT_ANSWER } from "@/lib/rag/prompt";
+import { buildLocalAnswer, buildSystemPrompt, NO_RESULT_ANSWER } from "@/lib/rag/prompt";
 import { canUseAiQueries, isPlan, type Plan } from "@/lib/plans/plans";
 
 export const runtime = "nodejs";
@@ -184,13 +184,19 @@ export async function POST(request: Request): Promise<Response> {
         : null;
 
     if (!model) {
-      return streamPlainText(buildExtractiveAnswer(chunks), sources);
+      return streamPlainText(buildLocalAnswer(query, chunks), sources);
     }
 
     const result = streamText({
       model,
       system: buildSystemPrompt(chunks),
-      prompt: query,
+      messages: parsed.messages
+        .slice(-6)
+        .filter((message) => message.role !== "system")
+        .map((message) => ({
+          role: message.role as "user" | "assistant",
+          content: getMessageText(message),
+        })),
       temperature: 0.1,
     });
 

@@ -4,18 +4,26 @@ import {
   FEE_TYPOLOGIES,
   formatPen,
   formatWeekRange,
+  groupDeliverables,
   paymentAmounts,
   type FeeQuoteResult,
 } from "@/lib/calculators/fees";
-import type { FeeQuote } from "@/lib/offline/db";
+import type { FeeQuote, StudioProfile } from "@/lib/offline/db";
+import { DEFAULT_STUDIO_PROFILE } from "@/lib/offline/profile";
 
 export interface ProposalOptions {
-  professional: { fullName: string; capNumber: string };
+  studio?: StudioProfile;
+  professional?: { fullName: string; capNumber: string };
   watermark: boolean;
   date?: Date;
 }
 
 type PdfWithTable = jsPDF & { lastAutoTable?: { finalY: number } };
+type Rgb = [number, number, number];
+
+const INK: Rgb = [26, 27, 31];
+const MUTED: Rgb = [107, 109, 117];
+const WHITE: Rgb = [255, 255, 255];
 const months = [
   "enero",
   "febrero",
@@ -34,87 +42,331 @@ const months = [
 function dateLabel(date: Date): string {
   return date.getDate() + " de " + months[date.getMonth()] + " de " + date.getFullYear();
 }
+
 function slug(value: string): string {
   return (
     value
       .normalize("NFD")
-      .replace(/[̀-ͯ]/g, "")
+      .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-|-$/g, "") || "propuesta"
   );
 }
+
+function parseHex(value: string, fallback: Rgb): Rgb {
+  const match = /^#?([0-9a-f]{6})$/i.exec(value.trim());
+  if (!match) return fallback;
+  return [
+    Number.parseInt(match[1].slice(0, 2), 16),
+    Number.parseInt(match[1].slice(2, 4), 16),
+    Number.parseInt(match[1].slice(4, 6), 16),
+  ];
+}
+
+function tint(color: Rgb, amount: number): Rgb {
+  return color.map((channel) => Math.round(255 + (channel - 255) * amount)) as Rgb;
+}
+
 function typologyLabel(value: string): string {
   return FEE_TYPOLOGIES.find((item) => item.value === value)?.label ?? value;
 }
-function nextSection(pdf: jsPDF, y: number, height = 20): number {
-  if (y + height > 272) {
-    pdf.addPage();
-    return 22;
-  }
-  return y;
+
+function studioFrom(options: ProposalOptions): StudioProfile {
+  return {
+    ...DEFAULT_STUDIO_PROFILE,
+    ...(options.studio ?? {}),
+    ...(options.professional ?? {}),
+  };
 }
-function sectionTitle(pdf: jsPDF, number: string, title: string, y: number): number {
+
+function addLogoOrMonogram(
+  pdf: jsPDF,
+  studio: StudioProfile,
+  x: number,
+  y: number,
+  maxWidth: number,
+  maxHeight: number,
+  primary: Rgb,
+): void {
+  if (studio.logoDataUrl) {
+    try {
+      const properties = pdf.getImageProperties(studio.logoDataUrl);
+      const ratio = Math.min(maxWidth / properties.width, maxHeight / properties.height);
+      pdf.addImage(
+        studio.logoDataUrl,
+        "PNG",
+        x,
+        y,
+        properties.width * ratio,
+        properties.height * ratio,
+      );
+      return;
+    } catch {
+      // Fall back to the monogram when a user-provided image is not embeddable.
+    }
+  }
+  pdf.setFillColor(...primary);
+  pdf.circle(x + maxWidth / 2, y + maxHeight / 2, Math.min(maxWidth, maxHeight) / 2, "F");
+  pdf.setTextColor(...WHITE);
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(10);
-  pdf.setTextColor(181, 130, 47);
-  if (number) pdf.text(number, 18, y);
-  pdf.setTextColor(26, 27, 31);
-  pdf.text(title.toUpperCase(), number ? 28 : 18, y);
-  pdf.setDrawColor(181, 130, 47);
-  pdf.setLineWidth(0.25);
+  pdf.setFontSize(Math.min(maxHeight * 0.8, 18));
+  const initials =
+    studio.studioName
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((word) => word[0])
+      .join("")
+      .slice(0, 2) || "T";
+  pdf.text(initials.toUpperCase(), x + maxWidth / 2, y + maxHeight * 0.64, { align: "center" });
+}
+
+function sectionTitle(
+  pdf: jsPDF,
+  number: string,
+  title: string,
+  y: number,
+  primary: Rgb,
+  secondary: Rgb,
+): number {
+  pdf.setFillColor(...primary);
+  pdf.rect(18, y - 7, 7, 7, "F");
+  pdf.setTextColor(...WHITE);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(7);
+  pdf.text(number, 21.5, y - 2.2, { align: "center" });
+  pdf.setTextColor(...primary);
+  pdf.setFontSize(10.5);
+  pdf.text(title.toUpperCase(), 29, y - 1.5);
+  pdf.setDrawColor(...secondary);
+  pdf.setLineWidth(0.3);
   pdf.line(18, y + 3, 192, y + 3);
   return y + 10;
 }
-function drawBullets(pdf: jsPDF, items: string[], y: number): number {
+
+function drawFooter(
+  pdf: jsPDF,
+  studio: StudioProfile,
+  date: string,
+  page: number,
+  total: number,
+  secondary: Rgb,
+  watermark: boolean,
+): void {
+  const height = pdf.internal.pageSize.getHeight();
+  pdf.setDrawColor(...secondary);
+  pdf.setLineWidth(0.25);
+  pdf.line(18, height - 17, 192, height - 17);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(7.5);
+  pdf.setTextColor(...MUTED);
+  const identity = [studio.studioName, studio.ruc ? "RUC " + studio.ruc : "", studio.address]
+    .filter(Boolean)
+    .join(" · ");
+  pdf.text(identity || "Propuesta generada con TRAZZO", 18, height - 11);
+  pdf.text("Página " + page + " de " + total, 192, height - 11, { align: "right" });
+  if (watermark)
+    pdf.text("Descarga sin marca de agua con los planes Estudiante o PRO.", 18, height - 6);
+  void date;
+}
+
+function drawWatermark(pdf: jsPDF): void {
+  const width = pdf.internal.pageSize.getWidth();
+  const height = pdf.internal.pageSize.getHeight();
+  pdf.saveGraphicsState();
+  pdf.setGState(
+    new (pdf.GState as unknown as new (options: { opacity: number }) => never)({ opacity: 0.1 }),
+  );
+  pdf.setTextColor(130, 130, 130);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(25);
+  pdf.text("VISTA PREVIA · TRAZZO GRATIS", width / 2, height / 2, { angle: 35, align: "center" });
+  pdf.restoreGraphicsState();
+}
+
+function addContentHeader(
+  pdf: jsPDF,
+  studio: StudioProfile,
+  date: string,
+  primary: Rgb,
+  secondary: Rgb,
+): void {
+  addLogoOrMonogram(pdf, studio, 18, 8, 20, 11, primary);
+  pdf.setTextColor(...primary);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(9);
+  pdf.text(studio.studioName || "TRAZZO", 192, 13, { align: "right" });
+  pdf.setTextColor(...MUTED);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(8);
+  pdf.text(date, 192, 18, { align: "right" });
+  pdf.setDrawColor(...secondary);
+  pdf.setLineWidth(0.3);
+  pdf.line(18, 24, 192, 24);
+}
+
+function addCover(
+  pdf: jsPDF,
+  quote: FeeQuote,
+  studio: StudioProfile,
+  date: string,
+  primary: Rgb,
+  secondary: Rgb,
+): void {
+  pdf.setFillColor(...primary);
+  pdf.rect(0, 0, 14, 297, "F");
+  pdf.setFillColor(...secondary);
+  pdf.rect(14, 0, 2.5, 297, "F");
+  pdf.setFillColor(...primary);
+  pdf.triangle(140, 0, 210, 0, 210, 70, "F");
+  pdf.setFillColor(...secondary);
+  pdf.lines(
+    [
+      [0, 0],
+      [70, 70],
+    ],
+    137,
+    2,
+    [1, 1],
+    "F",
+    true,
+  );
+  pdf.triangle(186, 297, 210, 297, 210, 273, "F");
+  addLogoOrMonogram(pdf, studio, 30, 28, 55, 30, primary);
+  pdf.setTextColor(...primary);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(9);
+  pdf.text((studio.studioName || "TRAZZO").toUpperCase(), 30, 65);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(8);
+  pdf.text(studio.studioName ? "ARQUITECTURA · RNE PRO · PERÚ" : "RNE PRO · PERÚ", 30, 71);
+  const title =
+    quote.documentType === "cotizacion"
+      ? "COTIZACIÓN DE DISEÑO Y PROYECTO"
+      : "PROPUESTA DE SERVICIOS PROFESIONALES";
+  pdf.setTextColor(...primary);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(24);
+  pdf.text(pdf.splitTextToSize(title, 145), 30, 108);
+  pdf.setDrawColor(...secondary);
+  pdf.setLineWidth(1);
+  pdf.line(30, 143, 70, 143);
+  pdf.setTextColor(...INK);
+  pdf.setFontSize(17);
+  pdf.text(quote.projectName || "Proyecto sin nombre", 30, 157);
+  pdf.setTextColor(...MUTED);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(11);
+  pdf.text(quote.location || "Ubicación por confirmar", 30, 166);
+  pdf.setFontSize(9);
+  pdf.text(quote.code + " · " + date, 30, 176);
+  if (quote.documentType !== "cotizacion") {
+    pdf.setFontSize(8);
+    pdf.text("PROPUESTA DE HONORARIOS", 30, 185);
+  }
+  pdf.setFillColor(...tint(secondary, 0.06));
+  pdf.rect(30, 198, 150, 39, "F");
+  pdf.setFillColor(...secondary);
+  pdf.rect(30, 198, 2, 39, "F");
+  pdf.setTextColor(...secondary);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(8);
+  pdf.text("EL CONTRATANTE", 38, 208);
+  pdf.setTextColor(...INK);
+  pdf.setFontSize(14);
+  pdf.text(quote.clientName || "Cliente por confirmar", 38, 218);
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(9);
-  pdf.setTextColor(26, 27, 31);
-  for (const item of items) {
-    const lines = pdf.splitTextToSize("• " + item, 174) as string[];
-    pdf.text(lines, 20, y);
-    y += lines.length * 4.5 + 2;
-  }
-  return y;
+  pdf.text("Proyecto: " + (quote.projectName || "—"), 38, 226);
+  pdf.text("Ubicación: " + (quote.location || "—"), 38, 233);
+  pdf.setTextColor(...MUTED);
+  pdf.setFontSize(8);
+  const author = [
+    studio.fullName ? "Arq. " + studio.fullName : "",
+    studio.capNumber ? "CAP N° " + studio.capNumber : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  pdf.text("Elaborado por: " + (author || "TRAZZO"), 30, 270);
+  pdf.text(
+    [studio.studioName, studio.ruc ? "RUC " + studio.ruc : "", studio.address]
+      .filter(Boolean)
+      .join(" · ") || "TRAZZO · RNE PRO · PERÚ",
+    30,
+    278,
+  );
 }
-function addFooter(pdf: jsPDF, quote: FeeQuote, watermark: boolean): void {
-  const pageCount = pdf.getNumberOfPages();
-  for (let page = 1; page <= pageCount; page += 1) {
-    pdf.setPage(page);
-    const width = pdf.internal.pageSize.getWidth();
-    const height = pdf.internal.pageSize.getHeight();
-    if (watermark) {
-      pdf.saveGraphicsState();
-      pdf.setGState(
-        new (pdf.GState as unknown as new (options: { opacity: number }) => never)({
-          opacity: 0.12,
-        }),
-      );
-      pdf.setTextColor(140, 140, 140);
-      pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(25);
-      pdf.text("VISTA PREVIA · TRAZZO GRATIS", width / 2, height / 2, {
-        angle: 35,
-        align: "center",
-      });
-      pdf.restoreGraphicsState();
-    }
-    pdf.setDrawColor(181, 130, 47);
-    pdf.setLineWidth(0.2);
-    pdf.line(18, height - 17, width - 18, height - 17);
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(7.5);
-    pdf.setTextColor(107, 109, 117);
-    pdf.text(quote.code + " · Página " + page + " de " + pageCount, 18, height - 11);
-    pdf.text(
-      "Honorarios referenciales; no incluyen tasas ni derechos salvo indicación.",
-      192,
-      height - 11,
-      { align: "right" },
-    );
-    if (watermark)
-      pdf.text("Descarga sin marca de agua con los planes Estudiante o PRO.", 18, height - 6);
+
+function proposalTable(
+  pdf: jsPDF,
+  startY: number,
+  head: string[][],
+  body: string[][],
+  foot: string[][],
+  primary: Rgb,
+  soft: Rgb,
+): number {
+  // Money and duration live in the last column; it is the one aligned right.
+  const lastColumn = (head[0]?.length ?? 1) - 1;
+  autoTable(pdf, {
+    startY,
+    margin: { left: 18, right: 18 },
+    head,
+    body,
+    foot,
+    theme: "grid",
+    styles: {
+      font: "helvetica",
+      fontSize: 8.5,
+      textColor: INK,
+      lineColor: [220, 218, 211],
+      lineWidth: 0.15,
+      cellPadding: 3,
+    },
+    headStyles: { fillColor: primary, textColor: WHITE, fontStyle: "bold" },
+    alternateRowStyles: { fillColor: soft },
+    footStyles: { fillColor: WHITE, textColor: INK },
+    columnStyles: { [lastColumn]: { halign: "right", cellWidth: 34 } },
+    didParseCell: (data) => {
+      if (data.section === "foot" && data.row.index === foot.length - 1) {
+        data.cell.styles.fillColor = primary;
+        data.cell.styles.textColor = WHITE;
+        data.cell.styles.fontStyle = "bold";
+      }
+      if (data.column.index === lastColumn) data.cell.styles.halign = "right";
+    },
+  });
+  return (pdf as PdfWithTable).lastAutoTable?.finalY ?? startY + 20;
+}
+
+function addSignatures(
+  pdf: jsPDF,
+  quote: FeeQuote,
+  studio: StudioProfile,
+  primary: Rgb,
+  y: number,
+  startNewPage: () => void,
+): void {
+  if (y > 242) {
+    startNewPage();
+    y = 44;
   }
+  pdf.setDrawColor(...primary);
+  pdf.setLineWidth(0.3);
+  pdf.line(25, y, 88, y);
+  pdf.line(122, y, 185, y);
+  pdf.setTextColor(...INK);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(8.5);
+  pdf.text("EL CONTRATANTE", 25, y + 7);
+  pdf.text("EL PROYECTISTA", 122, y + 7);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(8);
+  pdf.text(quote.clientName || "________________", 25, y + 14);
+  pdf.text("DNI / RUC: ____________", 25, y + 20);
+  pdf.text("Arq. " + (studio.fullName || "________________"), 122, y + 14);
+  pdf.text("CAP N° " + (studio.capNumber || "________________"), 122, y + 20);
+  pdf.text(studio.studioName || "TRAZZO", 122, y + 26);
 }
 
 export function buildProposalPdf(
@@ -122,87 +374,41 @@ export function buildProposalPdf(
   result: FeeQuoteResult,
   options: ProposalOptions,
 ): jsPDF {
+  const studio = studioFrom(options);
+  const primary = parseHex(studio.brandPrimary, [19, 41, 75]);
+  const secondary = parseHex(studio.brandSecondary, [197, 155, 39]);
+  const soft = tint(primary, 0.06);
+  const date = dateLabel(options.date ?? new Date());
   const pdf = new jsPDF({ unit: "mm", format: "a4", compress: false });
-  const width = pdf.internal.pageSize.getWidth();
-  pdf.setTextColor(26, 27, 31);
-  pdf.setFont("helvetica", "normal");
-  let y = 20;
-  if (options.professional.fullName) {
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(13);
-    pdf.text("Arq. " + options.professional.fullName, 18, y);
-    y += 5;
-    if (options.professional.capNumber) {
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(9);
-      pdf.setTextColor(107, 109, 117);
-      pdf.text("CAP N° " + options.professional.capNumber, 18, y);
-      y += 4;
-    }
-    pdf.setFontSize(7.5);
-    pdf.text("Propuesta generada con TRAZZO", 18, y);
-  } else {
-    pdf.setFont("helvetica", "bold");
-    pdf.setFontSize(20);
-    pdf.text("T R A Z Z O", 18, y + 2);
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(8);
-    pdf.setTextColor(107, 109, 117);
-    pdf.text("RNE PRO · PERÚ", 18, y + 8);
-  }
-  pdf.setTextColor(26, 27, 31);
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(10);
-  pdf.text("PROPUESTA DE HONORARIOS", width - 18, 20, { align: "right" });
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(9);
-  pdf.setTextColor(107, 109, 117);
-  pdf.text(quote.code, width - 18, 26, { align: "right" });
-  pdf.text(dateLabel(options.date ?? new Date()), width - 18, 31, { align: "right" });
-  pdf.setDrawColor(181, 130, 47);
-  pdf.setLineWidth(0.35);
-  pdf.line(18, 39, width - 18, 39);
-  y = 50;
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(8);
-  pdf.setTextColor(107, 109, 117);
-  pdf.text("CLIENTE", 18, y);
-  pdf.text("PROYECTO", 82, y);
-  pdf.text("UBICACIÓN", 145, y);
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(10);
-  pdf.setTextColor(26, 27, 31);
-  pdf.text(quote.clientName || "—", 18, y + 6);
-  pdf.text(quote.projectName || "—", 82, y + 6);
-  pdf.text(quote.location || "—", 145, y + 6);
-  y = 72;
-  y = sectionTitle(pdf, "", "Resumen del proyecto", y);
-  const summary = [
-    [
-      "Tipología",
-      typologyLabel(quote.input.typology),
-      "Área techada",
-      quote.input.areaM2.toFixed(2) + " m²",
-    ],
-    ["Pisos", String(quote.input.floors), "Ubicación", quote.location || "—"],
-    ["Plazo total", quote.input.weeks + " semanas", "", ""],
-  ];
+  addCover(pdf, quote, studio, date, primary, secondary);
+  if (options.watermark) drawWatermark(pdf);
+  pdf.addPage();
+  let y = 32;
+  addContentHeader(pdf, studio, date, primary, secondary);
+  y = sectionTitle(pdf, "01", "Resumen del proyecto", y, primary, secondary);
   autoTable(pdf, {
     startY: y,
     margin: { left: 18, right: 18 },
-    body: summary,
+    body: [
+      [
+        "Tipología",
+        typologyLabel(quote.input.typology),
+        "Área techada",
+        quote.input.areaM2.toFixed(2) + " m²",
+      ],
+      ["Pisos", String(quote.input.floors), "Ubicación", quote.location || "—"],
+      ["Plazo total", quote.input.weeks + " semanas", "Documento", quote.code],
+    ],
     theme: "plain",
-    styles: { font: "helvetica", fontSize: 9, textColor: [26, 27, 31], cellPadding: 2 },
+    styles: { font: "helvetica", fontSize: 9, textColor: INK, cellPadding: 2 },
     columnStyles: {
-      0: { fontStyle: "bold", textColor: [107, 109, 117], cellWidth: 28 },
-      1: { cellWidth: 55 },
-      2: { fontStyle: "bold", textColor: [107, 109, 117], cellWidth: 32 },
+      0: { fontStyle: "bold", textColor: MUTED, cellWidth: 30 },
+      2: { fontStyle: "bold", textColor: MUTED, cellWidth: 30 },
     },
   });
-  y = ((pdf as PdfWithTable).lastAutoTable?.finalY ?? y + 22) + 10;
-  y = nextSection(pdf, y, 42);
-  y = sectionTitle(pdf, "", "Propuesta económica", y);
-  const body = result.lines.map((line) => [line.label, line.detail, formatPen(line.amount)]);
+  y = (pdf as PdfWithTable).lastAutoTable?.finalY ?? y + 24;
+  y += 10;
+  y = sectionTitle(pdf, "02", "Propuesta económica", y, primary, secondary);
   const foot: string[][] = [["", "Subtotal", formatPen(result.subtotal)]];
   if (result.taxLabel === "IGV 18%") foot.push(["", "IGV 18%", formatPen(result.taxAmount)]);
   else {
@@ -211,111 +417,135 @@ export function buildProposalPdf(
       foot.push(["", "Retención 8% (si aplica)", "- " + formatPen(result.retention)]);
   }
   foot.push(["", "TOTAL", formatPen(result.total)]);
-  autoTable(pdf, {
-    startY: y,
-    margin: { left: 18, right: 18 },
-    head: [["Ítem", "Detalle", "Subtotal"]],
-    body,
-    foot,
-    theme: "grid",
-    styles: {
-      font: "helvetica",
-      fontSize: 8.5,
-      textColor: [26, 27, 31],
-      lineColor: [220, 218, 211],
-      lineWidth: 0.15,
-      cellPadding: 3,
-    },
-    headStyles: { fillColor: [243, 241, 236], textColor: [181, 130, 47], fontStyle: "bold" },
-    footStyles: { fillColor: [255, 255, 255], textColor: [26, 27, 31], fontStyle: "normal" },
-    columnStyles: {
-      0: { cellWidth: 48 },
-      2: { cellWidth: 32, halign: "right" },
-    },
-    didParseCell: (data) => {
-      if (data.section !== "foot") return;
-      // columnStyles only reach the body, so totals are aligned here.
-      if (data.column.index === 2) data.cell.styles.halign = "right";
-      if (data.row.index === foot.length - 1) data.cell.styles.fontStyle = "bold";
-    },
-  });
-  y = ((pdf as PdfWithTable).lastAutoTable?.finalY ?? y + 30) + 12;
-  y = nextSection(pdf, y, 25);
-  y = sectionTitle(pdf, "1", "Entregables", y);
-  y = drawBullets(pdf, quote.deliverables, y) + 5;
-  y = nextSection(pdf, y, 30);
-  y = sectionTitle(pdf, "2", "Cronograma y tiempos de entrega", y);
-  autoTable(pdf, {
-    startY: y,
-    margin: { left: 18, right: 18 },
-    head: [["Hito", "Semanas"]],
-    body: quote.schedule.map((milestone) => [milestone.label, formatWeekRange(milestone)]),
-    theme: "grid",
-    styles: {
-      font: "helvetica",
-      fontSize: 8.5,
-      textColor: [26, 27, 31],
-      lineColor: [220, 218, 211],
-      lineWidth: 0.15,
-      cellPadding: 3,
-    },
-    headStyles: { fillColor: [243, 241, 236], textColor: [181, 130, 47] },
-    // Only fixed columns get a width; the first one takes the remaining space.
-    columnStyles: { 1: { cellWidth: 36, halign: "center" } },
-  });
-  y = ((pdf as PdfWithTable).lastAutoTable?.finalY ?? y + 20) + 12;
-  y = nextSection(pdf, y, 30);
-  y = sectionTitle(pdf, "3", "Forma de pago", y);
-  const installmentAmounts = paymentAmounts(result.total, quote.payment.installments);
-  autoTable(pdf, {
-    startY: y,
-    margin: { left: 18, right: 18 },
-    head: [["Armada", "%", "Monto"]],
-    body: quote.payment.installments.map((installment, index) => [
-      installment.label,
-      installment.pct.toFixed(2) + "%",
-      formatPen(installmentAmounts[index] ?? 0),
-    ]),
-    theme: "grid",
-    styles: {
-      font: "helvetica",
-      fontSize: 8.5,
-      textColor: [26, 27, 31],
-      lineColor: [220, 218, 211],
-      lineWidth: 0.15,
-      cellPadding: 3,
-    },
-    headStyles: { fillColor: [243, 241, 236], textColor: [181, 130, 47] },
-    columnStyles: {
-      1: { cellWidth: 28, halign: "center" },
-      2: { cellWidth: 38, halign: "right" },
-    },
-  });
-  y = ((pdf as PdfWithTable).lastAutoTable?.finalY ?? y + 20) + 12;
-  y = nextSection(pdf, y, 30);
-  y = sectionTitle(pdf, "4", "Condiciones específicas", y);
-  y = drawBullets(pdf, quote.conditions, y);
-  if (pdf.internal.pageSize.getHeight() - (y + 8) < 45) {
-    pdf.addPage();
-    y = 25;
-  }
-  const signatureY = Math.min(y + 12, 245);
-  pdf.setDrawColor(181, 130, 47);
-  pdf.setLineWidth(0.25);
-  pdf.line(24, signatureY + 20, 88, signatureY + 20);
-  pdf.line(116, signatureY + 20, 180, signatureY + 20);
+  y =
+    proposalTable(
+      pdf,
+      y,
+      [["Ítem", "Detalle", "Subtotal"]],
+      result.lines.map((line) => [line.label, line.detail, formatPen(line.amount)]),
+      foot,
+      primary,
+      soft,
+    ) + 10;
+  const amounts = paymentAmounts(result.total, quote.payment.installments);
   pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(8.5);
-  pdf.setTextColor(26, 27, 31);
-  pdf.text("Arq. " + (options.professional.fullName || "________________"), 24, signatureY + 27);
-  pdf.text("Aceptación del cliente", 116, signatureY + 27);
-  pdf.setFont("helvetica", "normal");
   pdf.setFontSize(8);
-  pdf.setTextColor(107, 109, 117);
-  pdf.text("CAP N° " + (options.professional.capNumber || "________________"), 24, signatureY + 33);
-  pdf.text(quote.clientName || "________________", 116, signatureY + 33);
-  pdf.text("Fecha: ____", 116, signatureY + 39);
-  addFooter(pdf, quote, options.watermark);
+  pdf.setTextColor(...primary);
+  const cards = quote.payment.installments.slice(0, 3);
+  const cardWidth = 174 / Math.max(cards.length, 1);
+  cards.forEach((installment, index) => {
+    const x = 18 + index * cardWidth;
+    pdf.setFillColor(...soft);
+    pdf.roundedRect(x, y, cardWidth - 5, 22, 2, 2, "F");
+    pdf.text(index === 0 ? "ADELANTO (40%)" : "SALDO · " + installment.pct + "%", x + 4, y + 7);
+    pdf.setTextColor(...INK);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(10);
+    pdf.text(formatPen(amounts[index] ?? 0), x + 4, y + 16);
+    pdf.setTextColor(...primary);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(8);
+  });
+  y += 32;
+  y = sectionTitle(pdf, "03", "Alcance y entregables", y, primary, secondary);
+  for (const group of groupDeliverables(quote.input, quote.deliverables)) {
+    if (y > 260) {
+      pdf.addPage();
+      addContentHeader(pdf, studio, date, primary, secondary);
+      y = 32;
+    }
+    pdf.setTextColor(...primary);
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(9);
+    pdf.text(group.group, 22, y);
+    y += 5;
+    pdf.setTextColor(...INK);
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(8.5);
+    for (const item of group.items) {
+      // Square bullet drawn as a shape: "▪" is not in the standard PDF fonts.
+      const lines = pdf.splitTextToSize(item, 160) as string[];
+      pdf.setFillColor(...secondary);
+      pdf.rect(25, y - 2.1, 1.6, 1.6, "F");
+      pdf.text(lines, 29, y);
+      y += lines.length * 4 + 2;
+    }
+    y += 2;
+  }
+  y += 4;
+  if (y > 245) {
+    pdf.addPage();
+    addContentHeader(pdf, studio, date, primary, secondary);
+    y = 32;
+  }
+  y = sectionTitle(pdf, "04", "Cronograma", y, primary, secondary);
+  y =
+    proposalTable(
+      pdf,
+      y,
+      [["Hito", "Semanas", "Duración"]],
+      quote.schedule.map((item) => [
+        item.label,
+        formatWeekRange(item),
+        item.toWeek -
+          item.fromWeek +
+          1 +
+          (item.toWeek - item.fromWeek === 0 ? " semana" : " semanas"),
+      ]),
+      [],
+      primary,
+      soft,
+    ) + 10;
+  if (y > 245) {
+    pdf.addPage();
+    addContentHeader(pdf, studio, date, primary, secondary);
+    y = 32;
+  }
+  y = sectionTitle(pdf, "05", "Forma de pago", y, primary, secondary);
+  y =
+    proposalTable(
+      pdf,
+      y,
+      [["Armada", "Concepto", "%", "Monto"]],
+      quote.payment.installments.map((item, index) => [
+        item.label,
+        index === 0 ? "Adelanto" : "Saldo",
+        item.pct + "%",
+        formatPen(amounts[index] ?? 0),
+      ]),
+      [],
+      primary,
+      soft,
+    ) + 10;
+  if (y > 245) {
+    pdf.addPage();
+    addContentHeader(pdf, studio, date, primary, secondary);
+    y = 32;
+  }
+  y = sectionTitle(pdf, "06", "Condiciones y cláusulas", y, primary, secondary);
+  pdf.setTextColor(...INK);
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(8.5);
+  for (const [index, condition] of quote.conditions.entries()) {
+    const lines = pdf.splitTextToSize(index + 1 + ". " + condition, 170) as string[];
+    pdf.text(lines, 21, y);
+    y += lines.length * 4.5 + 3;
+  }
+  addSignatures(pdf, quote, studio, primary, y + 8, () => {
+    pdf.addPage();
+    addContentHeader(pdf, studio, date, primary, secondary);
+  });
+  const totalPages = pdf.getNumberOfPages();
+  for (let page = 2; page <= totalPages; page += 1) {
+    pdf.setPage(page);
+    drawFooter(pdf, studio, date, page, totalPages, secondary, options.watermark);
+  }
+  if (options.watermark) {
+    for (let page = 2; page <= totalPages; page += 1) {
+      pdf.setPage(page);
+      drawWatermark(pdf);
+    }
+  }
   return pdf;
 }
 

@@ -2,7 +2,7 @@
 
 import { Copy, Plus, Trash2 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, Card, PaywallModal } from "@/components/ui";
 import {
   calculateFeeQuote,
@@ -10,6 +10,7 @@ import {
   defaultDeliverables,
   defaultSchedule,
   DEFAULT_CONDITIONS,
+  DEFAULT_FEE_RATES,
   formatPen,
   validatePaymentPlan,
   type FeeQuoteResult,
@@ -23,7 +24,8 @@ import {
   saveFeeQuote,
   type FeeQuoteDraft,
 } from "@/lib/offline/fee-quotes";
-import { useFeeQuotes, useProfessionalProfile } from "@/lib/offline/hooks";
+import { useFeeQuotes, useStudioProfile } from "@/lib/offline/hooks";
+import { loadCustomFeeRates, saveCustomFeeRates } from "@/lib/offline/fee-rates";
 import type { FeeQuote } from "@/lib/offline/db";
 import { ProposalPreview } from "./ProposalPreview";
 import { QuoteForm } from "./QuoteForm";
@@ -32,6 +34,7 @@ import { QuoteSummary } from "./QuoteSummary";
 function initialDraft(): FeeQuoteDraft {
   const input = createDefaultFeeInput();
   return {
+    documentType: "propuesta",
     projectName: "",
     clientName: "",
     location: "",
@@ -50,6 +53,7 @@ function initialDraft(): FeeQuoteDraft {
 }
 function draftFromQuote(quote: FeeQuote): FeeQuoteDraft {
   return {
+    documentType: quote.documentType ?? "propuesta",
     projectName: quote.projectName,
     clientName: quote.clientName,
     location: quote.location,
@@ -69,7 +73,7 @@ export function FeeQuoteWorkspace() {
   const searchParams = useSearchParams();
   const selectedId = searchParams.get("quote");
   const activeQuote = quotes.find((quote) => quote.id === selectedId) ?? null;
-  const profile = useProfessionalProfile();
+  const studio = useStudioProfile();
   const currentPlan = useCurrentPlan();
   const [draft, setDraft] = useState<FeeQuoteDraft>(() => initialDraft());
   const [touched, setTouched] = useState({ deliverables: false, schedule: false });
@@ -77,6 +81,29 @@ export function FeeQuoteWorkspace() {
   const [saving, setSaving] = useState(false);
   const [preview, setPreview] = useState(false);
   const [paywall, setPaywall] = useState(false);
+  const [ratesLoaded, setRatesLoaded] = useState(false);
+  const [hasCustomRates, setHasCustomRates] = useState(false);
+  const skipRateSave = useRef(true);
+
+  useEffect(() => {
+    void loadCustomFeeRates().then((rates) => {
+      setHasCustomRates(Boolean(rates));
+      if (rates && !activeQuote)
+        setDraft((current) => ({ ...current, input: { ...current.input, rates } }));
+      setRatesLoaded(true);
+    });
+  }, [activeQuote]);
+
+  useEffect(() => {
+    if (!ratesLoaded) return;
+    if (skipRateSave.current) {
+      skipRateSave.current = false;
+      return;
+    }
+    setHasCustomRates(true);
+    const timer = window.setTimeout(() => void saveCustomFeeRates(draft.input.rates), 400);
+    return () => window.clearTimeout(timer);
+  }, [draft.input.rates, ratesLoaded]);
 
   useEffect(() => {
     if (activeQuote) {
@@ -107,6 +134,7 @@ export function FeeQuoteWorkspace() {
   const quoteForPdf = (): FeeQuote => ({
     id: activeQuote?.id ?? "preview",
     code: activeQuote?.code ?? "COT-PREVIA",
+    documentType: draft.documentType,
     projectName: draft.projectName || "Propuesta sin nombre",
     clientName: draft.clientName,
     location: draft.location,
@@ -167,13 +195,13 @@ export function FeeQuoteWorkspace() {
   };
   const download = (): void => {
     if (currentPlan.mode === "local" || canExportCleanProposal(currentPlan.plan)) {
-      exportProposalPdf(quoteForPdf(), result, { professional: profile, watermark: false });
+      exportProposalPdf(quoteForPdf(), result, { studio, watermark: false });
       return;
     }
     setPaywall(true);
   };
   const downloadWatermarked = (): void => {
-    exportProposalPdf(quoteForPdf(), result, { professional: profile, watermark: true });
+    exportProposalPdf(quoteForPdf(), result, { studio, watermark: true });
     setPaywall(false);
   };
 
@@ -236,6 +264,17 @@ export function FeeQuoteWorkspace() {
               setTouched((current) => ({ ...current, deliverables: true }))
             }
             onTouchSchedule={() => setTouched((current) => ({ ...current, schedule: true }))}
+            hasCustomRates={hasCustomRates}
+            onResetRates={() => {
+              void import("@/lib/offline/fee-rates").then(({ clearCustomFeeRates }) =>
+                clearCustomFeeRates(),
+              );
+              setHasCustomRates(false);
+              setDraft((current) => ({
+                ...current,
+                input: { ...current.input, rates: DEFAULT_FEE_RATES },
+              }));
+            }}
           />
         </main>
         <QuoteSummary
@@ -252,7 +291,7 @@ export function FeeQuoteWorkspace() {
           notice={notice}
         />
       </div>
-      {profile.fullName === "" && (
+      {studio.fullName === "" && (
         <p className="profile-hint">
           Agrega tu nombre y N° CAP en <a href="/cuenta">Cuenta</a> para personalizar la propuesta.
         </p>
@@ -261,7 +300,7 @@ export function FeeQuoteWorkspace() {
         <ProposalPreview
           quote={quoteForPdf()}
           result={result}
-          professional={profile}
+          studio={studio}
           watermark={watermarked}
           onClose={() => setPreview(false)}
         />

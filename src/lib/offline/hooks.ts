@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, ensureSeeded, type FeeQuote, type Project, type Takeoff } from "./db";
-import { getProfessionalProfile } from "./profile";
+import { getStudioProfile } from "./profile";
+import type { StudioProfile } from "./db";
 import { getSyncStatus, startOnlineSync, type SyncStatus } from "./sync";
 
 export function useCards() {
@@ -98,6 +99,22 @@ export function useFeeQuotes(): FeeQuote[] {
   );
 }
 
+export function useStudioProfile(): StudioProfile {
+  return useLiveQuery(() => getStudioProfile(), [], {
+    id: "default",
+    fullName: "",
+    capNumber: "",
+    studioName: "",
+    ruc: "",
+    address: "",
+    brandPrimary: "#13294B",
+    brandSecondary: "#C59B27",
+    logoDataUrl: null,
+    updatedAt: "",
+  });
+}
+
 export function useProfessionalProfile(): { fullName: string; capNumber: string } {
-  return useLiveQuery(() => getProfessionalProfile(), [], { fullName: "", capNumber: "" });
+  const profile = useStudioProfile();
+  return { fullName: profile.fullName, capNumber: profile.capNumber };
 }

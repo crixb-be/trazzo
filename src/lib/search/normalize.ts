@@ -1,6 +1,52 @@
-﻿/**
- * Normalizes search text without losing the dot used in RNE codes such as A.120.
- */
+export const SPANISH_STOPWORDS = new Set([
+  "de",
+  "del",
+  "la",
+  "las",
+  "el",
+  "los",
+  "un",
+  "una",
+  "unos",
+  "unas",
+  "y",
+  "o",
+  "a",
+  "al",
+  "en",
+  "con",
+  "por",
+  "para",
+  "que",
+  "cual",
+  "cuales",
+  "como",
+  "cuanto",
+  "cuanta",
+  "cuantos",
+  "cuantas",
+  "debe",
+  "deben",
+  "tener",
+  "tiene",
+  "es",
+  "son",
+  "ser",
+  "se",
+  "lo",
+  "mi",
+  "mis",
+  "su",
+  "sus",
+  "me",
+  "hay",
+  "segun",
+  "sobre",
+  "necesito",
+  "quiero",
+  "saber",
+]);
+
 export function normalize(value: string): string {
   return value
     .normalize("NFD")
@@ -11,6 +57,7 @@ export function normalize(value: string): string {
     .trim();
 }
 
-export function tokenize(value: string): string[] {
-  return normalize(value).split(" ").filter(Boolean);
+export function tokenize(value: string, removeStopwords = false): string[] {
+  const tokens = normalize(value).split(" ").filter(Boolean);
+  return removeStopwords ? tokens.filter((token) => !SPANISH_STOPWORDS.has(token)) : tokens;
 }

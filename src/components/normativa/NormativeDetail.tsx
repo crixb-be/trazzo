@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { ChevronDown, Lock, MessageSquare, SlidersHorizontal } from "lucide-react";
@@ -88,7 +88,7 @@ export function NormativeDetail({ slug }: { slug: string }) {
                       unit="m"
                       value={Number(overrides[name] ?? value)}
                       step={0.01}
-                      onChange={(event) => updateParameter(name, Number(event.target.value))}
+                      onValueChange={(next) => updateParameter(name, next ?? 0)}
                     />
                   ))
                 )}

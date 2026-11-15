@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { DoorOpen } from "lucide-react";
@@ -10,12 +10,13 @@ import { CalculatorResult } from "./CalculatorResult";
 export function StairCalculator() {
   const [floorHeight, setFloorHeight] = useState(2.7);
   const [width, setWidth] = useState(0.9);
-  const [preferredTread, setPreferredTread] = useState("");
+  const [preferredTread, setPreferredTread] = useState<number | null>(null);
+  const [activeField, setActiveField] = useState<"height" | "width" | "tread" | null>(null);
   const [use, setUse] = useState<"vivienda" | "evacuacion">("vivienda");
   const result = computeStair({
     floorHeight,
     width,
-    preferredTread: preferredTread ? Number(preferredTread) : undefined,
+    preferredTread: preferredTread ?? undefined,
     use,
   });
 
@@ -33,21 +34,28 @@ export function StairCalculator() {
             unit="m"
             value={floorHeight}
             min={0}
-            onChange={(e) => setFloorHeight(Number(e.target.value))}
+            onFocus={() => setActiveField("height")}
+            onBlur={() => setActiveField(null)}
+            onValueChange={(value) => setFloorHeight(value ?? 0)}
           />
           <NumberField
             label="Ancho libre"
             unit="m"
             value={width}
             min={0}
-            onChange={(e) => setWidth(Number(e.target.value))}
+            onFocus={() => setActiveField("width")}
+            onBlur={() => setActiveField(null)}
+            onValueChange={(value) => setWidth(value ?? 0)}
           />
           <NumberField
-            label="Paso preferido"
+            label="Paso / Huella (p)"
             unit="m"
+            hint="Profundidad donde pisa el pie, mín. 0.25 m"
             value={preferredTread}
             min={0}
-            onChange={(e) => setPreferredTread(e.target.value)}
+            onFocus={() => setActiveField("tread")}
+            onBlur={() => setActiveField(null)}
+            onValueChange={setPreferredTread}
           />
           <Select
             label="Uso"
@@ -70,6 +78,8 @@ export function StairCalculator() {
             risers: result.values.risers,
             cp: result.values.riserHeight,
             p: result.values.tread,
+            highlight: activeField ?? "",
+            width,
           }}
         />
         <CalculatorResult

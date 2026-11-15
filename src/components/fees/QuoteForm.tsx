@@ -27,6 +27,8 @@ interface QuoteFormProps {
   onChange: (draft: FeeQuoteDraft) => void;
   onTouchDeliverables: () => void;
   onTouchSchedule: () => void;
+  onResetRates: () => void;
+  hasCustomRates: boolean;
 }
 
 const specialtyLabels = {
@@ -39,9 +41,6 @@ const modalityOptions = (["A", "B", "C", "D"] as LicenseModality[]).map((value) 
   label: "Modalidad " + value,
 }));
 
-function numberFrom(event: React.ChangeEvent<HTMLInputElement>): number {
-  return Number(event.target.value);
-}
 function updateRates(rates: FeeRates, patch: Partial<FeeRates>): FeeRates {
   return { ...rates, ...patch };
 }
@@ -52,6 +51,8 @@ export function QuoteForm({
   onChange,
   onTouchDeliverables,
   onTouchSchedule,
+  onResetRates,
+  hasCustomRates,
 }: QuoteFormProps) {
   const [showRates, setShowRates] = useState(false);
   const input = draft.input;
@@ -94,6 +95,17 @@ export function QuoteForm({
       <Card>
         <div className="eyebrow">01 / DATOS DEL PROYECTO</div>
         <div className="form-grid two-columns">
+          <Select
+            label="Tipo de documento"
+            value={draft.documentType}
+            options={[
+              { value: "propuesta", label: "Propuesta de servicios profesionales" },
+              { value: "cotizacion", label: "Cotización de diseño y proyecto" },
+            ]}
+            onChange={(event) =>
+              onChange({ ...draft, documentType: event.target.value as "propuesta" | "cotizacion" })
+            }
+          />
           <div className="field">
             <label>Nombre del proyecto</label>
             <Input
@@ -130,20 +142,20 @@ export function QuoteForm({
             label="Área techada"
             unit="m²"
             value={input.areaM2}
-            onChange={(event) => changeInput({ areaM2: numberFrom(event) })}
+            onValueChange={(value) => changeInput({ areaM2: value ?? 0 })}
           />
           <NumberField
             label="Pisos"
             value={input.floors}
             step={1}
-            onChange={(event) => changeInput({ floors: numberFrom(event) })}
+            onValueChange={(value) => changeInput({ floors: value ?? 0 })}
           />
           <NumberField
             label="Plazo total"
             unit="semanas"
             value={input.weeks}
             step={1}
-            onChange={(event) => changeInput({ weeks: numberFrom(event) })}
+            onValueChange={(value) => changeInput({ weeks: value ?? 0 })}
           />
         </div>
       </Card>
@@ -164,6 +176,19 @@ export function QuoteForm({
               </span>
             </label>
             <strong className="mono">{formatPen(lineAmount("design"))}</strong>
+            {scope.design && (
+              <NumberField
+                label="S/ por m²"
+                value={input.rates.designPerM2[input.typology]}
+                onValueChange={(value) =>
+                  changeInput({
+                    rates: updateRates(input.rates, {
+                      designPerM2: { ...input.rates.designPerM2, [input.typology]: value ?? 0 },
+                    }),
+                  })
+                }
+              />
+            )}
           </div>
           <div className="scope-option">
             <label>
@@ -205,6 +230,27 @@ export function QuoteForm({
                     ),
                   )}
                 </div>
+                <div className="inline-rate-grid">
+                  {(Object.keys(specialtyLabels) as Array<keyof typeof specialtyLabels>).map(
+                    (specialty) => (
+                      <NumberField
+                        key={specialty}
+                        label={specialtyLabels[specialty] + " · S/ m²"}
+                        value={input.rates.specialtyPerM2[specialty]}
+                        onValueChange={(value) =>
+                          changeInput({
+                            rates: updateRates(input.rates, {
+                              specialtyPerM2: {
+                                ...input.rates.specialtyPerM2,
+                                [specialty]: value ?? 0,
+                              },
+                            }),
+                          })
+                        }
+                      />
+                    ),
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -229,8 +275,8 @@ export function QuoteForm({
                   label="Cantidad de renders"
                   value={scope.renders.count}
                   step={1}
-                  onChange={(event) =>
-                    changeScope({ renders: { ...scope.renders, count: numberFrom(event) } })
+                  onValueChange={(value) =>
+                    changeScope({ renders: { ...scope.renders, count: value ?? 0 } })
                   }
                 />
                 <label className="checkbox-label">
@@ -245,6 +291,22 @@ export function QuoteForm({
                   />{" "}
                   Recorrido virtual
                 </label>
+                <NumberField
+                  label="S/ por render"
+                  value={input.rates.renderUnit}
+                  onValueChange={(value) =>
+                    changeInput({ rates: updateRates(input.rates, { renderUnit: value ?? 0 }) })
+                  }
+                />
+                {scope.renders.virtualTour && (
+                  <NumberField
+                    label="S/ recorrido"
+                    value={input.rates.virtualTour}
+                    onValueChange={(value) =>
+                      changeInput({ rates: updateRates(input.rates, { virtualTour: value ?? 0 }) })
+                    }
+                  />
+                )}
               </div>
             )}
           </div>
@@ -324,12 +386,23 @@ export function QuoteForm({
                 </div>
                 {scope.supervision.mode === "visits" && (
                   <NumberField
+                    label="S/ por visita"
+                    value={input.rates.supervisionVisit}
+                    onValueChange={(value) =>
+                      changeInput({
+                        rates: updateRates(input.rates, { supervisionVisit: value ?? 0 }),
+                      })
+                    }
+                  />
+                )}
+                {scope.supervision.mode === "visits" && (
+                  <NumberField
                     label="Visitas por semana"
                     value={scope.supervision.visitsPerWeek}
                     step={1}
-                    onChange={(event) =>
+                    onValueChange={(value) =>
                       changeScope({
-                        supervision: { ...scope.supervision, visitsPerWeek: numberFrom(event) },
+                        supervision: { ...scope.supervision, visitsPerWeek: value ?? 0 },
                       })
                     }
                   />
@@ -338,8 +411,8 @@ export function QuoteForm({
                   label="Semanas de supervisión"
                   value={scope.supervision.weeks}
                   step={1}
-                  onChange={(event) =>
-                    changeScope({ supervision: { ...scope.supervision, weeks: numberFrom(event) } })
+                  onValueChange={(value) =>
+                    changeScope({ supervision: { ...scope.supervision, weeks: value ?? 0 } })
                   }
                 />
               </div>
@@ -360,23 +433,27 @@ export function QuoteForm({
             <strong className="mono">{formatPen(lineAmount("execution"))}</strong>
             {scope.execution.enabled && (
               <div className="scope-sub-fields">
+                <NumberField
+                  label="% dirección técnica"
+                  value={(input.rates.executionPct ?? 0) * 100}
+                  min={0}
+                  max={100}
+                  onValueChange={(value) =>
+                    changeInput({
+                      rates: updateRates(input.rates, { executionPct: (value ?? 0) / 100 }),
+                    })
+                  }
+                />
                 <p className="muted small">
                   Presupuesto usado: {formatPen(result.constructionBudget)}
                 </p>
-                <div className="field">
-                  <label>Presupuesto referencial de obra (S/)</label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={input.constructionBudget ?? ""}
-                    placeholder={String(result.constructionBudget)}
-                    onChange={(event) =>
-                      changeInput({
-                        constructionBudget: event.target.value === "" ? null : numberFrom(event),
-                      })
-                    }
-                  />
-                </div>
+                <NumberField
+                  label="Presupuesto referencial de obra (S/)"
+                  value={input.constructionBudget}
+                  min={0}
+                  hint={"Por defecto: " + formatPen(result.constructionBudget)}
+                  onValueChange={(value) => changeInput({ constructionBudget: value })}
+                />
               </div>
             )}
           </div>
@@ -387,7 +464,11 @@ export function QuoteForm({
         <button className="collapse-trigger" type="button" onClick={() => setShowRates(!showRates)}>
           <span>
             <span className="eyebrow">03 / TARIFAS REFERENCIALES</span>
-            <small>Tarifas referenciales del mercado peruano; ajústalas a tu práctica.</small>
+            <small>
+              {hasCustomRates
+                ? "Tarifas personalizadas guardadas en este dispositivo."
+                : "Tarifas referenciales del mercado peruano; ajústalas a tu práctica."}
+            </small>
           </span>
           <ChevronDown size={18} className={showRates ? "rotated" : ""} />
         </button>
@@ -397,12 +478,12 @@ export function QuoteForm({
               <NumberField
                 label="Diseño por m²"
                 value={input.rates.designPerM2[input.typology]}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   changeInput({
                     rates: updateRates(input.rates, {
                       designPerM2: {
                         ...input.rates.designPerM2,
-                        [input.typology]: numberFrom(event),
+                        [input.typology]: value ?? 0,
                       },
                     }),
                   })
@@ -411,10 +492,10 @@ export function QuoteForm({
               <NumberField
                 label="Factor por piso extra"
                 value={input.rates.floorFactorPerExtraFloor}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   changeInput({
                     rates: updateRates(input.rates, {
-                      floorFactorPerExtraFloor: numberFrom(event),
+                      floorFactorPerExtraFloor: value ?? 0,
                     }),
                   })
                 }
@@ -422,21 +503,21 @@ export function QuoteForm({
               <NumberField
                 label="Factor máximo"
                 value={input.rates.maxFloorFactor}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   changeInput({
-                    rates: updateRates(input.rates, { maxFloorFactor: numberFrom(event) }),
+                    rates: updateRates(input.rates, { maxFloorFactor: value ?? 0 }),
                   })
                 }
               />
               <NumberField
                 label="Estructuras por m²"
                 value={input.rates.specialtyPerM2.estructuras}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   changeInput({
                     rates: updateRates(input.rates, {
                       specialtyPerM2: {
                         ...input.rates.specialtyPerM2,
-                        estructuras: numberFrom(event),
+                        estructuras: value ?? 0,
                       },
                     }),
                   })
@@ -445,12 +526,12 @@ export function QuoteForm({
               <NumberField
                 label="Sanitarias por m²"
                 value={input.rates.specialtyPerM2.sanitarias}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   changeInput({
                     rates: updateRates(input.rates, {
                       specialtyPerM2: {
                         ...input.rates.specialtyPerM2,
-                        sanitarias: numberFrom(event),
+                        sanitarias: value ?? 0,
                       },
                     }),
                   })
@@ -459,12 +540,12 @@ export function QuoteForm({
               <NumberField
                 label="Eléctricas por m²"
                 value={input.rates.specialtyPerM2.electricas}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   changeInput({
                     rates: updateRates(input.rates, {
                       specialtyPerM2: {
                         ...input.rates.specialtyPerM2,
-                        electricas: numberFrom(event),
+                        electricas: value ?? 0,
                       },
                     }),
                   })
@@ -473,28 +554,28 @@ export function QuoteForm({
               <NumberField
                 label="Render unitario"
                 value={input.rates.renderUnit}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   changeInput({
-                    rates: updateRates(input.rates, { renderUnit: numberFrom(event) }),
+                    rates: updateRates(input.rates, { renderUnit: value ?? 0 }),
                   })
                 }
               />
               <NumberField
                 label="Recorrido virtual"
                 value={input.rates.virtualTour}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   changeInput({
-                    rates: updateRates(input.rates, { virtualTour: numberFrom(event) }),
+                    rates: updateRates(input.rates, { virtualTour: value ?? 0 }),
                   })
                 }
               />
               <NumberField
                 label="Licencia A"
                 value={input.rates.licenseByModality.A}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   changeInput({
                     rates: updateRates(input.rates, {
-                      licenseByModality: { ...input.rates.licenseByModality, A: numberFrom(event) },
+                      licenseByModality: { ...input.rates.licenseByModality, A: value ?? 0 },
                     }),
                   })
                 }
@@ -502,10 +583,10 @@ export function QuoteForm({
               <NumberField
                 label="Licencia B"
                 value={input.rates.licenseByModality.B}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   changeInput({
                     rates: updateRates(input.rates, {
-                      licenseByModality: { ...input.rates.licenseByModality, B: numberFrom(event) },
+                      licenseByModality: { ...input.rates.licenseByModality, B: value ?? 0 },
                     }),
                   })
                 }
@@ -513,10 +594,10 @@ export function QuoteForm({
               <NumberField
                 label="Licencia C"
                 value={input.rates.licenseByModality.C}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   changeInput({
                     rates: updateRates(input.rates, {
-                      licenseByModality: { ...input.rates.licenseByModality, C: numberFrom(event) },
+                      licenseByModality: { ...input.rates.licenseByModality, C: value ?? 0 },
                     }),
                   })
                 }
@@ -524,10 +605,10 @@ export function QuoteForm({
               <NumberField
                 label="Licencia D"
                 value={input.rates.licenseByModality.D}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   changeInput({
                     rates: updateRates(input.rates, {
-                      licenseByModality: { ...input.rates.licenseByModality, D: numberFrom(event) },
+                      licenseByModality: { ...input.rates.licenseByModality, D: value ?? 0 },
                     }),
                   })
                 }
@@ -535,31 +616,33 @@ export function QuoteForm({
               <NumberField
                 label="Visita de supervisión"
                 value={input.rates.supervisionVisit}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   changeInput({
-                    rates: updateRates(input.rates, { supervisionVisit: numberFrom(event) }),
+                    rates: updateRates(input.rates, { supervisionVisit: value ?? 0 }),
                   })
                 }
               />
               <NumberField
                 label="Supervisión (%)"
-                value={input.rates.supervisionPct}
-                step={0.01}
-                onChange={(event) =>
+                value={input.rates.supervisionPct * 100}
+                min={0}
+                max={100}
+                step={0.1}
+                onValueChange={(value) =>
                   changeInput({
-                    rates: updateRates(input.rates, { supervisionPct: numberFrom(event) }),
+                    rates: updateRates(input.rates, { supervisionPct: (value ?? 0) / 100 }),
                   })
                 }
               />
               <NumberField
                 label="Costo obra por m²"
                 value={input.rates.constructionCostPerM2[input.typology]}
-                onChange={(event) =>
+                onValueChange={(value) =>
                   changeInput({
                     rates: updateRates(input.rates, {
                       constructionCostPerM2: {
                         ...input.rates.constructionCostPerM2,
-                        [input.typology]: numberFrom(event),
+                        [input.typology]: value ?? 0,
                       },
                     }),
                   })
@@ -567,20 +650,18 @@ export function QuoteForm({
               />
               <NumberField
                 label="Ejecución (%)"
-                value={input.rates.executionPct}
-                step={0.01}
-                onChange={(event) =>
+                value={input.rates.executionPct * 100}
+                min={0}
+                max={100}
+                step={0.1}
+                onValueChange={(value) =>
                   changeInput({
-                    rates: updateRates(input.rates, { executionPct: numberFrom(event) }),
+                    rates: updateRates(input.rates, { executionPct: (value ?? 0) / 100 }),
                   })
                 }
               />
             </div>
-            <button
-              className="btn btn-ghost"
-              type="button"
-              onClick={() => changeInput({ rates: DEFAULT_FEE_RATES })}
-            >
+            <button className="btn btn-ghost" type="button" onClick={onResetRates}>
               Restablecer tarifas
             </button>
           </div>
@@ -665,7 +746,7 @@ export function QuoteForm({
               <NumberField
                 label="%"
                 value={installment.pct}
-                onChange={(event) => changePayment(index, { pct: numberFrom(event) })}
+                onValueChange={(value) => changePayment(index, { pct: value ?? 0 })}
               />
               <span className="mono payment-amount">{formatPen(paymentValues[index] ?? 0)}</span>
               <button
@@ -730,12 +811,12 @@ export function QuoteForm({
                 label="Desde"
                 value={milestone.fromWeek}
                 step={1}
-                onChange={(event) => {
+                onValueChange={(value) => {
                   onTouchSchedule();
                   onChange({
                     ...draft,
                     schedule: draft.schedule.map((item, itemIndex) =>
-                      itemIndex === index ? { ...item, fromWeek: numberFrom(event) } : item,
+                      itemIndex === index ? { ...item, fromWeek: value ?? 0 } : item,
                     ),
                   });
                 }}
@@ -744,12 +825,12 @@ export function QuoteForm({
                 label="Hasta"
                 value={milestone.toWeek}
                 step={1}
-                onChange={(event) => {
+                onValueChange={(value) => {
                   onTouchSchedule();
                   onChange({
                     ...draft,
                     schedule: draft.schedule.map((item, itemIndex) =>
-                      itemIndex === index ? { ...item, toWeek: numberFrom(event) } : item,
+                      itemIndex === index ? { ...item, toWeek: value ?? 0 } : item,
                     ),
                   });
                 }}

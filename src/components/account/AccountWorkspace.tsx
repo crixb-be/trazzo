@@ -2,12 +2,12 @@
 
 import { Check, Cloud, Download, FileUp, RefreshCw, RotateCcw } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge, BillingToggle, Button, Card, Input } from "@/components/ui";
 import { SEED_VERSION } from "@/data/seed-rne";
 import { db } from "@/lib/offline/db";
-import { getProfessionalProfile, saveProfessionalProfile } from "@/lib/offline/profile";
-import { useSyncStatus } from "@/lib/offline/hooks";
+import { getStudioProfile, saveStudioProfile } from "@/lib/offline/profile";
+import { useStudioProfile, useSyncStatus } from "@/lib/offline/hooks";
 import { flushOutbox, pullRemote } from "@/lib/offline/sync";
 import {
   formatPlanPrice,
@@ -18,6 +18,8 @@ import {
   type Plan,
 } from "@/lib/plans/plans";
 import { createClient } from "@/lib/supabase/client";
+import { prepareLogo } from "@/lib/ui/logo";
+import { isValidRuc } from "@/lib/validation";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -32,6 +34,7 @@ const features: Record<Plan, string[]> = {
 
 export function AccountWorkspace() {
   const sync = useSyncStatus();
+  const studio = useStudioProfile();
   const [configured, setConfigured] = useState(Boolean(createClient()));
   const [email, setEmail] = useState("");
   const [currentPlan, setCurrentPlan] = useState<Plan>("free");
@@ -39,17 +42,43 @@ export function AccountWorkspace() {
   const [studentEmail, setStudentEmail] = useState("");
   const [name, setName] = useState("");
   const [capNumber, setCapNumber] = useState("");
+  const [studioName, setStudioName] = useState("");
+  const [ruc, setRuc] = useState("");
+  const [address, setAddress] = useState("");
+  const [brandPrimary, setBrandPrimary] = useState("#13294B");
+  const [brandSecondary, setBrandSecondary] = useState("#C59B27");
+  const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
   const [document, setDocument] = useState<File | null>(null);
   const [notice, setNotice] = useState("");
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
-    void getProfessionalProfile().then((profile) => {
+    void getStudioProfile().then((profile) => {
       setName(profile.fullName);
       setCapNumber(profile.capNumber);
+      setStudioName(profile.studioName);
+      setRuc(profile.ruc);
+      setAddress(profile.address);
+      setBrandPrimary(profile.brandPrimary);
+      setBrandSecondary(profile.brandSecondary);
+      setLogoDataUrl(profile.logoDataUrl);
     });
   }, []);
+
+  useEffect(() => {
+    if (studio.updatedAt) {
+      setName(studio.fullName);
+      setCapNumber(studio.capNumber);
+      setStudioName(studio.studioName);
+      setRuc(studio.ruc);
+      setAddress(studio.address);
+      setBrandPrimary(studio.brandPrimary);
+      setBrandSecondary(studio.brandSecondary);
+      setLogoDataUrl(studio.logoDataUrl);
+    }
+  }, [studio.updatedAt]);
 
   useEffect(() => {
     const client = createClient();
@@ -82,18 +111,68 @@ export function AccountWorkspace() {
   }, []);
 
   async function saveProfile(): Promise<void> {
-    await saveProfessionalProfile({ fullName: name, capNumber });
-    const client = createClient();
-    if (client) {
-      const { data } = await client.auth.getUser();
-      if (data.user) {
-        await client
-          .from("profiles")
-          .update({ full_name: name, cap_number: capNumber })
-          .eq("id", data.user.id);
+    await saveStudioProfile({
+      fullName: name,
+      capNumber,
+      studioName,
+      ruc,
+      address,
+      brandPrimary,
+      brandSecondary,
+      logoDataUrl,
+    });
+    let remoteFailed = false;
+    try {
+      const client = createClient();
+      if (client) {
+        const { data } = await client.auth.getUser();
+        if (data.user) {
+          let logoUrl: string | null = null;
+          if (logoDataUrl) {
+            const response = await fetch(logoDataUrl);
+            const blob = await response.blob();
+            const upload = await client.storage
+              .from("studio-logos")
+              .upload(data.user.id + "/logo.png", blob, { upsert: true, contentType: "image/png" });
+            if (upload.error) throw upload.error;
+            const signed = await client.storage
+              .from("studio-logos")
+              .createSignedUrl(data.user.id + "/logo.png", 60 * 60 * 24 * 365);
+            logoUrl = signed.data?.signedUrl ?? data.user.id + "/logo.png";
+          }
+          const update = await client
+            .from("profiles")
+            .update({
+              full_name: name,
+              cap_number: capNumber,
+              studio_name: studioName,
+              ruc,
+              studio_address: address,
+              brand_primary: brandPrimary,
+              brand_secondary: brandSecondary,
+              logo_url: logoUrl,
+            })
+            .eq("id", data.user.id);
+          if (update.error) throw update.error;
+        }
       }
+    } catch {
+      remoteFailed = true;
     }
-    setNotice("Perfil guardado.");
+    setNotice(
+      remoteFailed
+        ? "Perfil guardado localmente. No se pudo sincronizar la marca con Supabase."
+        : "Perfil guardado.",
+    );
+  }
+
+  async function changeLogo(file: File): Promise<void> {
+    try {
+      setLogoDataUrl(await prepareLogo(file));
+      setNotice("");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "No se pudo preparar el logo.");
+    }
   }
 
   async function choosePlan(plan: Plan): Promise<void> {
@@ -221,6 +300,110 @@ export function AccountWorkspace() {
           </p>
         </Card>
 
+        <Card className="studio-brand-card">
+          <div className="eyebrow">ESTUDIO / MARCA</div>
+          <div className="logo-dropzone">
+            <div className="logo-tile">
+              {logoDataUrl ? <img src={logoDataUrl} alt="Logo del estudio" /> : <span>LOGO</span>}
+            </div>
+            <div className="inline-actions">
+              <Button size="sm" onClick={() => logoInputRef.current?.click()}>
+                Subir logo
+              </Button>
+              {logoDataUrl && (
+                <Button size="sm" variant="ghost" onClick={() => setLogoDataUrl(null)}>
+                  Quitar
+                </Button>
+              )}
+            </div>
+            <input
+              ref={logoInputRef}
+              hidden
+              type="file"
+              accept="image/png,image/jpeg,image/svg+xml"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) void changeLogo(file);
+              }}
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="studio-name">Nombre del Estudio / Empresa</label>
+            <Input
+              id="studio-name"
+              value={studioName}
+              onChange={(event) => setStudioName(event.target.value)}
+              placeholder="B & E Arquitectura"
+            />
+          </div>
+          <div className="field">
+            <label htmlFor="studio-ruc">RUC</label>
+            <Input
+              id="studio-ruc"
+              inputMode="numeric"
+              aria-invalid={!isValidRuc(ruc)}
+              value={ruc}
+              onChange={(event) => setRuc(event.target.value)}
+              className={!isValidRuc(ruc) ? "error" : ""}
+            />
+            {!isValidRuc(ruc) && (
+              <span className="danger small">
+                RUC inválido: usa 11 dígitos con prefijo 10, 15, 17 o 20.
+              </span>
+            )}
+          </div>
+          <div className="field">
+            <label htmlFor="studio-address">Ciudad / Dirección</label>
+            <Input
+              id="studio-address"
+              value={address}
+              onChange={(event) => setAddress(event.target.value)}
+              placeholder="Lima, Perú"
+            />
+          </div>
+          <div className="color-fields">
+            <label>
+              Color principal{" "}
+              <Input
+                type="color"
+                value={brandPrimary}
+                onChange={(event) => setBrandPrimary(event.target.value)}
+              />
+              <Input
+                aria-label="Color principal en hexadecimal"
+                value={brandPrimary}
+                onChange={(event) => setBrandPrimary(event.target.value)}
+              />
+            </label>
+            <label>
+              Color de acento{" "}
+              <Input
+                type="color"
+                value={brandSecondary}
+                onChange={(event) => setBrandSecondary(event.target.value)}
+              />
+              <Input
+                aria-label="Color de acento en hexadecimal"
+                value={brandSecondary}
+                onChange={(event) => setBrandSecondary(event.target.value)}
+              />
+            </label>
+          </div>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setBrandPrimary("#13294B");
+              setBrandSecondary("#C59B27");
+            }}
+          >
+            Restablecer colores
+          </Button>
+          <div className="brand-preview-strip">
+            <span style={{ background: brandPrimary }} />
+            <span style={{ background: brandSecondary }} />
+            <strong>{studioName || "TRAZZO"}</strong>
+          </div>
+        </Card>
         <Card>
           <div className="eyebrow">SINCRONIZACIÓN</div>
           <h2>{sync.online ? "Listo para sincronizar" : "Trabajando sin conexión"}</h2>

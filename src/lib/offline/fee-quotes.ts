@@ -9,6 +9,7 @@ import {
 import { createLocalUuid, db, type FeeQuote } from "./db";
 
 export interface FeeQuoteDraft {
+  documentType: "propuesta" | "cotizacion";
   projectName: string;
   clientName: string;
   location: string;
@@ -62,7 +63,11 @@ export async function duplicateFeeQuote(id: string): Promise<FeeQuote> {
   const original = await localDb.fee_quotes.get(id);
   if (!original) throw new Error("No se encontró la cotización.");
   return saveFeeQuote(
-    { ...original, projectName: original.projectName + " (copia)" },
+    {
+      ...original,
+      documentType: original.documentType ?? "propuesta",
+      projectName: original.projectName + " (copia)",
+    },
     { createdAt: new Date().toISOString() },
   );
 }
