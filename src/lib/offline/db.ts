@@ -52,6 +52,8 @@ export interface StudioProfile {
   brandPrimary: string;
   brandSecondary: string;
   logoDataUrl: string | null;
+  /** Square JPEG data URL of the user's profile photo. */
+  avatarDataUrl: string | null;
   updatedAt: string;
 }
 

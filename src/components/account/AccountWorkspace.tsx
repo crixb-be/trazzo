@@ -1,8 +1,19 @@
 "use client";
 
-import { Check, Cloud, Download, FileUp, RefreshCw, RotateCcw } from "lucide-react";
+import {
+  Camera,
+  Check,
+  Cloud,
+  Download,
+  FileUp,
+  FolderOpen,
+  Images,
+  RefreshCw,
+  RotateCcw,
+  Trash2,
+} from "lucide-react";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { Badge, BillingToggle, Button, Card, Input } from "@/components/ui";
 import { SEED_VERSION } from "@/data/seed-rne";
 import { db } from "@/lib/offline/db";
@@ -18,6 +29,7 @@ import {
   type Plan,
 } from "@/lib/plans/plans";
 import { createClient } from "@/lib/supabase/client";
+import { prepareAvatar } from "@/lib/ui/avatar";
 import { prepareLogo } from "@/lib/ui/logo";
 import { isValidRuc } from "@/lib/validation";
 
@@ -31,6 +43,15 @@ const features: Record<Plan, string[]> = {
   student: ["Fichas Pro", "Proyectos ilimitados", "200 consultas IA / mes", "Exportación PDF"],
   pro: ["Fichas Pro", "Proyectos ilimitados", "IA ilimitada", "Exportación PDF"],
 };
+
+function initials(source: string): string {
+  const words = source
+    .replace(/@.*$/, "")
+    .split(/[\s._-]+/)
+    .filter(Boolean);
+  const letters = words.slice(0, 2).map((word) => word[0]?.toUpperCase() ?? "");
+  return letters.join("") || "T";
+}
 
 export function AccountWorkspace() {
   const sync = useSyncStatus();
@@ -49,6 +70,11 @@ export function AccountWorkspace() {
   const [brandSecondary, setBrandSecondary] = useState("#C59B27");
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
+  const [avatarDataUrl, setAvatarDataUrl] = useState<string | null>(null);
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const filesInputRef = useRef<HTMLInputElement>(null);
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
   const [document, setDocument] = useState<File | null>(null);
   const [notice, setNotice] = useState("");
@@ -64,6 +90,7 @@ export function AccountWorkspace() {
       setBrandPrimary(profile.brandPrimary);
       setBrandSecondary(profile.brandSecondary);
       setLogoDataUrl(profile.logoDataUrl);
+      setAvatarDataUrl(profile.avatarDataUrl);
     });
   }, []);
 
@@ -77,6 +104,7 @@ export function AccountWorkspace() {
       setBrandPrimary(studio.brandPrimary);
       setBrandSecondary(studio.brandSecondary);
       setLogoDataUrl(studio.logoDataUrl);
+      setAvatarDataUrl(studio.avatarDataUrl);
     }
   }, [studio.updatedAt]);
 
@@ -179,6 +207,73 @@ export function AccountWorkspace() {
     }
   }
 
+  // Like the logo, the photo is saved locally right away; the Supabase copy is
+  // best effort so the feature keeps working offline or in local mode.
+  async function syncAvatarRemote(dataUrl: string | null): Promise<boolean> {
+    try {
+      const client = createClient();
+      if (!client) return true;
+      const { data } = await client.auth.getUser();
+      if (!data.user) return true;
+      const path = data.user.id + "/avatar.jpg";
+      let avatarUrl: string | null = null;
+      if (dataUrl) {
+        const blob = await (await fetch(dataUrl)).blob();
+        const upload = await client.storage
+          .from("avatars")
+          .upload(path, blob, { upsert: true, contentType: "image/jpeg" });
+        if (upload.error) throw upload.error;
+        const signed = await client.storage
+          .from("avatars")
+          .createSignedUrl(path, 60 * 60 * 24 * 365);
+        avatarUrl = signed.data?.signedUrl ?? path;
+      } else {
+        await client.storage.from("avatars").remove([path]);
+      }
+      const update = await client
+        .from("profiles")
+        .update({ avatar_url: avatarUrl })
+        .eq("id", data.user.id);
+      if (update.error) throw update.error;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  async function changeAvatar(file: File): Promise<void> {
+    setAvatarBusy(true);
+    try {
+      const dataUrl = await prepareAvatar(file);
+      setAvatarDataUrl(dataUrl);
+      await saveStudioProfile({ avatarDataUrl: dataUrl });
+      const synced = await syncAvatarRemote(dataUrl);
+      setNotice(
+        synced
+          ? "Foto de perfil actualizada."
+          : "Foto guardada en este dispositivo. No se pudo sincronizar con tu cuenta.",
+      );
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "No se pudo preparar la foto.");
+    } finally {
+      setAvatarBusy(false);
+    }
+  }
+
+  async function removeAvatar(): Promise<void> {
+    setAvatarDataUrl(null);
+    await saveStudioProfile({ avatarDataUrl: null });
+    await syncAvatarRemote(null);
+    setNotice("Foto de perfil quitada.");
+  }
+
+  function handleAvatarInput(event: ChangeEvent<HTMLInputElement>): void {
+    const file = event.target.files?.[0];
+    // Reset so picking the same photo again still fires onChange.
+    event.target.value = "";
+    if (file) void changeAvatar(file);
+  }
+
   async function removeLogo(): Promise<void> {
     setLogoDataUrl(null);
     await saveStudioProfile({ logoDataUrl: null });
@@ -279,6 +374,81 @@ export function AccountWorkspace() {
         <Card className="profile-card">
           <div className="eyebrow">PERFIL</div>
           <h2>{email || "Trabajo local"}</h2>
+          <div className="avatar-picker">
+            <div className="avatar-preview" aria-busy={avatarBusy}>
+              {avatarDataUrl ? (
+                <img src={avatarDataUrl} alt="Foto de perfil" />
+              ) : (
+                <span aria-hidden="true">{initials(name || email)}</span>
+              )}
+            </div>
+            <div className="avatar-picker-body">
+              <strong>Foto de perfil</strong>
+              <div className="inline-actions">
+                <Button
+                  size="sm"
+                  disabled={avatarBusy}
+                  onClick={() => cameraInputRef.current?.click()}
+                >
+                  <Camera size={14} /> Tomar foto
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={avatarBusy}
+                  onClick={() => galleryInputRef.current?.click()}
+                >
+                  <Images size={14} /> Galería
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={avatarBusy}
+                  onClick={() => filesInputRef.current?.click()}
+                >
+                  <FolderOpen size={14} /> Archivos
+                </Button>
+                {avatarDataUrl && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={avatarBusy}
+                    onClick={() => void removeAvatar()}
+                  >
+                    <Trash2 size={14} /> Quitar
+                  </Button>
+                )}
+              </div>
+              <span className="muted small">
+                {avatarBusy
+                  ? "Preparando foto…"
+                  : "JPG, PNG, WebP o HEIC. Se recorta en cuadrado y se guarda al instante."}
+              </span>
+            </div>
+            {/* Camera: opens the front camera directly on phones. */}
+            <input
+              ref={cameraInputRef}
+              hidden
+              type="file"
+              accept="image/*"
+              capture="user"
+              onChange={handleAvatarInput}
+            />
+            {/* Gallery: the image/* wildcard opens the photo library / gallery. */}
+            <input
+              ref={galleryInputRef}
+              hidden
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarInput}
+            />
+            {/* Files: explicit types open the file manager / documents picker. */}
+            <input
+              ref={filesInputRef}
+              hidden
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif,.jpg,.jpeg,.png,.webp,.gif,.heic,.heif"
+              onChange={handleAvatarInput}
+            />
+          </div>
           <div className="field">
             <label>Correo</label>
             <Input value={email} readOnly placeholder="No hay sesión activa" />

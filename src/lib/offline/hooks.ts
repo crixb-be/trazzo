@@ -110,6 +110,7 @@ export function useStudioProfile(): StudioProfile {
     brandPrimary: "#13294B",
     brandSecondary: "#C59B27",
     logoDataUrl: null,
+    avatarDataUrl: null,
     updatedAt: "",
   });
 }
