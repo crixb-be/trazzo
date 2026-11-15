@@ -67,19 +67,25 @@ function contextBlock(chunk: RetrievedChunk, index: number): string {
  * retrieved cards; the model decides which ones apply and must reuse their
  * citation strings verbatim so the UI can turn them into links.
  */
+/** Core instruction for every model, as defined by the product owner. */
+export const STRICT_SYSTEM_PROMPT =
+  "Eres un especialista técnico en el RNE del Perú. Responde basándote en las fichas recuperadas, descartando fichas de otros elementos aunque compartan palabras (ej. ignorar 'Pozo de luz para servicios' si preguntan por 'puerta de baño de servicio'). Si preguntan medidas, entrega ancho estándar (A.010), ancho accesible (A.120) y altura mínima juntos. Si falta un dato en las fichas, aclara qué norma falta consultar sin inventar.";
+
+/**
+ * System prompt for the synthesis models: the strict instruction first, then
+ * the formatting rules that keep citations clickable, then the cards.
+ */
 export function buildSystemPrompt(chunks: RetrievedChunk[], technicalTerms: string[] = []): string {
   const context = chunks.map(contextBlock).join("\n\n");
 
   return [
-    "Eres TRAZZO RNE, asistente técnico para arquitectura y construcción en Perú. Ayudas a arquitectos, estudiantes y maestros de obra a entender el Reglamento Nacional de Edificaciones (RNE).",
+    STRICT_SYSTEM_PROMPT,
     "",
-    "Cómo responder:",
-    "- Empieza con una respuesta directa en español cotidiano (1-2 oraciones), con los valores concretos y sus unidades.",
-    "- Luego agrega una sección **Respaldo técnico** con viñetas: cubre todos los aspectos que el usuario necesita aunque no los haya nombrado. Ejemplo: si pregunta la medida de una puerta, da el ancho libre mínimo, la altura mínima del vano y el caso accesible de la A.120 cuando esas fichas estén en el contexto.",
-    "- Si una ficha del contexto no tiene relación con la pregunta, ignórala.",
-    "- Cada valor normativo lleva su cita copiada exactamente del campo «Cita exacta» de su ficha, por ejemplo [A.120 Art. 9 · Ancho de puerta accesible]. No cambies el texto entre corchetes y no inventes citas.",
-    "- Nunca inventes valores, artículos ni excepciones. Si el contexto no alcanza para responder, dilo en una oración y sugiere qué dato o término precisar.",
-    "- Usa Markdown simple: **negritas** para valores clave, viñetas con «- » y párrafos cortos. No uses tablas ni encabezados con «#».",
+    "Formato de la respuesta:",
+    "- Primero una respuesta directa en español cotidiano (1-2 oraciones) con los valores y sus unidades.",
+    "- Luego una sección **Respaldo técnico** con viñetas, una por valor normativo.",
+    "- Cada valor lleva su cita copiada exactamente del campo «Cita exacta» de su ficha, por ejemplo [A.010 Cap. VI · Ancho mínimo de puertas según ambiente]. No cambies el texto entre corchetes ni inventes citas.",
+    "- Usa Markdown simple: **negritas** para valores clave, viñetas con «- » y párrafos cortos. Sin tablas ni encabezados con «#».",
     "- Extensión: completa pero sin relleno, normalmente entre 80 y 220 palabras.",
     `- Cierra con una línea en cursiva: _${DISCLAIMER}_`,
     "",
@@ -87,7 +93,7 @@ export function buildSystemPrompt(chunks: RetrievedChunk[], technicalTerms: stri
       ? `La consulta está en lenguaje cotidiano; equivale en el RNE a: ${technicalTerms.join(", ")}.`
       : "",
     "",
-    "CONTEXTO RECUPERADO:",
+    "FICHAS RECUPERADAS:",
     context || NO_RESULT_ANSWER,
   ]
     .filter((line, index, lines) => line !== "" || lines[index - 1] !== "")

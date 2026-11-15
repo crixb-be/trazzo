@@ -4,6 +4,7 @@ import { RNE_CARDS, type RneCard } from "@/data/seed-rne";
 import { citationForCard } from "@/lib/rag/citations";
 import { expandColloquialQuery } from "@/lib/search/colloquial";
 import { searchCardsScored } from "@/lib/search/search";
+import { filterBySubject } from "@/lib/search/subject";
 import { isSupabaseConfigured } from "@/lib/supabase/env";
 import { createClient } from "@/lib/supabase/client";
 
@@ -107,7 +108,9 @@ export async function retrieveVector(query: string, limit = 6): Promise<Retrieve
 /** Weighted local search (with colloquial expansion) over the seed cards. */
 export function retrieveLocal(query: string, mode: RetrievalMode = "extractive"): RetrievedChunk[] {
   const { limit, relativeScore } = MODE_LIMITS[mode];
-  const scored = searchCardsScored(RNE_CARDS, query);
+  // Drop cards about other elements before ranking ("pozo de luz para servicios"
+  // must not answer "puerta de baño de servicio").
+  const scored = filterBySubject(query, searchCardsScored(RNE_CARDS, query));
   const top = scored[0];
   if (!top || top.score < MIN_TOP_SCORE) return [];
 
@@ -133,8 +136,10 @@ export async function retrieve(
     const { limit } = MODE_LIMITS[mode];
     const vector = await retrieveVector(query, limit);
     const seen = new Set(vector.map((chunk) => chunk.slug));
-    return [...vector, ...local.filter((chunk) => !seen.has(chunk.slug))].slice(0, limit);
-  } catch {
+    const merged = [...vector, ...local.filter((chunk) => !seen.has(chunk.slug))];
+    return filterBySubject(query, merged).slice(0, limit);
+  } catch (error) {
+    console.error("Búsqueda vectorial falló; se usa la búsqueda local", error);
     return local;
   }
 }

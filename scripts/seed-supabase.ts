@@ -11,9 +11,14 @@ async function main(): Promise<void> {
     return;
   }
 
-  const { error: cardsError } = await client.from("rne_cards").upsert(RNE_CARDS);
+  // Seed rows carry no id: match existing rows by their natural unique keys.
+  const { error: cardsError } = await client
+    .from("rne_cards")
+    .upsert(RNE_CARDS, { onConflict: "slug" });
   if (cardsError) throw cardsError;
-  const { error: materialsError } = await client.from("materials_catalog").upsert(MATERIALS);
+  const { error: materialsError } = await client
+    .from("materials_catalog")
+    .upsert(MATERIALS, { onConflict: "code" });
   if (materialsError) throw materialsError;
 
   console.log(`Seed cargado: ${RNE_CARDS.length} fichas, ${MATERIALS.length} materiales.`);

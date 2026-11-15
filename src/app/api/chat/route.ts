@@ -4,11 +4,12 @@ import {
   streamText,
   type UIMessage,
 } from "ai";
-import { google } from "@ai-sdk/google";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { streamClaudeAnswer, type ChatTurn } from "@/lib/ai/anthropic";
+import { GEMINI_MODEL, providerKey, selectProvider } from "@/lib/ai/provider";
 import { retrieve } from "@/lib/rag/retrieve";
 import { expandColloquialQuery } from "@/lib/search/colloquial";
 import { buildLocalAnswer, buildSystemPrompt, NO_RESULT_ANSWER } from "@/lib/rag/prompt";
@@ -98,30 +99,6 @@ function streamPlainText(text: string, sources: SourceData[]): Response {
   });
 
   return createUIMessageStreamResponse({ stream });
-}
-
-type Provider = "anthropic" | "openai" | "google" | "local";
-
-const PROVIDER_KEYS: Record<Exclude<Provider, "local">, string> = {
-  anthropic: "ANTHROPIC_API_KEY",
-  openai: "OPENAI_API_KEY",
-  google: "GOOGLE_GENERATIVE_AI_API_KEY",
-};
-
-/**
- * AI_PROVIDER picks a provider explicitly when its key is present; otherwise
- * the first configured one wins (Anthropic, OpenAI, Google), else local mode.
- */
-function selectProvider(): Provider {
-  const preferred = process.env.AI_PROVIDER?.trim().toLowerCase();
-  if (preferred && preferred in PROVIDER_KEYS) {
-    const key = PROVIDER_KEYS[preferred as keyof typeof PROVIDER_KEYS];
-    if (process.env[key]) return preferred as Provider;
-  }
-  for (const provider of ["anthropic", "openai", "google"] as const) {
-    if (process.env[PROVIDER_KEYS[provider]]) return provider;
-  }
-  return "local";
 }
 
 const REFUSAL_ANSWER =
@@ -254,17 +231,33 @@ export async function POST(request: Request): Promise<Response> {
       return streamClaude(system, turns, sources);
     }
 
+    const modelLabel = provider === "openai" ? "OpenAI gpt-4o-mini" : `Gemini ${GEMINI_MODEL}`;
     const result = streamText({
-      model: provider === "openai" ? openai("gpt-4o-mini") : google("gemini-2.0-flash"),
+      model:
+        provider === "openai"
+          ? openai("gpt-4o-mini")
+          : createGoogleGenerativeAI({ apiKey: providerKey("google") })(GEMINI_MODEL),
       system,
       messages: turns.map((turn) => ({ role: turn.role, content: turn.text })),
       temperature: 0.1,
+      // Provider failures (bad key, quota, model not found) are logged instead of
+      // disappearing inside the stream.
+      onError: ({ error }) => {
+        console.error(`Error de ${modelLabel} en /api/chat`, error);
+      },
     });
 
     const stream = createUIMessageStream<ServerChatMessage>({
       execute: ({ writer }) => {
         writer.write({ type: "data-sources", data: sources });
-        writer.merge(result.toUIMessageStream());
+        writer.merge(
+          result.toUIMessageStream({
+            onError: (error) => {
+              console.error(`Error de ${modelLabel} al transmitir la respuesta`, error);
+              return "No pudimos completar la respuesta del asistente. Revisa la configuración de la IA e inténtalo de nuevo.";
+            },
+          }),
+        );
       },
     });
 

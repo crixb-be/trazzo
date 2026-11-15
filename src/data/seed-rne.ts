@@ -40,7 +40,7 @@ export interface Material {
   notes: string;
 }
 
-export const SEED_VERSION = 3;
+export const SEED_VERSION = 4;
 
 const LEGAL_NOTE =
   "Valores referenciales según la edición indicada del RNE. Verifica la versión vigente publicada por el MVCS antes de usar en expedientes.";
@@ -120,6 +120,38 @@ export const RNE_CARDS: RneCard[] = [
     edition: EDITION,
     svg_type: "door-clearance",
     params: { height: 2.1, width: 0.9 },
+    is_pro: false,
+    verified_at: null,
+  },
+  {
+    slug: "puerta-ancho-minimo",
+    title: "Ancho mínimo de puertas según ambiente",
+    norm_code: "A.010",
+    article: "Cap. VI - Vanos",
+    category: "Circulación",
+    keywords: [
+      "puerta",
+      "ancho",
+      "vano",
+      "ingreso",
+      "ingreso principal",
+      "dormitorio",
+      "ambiente",
+      "baño",
+      "servicios higienicos",
+      "ss.hh",
+      "hoja",
+    ],
+    min_value: 0.7,
+    unit: "m",
+    summary:
+      "Ancho mínimo de vano de puerta: ingreso principal 0.90 m, ambientes y dormitorios 0.80 m, servicios higiénicos comunes 0.70 m.",
+    body: "La A.010 fija el ancho mínimo del vano según el ambiente: 0.90 m para el ingreso principal, 0.80 m para ambientes interiores y dormitorios, y 0.70 m para servicios higiénicos comunes. Un baño accesible no se rige por estos valores: la A.120 exige 0.90 m de ancho libre de paso. La altura mínima del vano se trata en la ficha de altura de vano de puerta.",
+    legal_note:
+      "Los 0.70 m aplican a servicios higiénicos comunes; para baños accesibles prevalece el ancho de 0.90 m de la Norma A.120.",
+    edition: EDITION,
+    svg_type: "door-clearance",
+    params: { width: 0.8, height: 2.1 },
     is_pro: false,
     verified_at: null,
   },

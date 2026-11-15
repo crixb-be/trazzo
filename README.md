@@ -56,7 +56,8 @@ Comandos de calidad:
 | SUPABASE_SERVICE_ROLE_KEY     | Webhooks, seed y administración         | Backend Supabase |
 | ANTHROPIC_API_KEY             | Modelo Claude para el asistente         | RAG generativo   |
 | OPENAI_API_KEY                | Embeddings pgvector y modelo GPT        | RAG vectorial    |
-| GOOGLE_GENERATIVE_AI_API_KEY  | Modelo Gemini para el asistente         | RAG generativo   |
+| GEMINI_API_KEY                | Gemini 2.5 Flash para el asistente      | RAG generativo   |
+| GOOGLE_GENERATIVE_AI_API_KEY  | Alias anterior de GEMINI_API_KEY        | RAG generativo   |
 | AI_PROVIDER                   | Fuerza anthropic, openai o google       | Opcional         |
 | MP_ACCESS_TOKEN               | Preferencias y consulta de Mercado Pago | Pagos            |
 | MP_WEBHOOK_SECRET             | Firma de webhooks Mercado Pago          | Pagos            |
@@ -70,7 +71,7 @@ Copia las variables a .env.local. El repositorio no incluye secretos ni un archi
 
 El asistente traduce primero el lenguaje cotidiano a términos del RNE ("baño de servicios" → servicios higiénicos, aparato sanitario; "medida" → ancho mínimo, altura libre, vano) y recupera hasta 6 fichas relacionadas. Con una clave de IA redacta una respuesta completa con respaldo técnico y citas que enlazan a cada ficha; sin clave responde en modo local con las fichas más relevantes.
 
-Proveedor: se usa `AI_PROVIDER` si su clave está configurada; si no, el primero disponible entre Anthropic (Claude Opus 5.5), OpenAI (gpt-4o-mini) y Google (Gemini 2.0 Flash). Con Claude se activan los fallbacks del lado del servidor: si el modelo declina una consulta, la API la reintenta con un modelo alternativo en la misma solicitud.
+Proveedor: se usa `AI_PROVIDER` si su clave está configurada; si no, el primero disponible entre Google (Gemini 2.5 Flash con `GEMINI_API_KEY`), Anthropic (Claude Opus 5.5) y OpenAI (gpt-4o-mini). OpenAI va al final porque su clave suele usarse solo para embeddings. Antes de enviar las fichas al modelo se descartan las de otros elementos (por ejemplo, un pozo de luz cuando la pregunta es sobre una puerta), y cualquier error del proveedor se registra en la consola del servidor. Con Claude se activan los fallbacks del lado del servidor: si el modelo declina una consulta, la API la reintenta con un modelo alternativo en la misma solicitud.
 
 ## Supabase
 
