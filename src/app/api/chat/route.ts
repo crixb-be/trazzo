@@ -13,7 +13,7 @@ import { GEMINI_MODEL, providerKey, selectProvider } from "@/lib/ai/provider";
 import { retrieve } from "@/lib/rag/retrieve";
 import { expandColloquialQuery } from "@/lib/search/colloquial";
 import { buildLocalAnswer, buildSystemPrompt, NO_RESULT_ANSWER } from "@/lib/rag/prompt";
-import { canUseAiQueries, isPlan, type Plan } from "@/lib/plans/plans";
+import { canUseAiQueries, resolveEffectivePlan, type Plan } from "@/lib/plans/plans";
 
 export const runtime = "nodejs";
 
@@ -160,16 +160,11 @@ export async function POST(request: Request): Promise<Response> {
     if (user) {
       const { data: profile } = await supabase
         .from("profiles")
-        .select("plan, student_verified, ai_queries_used")
+        .select("plan, student_verified, subscription_expires_at, ai_queries_used")
         .eq("id", user.id)
         .maybeSingle();
-      const profilePlan = profile?.plan;
-      plan =
-        profilePlan === "student" && profile?.student_verified
-          ? "student"
-          : isPlan(profilePlan ?? "")
-            ? profilePlan
-            : "free";
+      plan = resolveEffectivePlan(profile);
+
       const usedQueries =
         typeof profile?.ai_queries_used === "number" && Number.isFinite(profile.ai_queries_used)
           ? profile.ai_queries_used

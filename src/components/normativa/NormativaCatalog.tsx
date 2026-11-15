@@ -8,8 +8,8 @@ import { Badge, Card, Chip, EmptyState, Input, PaywallModal } from "@/components
 import type { RneCategory } from "@/data/seed-rne";
 import { useCards } from "@/lib/offline/hooks";
 import { ensureSeeded } from "@/lib/offline/db";
-import { createClient } from "@/lib/supabase/client";
-import { canUseProCards, type Plan } from "@/lib/plans/plans";
+import { canUseProCards } from "@/lib/plans/plans";
+import { useCurrentPlan } from "@/lib/plans/use-current-plan";
 import { searchCards } from "@/lib/search/search";
 
 const categories: Array<"Todas" | RneCategory> = [
@@ -33,7 +33,7 @@ export function NormativaCatalog() {
   );
   const [normCode, setNormCode] = useState(searchParams.get("norm") ?? "Todos");
   const [onlyFree, setOnlyFree] = useState(searchParams.get("free") === "1");
-  const [plan, setPlan] = useState<Plan>("free");
+  const { plan } = useCurrentPlan();
   const [paywall, setPaywall] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -45,21 +45,6 @@ export function NormativaCatalog() {
         setLoaded(true);
         setLoadError("No se pudo abrir la biblioteca local. Recarga la aplicación.");
       });
-  }, []);
-
-  useEffect(() => {
-    const client = createClient();
-    if (!client) return;
-    void client.auth.getUser().then(async ({ data }) => {
-      if (!data.user) return;
-      const profile = await client
-        .from("profiles")
-        .select("plan,student_verified")
-        .eq("id", data.user.id)
-        .maybeSingle();
-      if (profile.data?.plan === "student" && profile.data.student_verified) setPlan("student");
-      if (profile.data?.plan === "pro") setPlan("pro");
-    });
   }, []);
 
   function syncUrl(next: { q?: string; cat?: string; norm?: string; free?: boolean }): void {
@@ -82,7 +67,7 @@ export function NormativaCatalog() {
     return searchCards(filtered, query);
   }, [cards, category, normCode, onlyFree, query]);
 
-  const hasProAccess = canUseProCards(plan, plan === "student");
+  const hasProAccess = canUseProCards(plan);
 
   if (!loaded && cards.length === 0) {
     return <CatalogState message="Cargando fichas locales…" />;

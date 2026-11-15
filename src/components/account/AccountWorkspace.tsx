@@ -28,6 +28,7 @@ import {
   type BillingCycle,
   type Plan,
 } from "@/lib/plans/plans";
+import { useCurrentPlan } from "@/lib/plans/use-current-plan";
 import { createClient } from "@/lib/supabase/client";
 import { prepareAvatar } from "@/lib/ui/avatar";
 import { prepareLogo } from "@/lib/ui/logo";
@@ -58,8 +59,7 @@ export function AccountWorkspace() {
   const studio = useStudioProfile();
   const [configured, setConfigured] = useState(Boolean(createClient()));
   const [email, setEmail] = useState("");
-  const [currentPlan, setCurrentPlan] = useState<Plan>("free");
-  const [studentVerified, setStudentVerified] = useState(false);
+  const { plan: currentPlan, studentVerified } = useCurrentPlan();
   const [studentEmail, setStudentEmail] = useState("");
   const [name, setName] = useState("");
   const [capNumber, setCapNumber] = useState("");
@@ -118,13 +118,9 @@ export function AccountWorkspace() {
         setStudentEmail(data.user.email ?? "");
         const profile = await client
           .from("profiles")
-          .select("plan,student_verified,full_name,cap_number")
+          .select("full_name,cap_number")
           .eq("id", data.user.id)
           .maybeSingle();
-        if (profile.data?.plan === "student" || profile.data?.plan === "pro") {
-          setCurrentPlan(profile.data.plan);
-        }
-        setStudentVerified(Boolean(profile.data?.student_verified));
         if (typeof profile.data?.full_name === "string") setName(profile.data.full_name);
         if (typeof profile.data?.cap_number === "string") setCapNumber(profile.data.cap_number);
       });

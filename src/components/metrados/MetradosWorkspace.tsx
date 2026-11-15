@@ -12,7 +12,8 @@ import { type Project, type Takeoff } from "@/lib/offline/db";
 import { useMaterials, useProjects, useTakeoffs, useSyncStatus } from "@/lib/offline/hooks";
 import { deleteProject, deleteTakeoff, saveProject, saveTakeoff } from "@/lib/offline/repositories";
 import { flushOutbox, pullRemote } from "@/lib/offline/sync";
-import { createClient } from "@/lib/supabase/client";
+import { canCreateProject, canExportPdf } from "@/lib/plans/plans";
+import { useCurrentPlan } from "@/lib/plans/use-current-plan";
 import { ProjectList } from "./ProjectList";
 import { TakeoffTable, type TakeoffDraft } from "./TakeoffTable";
 
@@ -36,7 +37,7 @@ export function MetradosWorkspace() {
   const [draft, setDraft] = useState<TakeoffDraft>({ ...emptyDraft });
   const [paywall, setPaywall] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const [pdfEnabled, setPdfEnabled] = useState(false);
+  const { plan } = useCurrentPlan();
 
   const activeProject =
     projects.find((project) => project.id === selectedId) ?? projects[0] ?? null;
@@ -54,24 +55,6 @@ export function MetradosWorkspace() {
       window.history.replaceState(null, "", "/metrados?project=" + selectedId);
     }
   }, [selectedId]);
-
-  useEffect(() => {
-    const supabase = createClient();
-    if (!supabase) return;
-
-    void (async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) return;
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("plan")
-        .eq("id", userData.user.id)
-        .maybeSingle();
-
-      setPdfEnabled(profile?.plan === "pro" || profile?.plan === "student");
-    })();
-  }, []);
 
   const totalLines = useMemo(
     () =>
@@ -97,7 +80,7 @@ export function MetradosWorkspace() {
     typology: string;
     status: Project["status"];
   }): Promise<void> {
-    if (projects.length >= 1) {
+    if (!canCreateProject(plan, projects.length)) {
       setPaywall(true);
       return;
     }
@@ -240,11 +223,7 @@ export function MetradosWorkspace() {
   async function exportPdf(): Promise<void> {
     if (!activeProject) return;
 
-    if (!pdfEnabled) {
-      setPaywall(true);
-      return;
-    }
-
+    const watermark = !canExportPdf(plan);
     const pdf = new jsPDF();
     pdf.setFontSize(18);
     pdf.text("TRAZZO", 14, 18);
@@ -284,6 +263,16 @@ export function MetradosWorkspace() {
       14,
       finalY + 14,
     );
+    if (watermark) {
+      const pages = pdf.getNumberOfPages();
+      for (let page = 1; page <= pages; page += 1) {
+        pdf.setPage(page);
+        pdf.setTextColor(200, 200, 200);
+        pdf.setFontSize(46);
+        pdf.text("TRAZZO GRATIS", 105, 160, { align: "center", angle: 35 });
+      }
+      pdf.setTextColor(0, 0, 0);
+    }
     pdf.save(activeProject.name.replaceAll(" ", "-").toLowerCase() + "-metrados.pdf");
   }
 
@@ -345,7 +334,7 @@ export function MetradosWorkspace() {
                       <Download size={14} /> CSV
                     </Button>
                     <Button size="sm" onClick={() => void exportPdf()}>
-                      <FileText size={14} /> PDF Pro
+                      <FileText size={14} /> PDF
                     </Button>
                   </div>
                 </div>
@@ -391,8 +380,8 @@ export function MetradosWorkspace() {
       {paywall && (
         <PaywallModal onClose={() => setPaywall(false)} title="Función de plan superior">
           <p>
-            El plan Gratis permite un proyecto. Exportar PDF y proyectos adicionales están
-            disponibles en Estudiante y Pro.
+            El plan Gratis incluye un proyecto y PDF con marca de agua. Estudiante y Pro tienen
+            proyectos ilimitados y PDF limpio.
           </p>
         </PaywallModal>
       )}

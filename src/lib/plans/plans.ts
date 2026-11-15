@@ -85,6 +85,32 @@ export function isPlan(value: string): value is Plan {
   return value === "free" || value === "student" || value === "pro";
 }
 
+export interface PlanProfileRow {
+  plan?: unknown;
+  student_verified?: unknown;
+  subscription_expires_at?: unknown;
+}
+
+/**
+ * The plan a profile row is actually entitled to right now: an unverified
+ * student or an expired subscription counts as Gratis. A paid plan with no
+ * expiry date (granted by hand) does not expire.
+ */
+export function resolveEffectivePlan(
+  row: PlanProfileRow | null | undefined,
+  now: Date = new Date(),
+): Plan {
+  const stored = typeof row?.plan === "string" && isPlan(row.plan) ? row.plan : "free";
+  if (stored === "free") return "free";
+  if (stored === "student" && row?.student_verified !== true) return "free";
+  const expires =
+    typeof row?.subscription_expires_at === "string"
+      ? Date.parse(row.subscription_expires_at)
+      : Number.NaN;
+  if (Number.isFinite(expires) && expires <= now.getTime()) return "free";
+  return stored;
+}
+
 export function canUseProCards(plan: Plan, studentVerified = true): boolean {
   return plan === "pro" || (plan === "student" && studentVerified);
 }

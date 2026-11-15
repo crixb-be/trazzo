@@ -1,6 +1,7 @@
 import { db, ensureSeeded, type FeeQuote, type Outbox, type Project, type Takeoff } from "./db";
 import { createClient } from "@/lib/supabase/client";
-import { canUseProCards, type Plan } from "@/lib/plans/plans";
+import { canUseProCards } from "@/lib/plans/plans";
+import { loadPlanSnapshot } from "@/lib/plans/plan-store";
 
 export { ensureSeeded };
 
@@ -14,20 +15,6 @@ export interface SyncStatus {
 }
 
 let syncInProgress = false;
-
-async function currentPlan(): Promise<Plan> {
-  const client = createClient();
-  if (!client) return "free";
-
-  const {
-    data: { user },
-  } = await client.auth.getUser();
-  if (!user) return "free";
-
-  const { data } = await client.from("profiles").select("plan").eq("id", user.id).maybeSingle();
-  const plan = data?.plan;
-  return plan === "student" || plan === "pro" ? plan : "free";
-}
 
 async function writeRemoteItem(item: Outbox): Promise<boolean> {
   const client = createClient();
@@ -111,7 +98,7 @@ export async function pullRemote(): Promise<void> {
   const client = createClient();
   if (!client) return;
 
-  const plan = await currentPlan();
+  const { plan } = await loadPlanSnapshot();
   const { data: cards } = await client
     .from("rne_cards")
     .select("*")

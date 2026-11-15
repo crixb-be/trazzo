@@ -11,6 +11,7 @@ import {
   formatPlanPrice,
   monthlyEquivalent,
   subscriptionDays,
+  resolveEffectivePlan,
 } from "./plans";
 
 describe("plans", () => {
@@ -57,5 +58,28 @@ describe("plans", () => {
   it("gates PDF export", () => {
     expect(canExportPdf("free")).toBe(false);
     expect(canExportPdf("student")).toBe(true);
+  });
+
+  it("resolves the plan a profile is entitled to", () => {
+    const now = new Date("2026-06-15T12:00:00Z");
+    const future = "2026-07-01T00:00:00Z";
+    const past = "2026-06-01T00:00:00Z";
+    expect(resolveEffectivePlan(null, now)).toBe("free");
+    expect(resolveEffectivePlan({ plan: "pro", subscription_expires_at: future }, now)).toBe("pro");
+    expect(resolveEffectivePlan({ plan: "pro", subscription_expires_at: past }, now)).toBe("free");
+    expect(resolveEffectivePlan({ plan: "pro", subscription_expires_at: null }, now)).toBe("pro");
+    expect(
+      resolveEffectivePlan(
+        { plan: "student", student_verified: false, subscription_expires_at: future },
+        now,
+      ),
+    ).toBe("free");
+    expect(
+      resolveEffectivePlan(
+        { plan: "student", student_verified: true, subscription_expires_at: future },
+        now,
+      ),
+    ).toBe("student");
+    expect(resolveEffectivePlan({ plan: "enterprise" }, now)).toBe("free");
   });
 });

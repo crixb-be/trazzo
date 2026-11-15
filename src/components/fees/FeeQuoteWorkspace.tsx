@@ -136,7 +136,7 @@ export function FeeQuoteWorkspace() {
   }, [regenerationKey, touched.deliverables, touched.schedule]);
   const result = useMemo(() => calculateFeeQuote(draft.input), [draft.input]);
   const paymentValidation = validatePaymentPlan(draft.payment.installments);
-  const watermarked = currentPlan.mode === "account" && !canExportCleanProposal(currentPlan.plan);
+  const watermarked = !canExportCleanProposal(currentPlan.plan);
 
   const quoteForPdf = (): FeeQuote => ({
     id: activeQuote?.id ?? "preview",
@@ -204,7 +204,7 @@ export function FeeQuoteWorkspace() {
     setNotice("Cotización eliminada.");
   };
   const download = (): void => {
-    if (currentPlan.mode === "local" || canExportCleanProposal(currentPlan.plan)) {
+    if (canExportCleanProposal(currentPlan.plan)) {
       exportProposalPdf(quoteForPdf(), result, { studio, watermark: false });
       return;
     }
