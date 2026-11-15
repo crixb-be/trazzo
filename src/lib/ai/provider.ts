@@ -8,7 +8,7 @@ export const PROVIDER_KEYS: Record<RemoteProvider, string[]> = {
   openai: ["OPENAI_API_KEY"],
 };
 
-export const GEMINI_MODEL = "gemini-2.5-flash";
+export const GEMINI_MODEL = "gemini-3.8-flash";
 
 type Env = Record<string, string | undefined>;
 
