@@ -28,6 +28,7 @@ import {
   type BillingCycle,
   type Plan,
 } from "@/lib/plans/plans";
+import { invalidatePlanSnapshot } from "@/lib/plans/plan-store";
 import { useCurrentPlan } from "@/lib/plans/use-current-plan";
 import { createClient } from "@/lib/supabase/client";
 import { prepareAvatar } from "@/lib/ui/avatar";
@@ -40,9 +41,20 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const features: Record<Plan, string[]> = {
-  free: ["Fichas básicas", "1 proyecto local", "10 consultas IA / mes"],
-  student: ["Fichas Pro", "Proyectos ilimitados", "200 consultas IA / mes", "Exportación PDF"],
-  pro: ["Fichas Pro", "Proyectos ilimitados", "IA ilimitada", "Exportación PDF"],
+  free: [
+    "Todas las calculadoras",
+    "Fichas básicas",
+    "1 proyecto",
+    "10 consultas al asistente por día",
+    "PDF con marca de agua",
+  ],
+  student: [
+    "Fichas Pro",
+    "Proyectos ilimitados",
+    "50 consultas al asistente por día",
+    "PDF limpio",
+  ],
+  pro: ["Fichas Pro", "Proyectos ilimitados", "Asistente ilimitado", "PDF limpio"],
 };
 
 function initials(source: string): string {
@@ -60,7 +72,6 @@ export function AccountWorkspace() {
   const [configured, setConfigured] = useState(Boolean(createClient()));
   const [email, setEmail] = useState("");
   const { plan: currentPlan, studentVerified } = useCurrentPlan();
-  const [studentEmail, setStudentEmail] = useState("");
   const [name, setName] = useState("");
   const [capNumber, setCapNumber] = useState("");
   const [studioName, setStudioName] = useState("");
@@ -115,7 +126,6 @@ export function AccountWorkspace() {
       void client.auth.getUser().then(async ({ data }) => {
         if (!data.user) return;
         setEmail(data.user.email ?? "");
-        setStudentEmail(data.user.email ?? "");
         const profile = await client
           .from("profiles")
           .select("full_name,cap_number")
@@ -297,26 +307,43 @@ export function AccountWorkspace() {
 
   async function verifyStudent(): Promise<void> {
     if (!configured) {
-      setNotice("Configura Supabase para activar la verificación.");
-      return;
-    }
-    if (isEduPeEmail(studentEmail)) {
-      setNotice("Solicitud enviada. Revisa tu correo institucional para continuar.");
+      setNotice("La verificación de estudiante necesita una cuenta; aún no está disponible aquí.");
       return;
     }
     const client = createClient();
-    if (!client || !document) {
-      setNotice("Usa un correo .edu.pe o selecciona un documento PDF/JPG.");
+    const { data } = client ? await client.auth.getUser() : { data: { user: null } };
+    if (!client || !data.user) {
+      setNotice("Inicia sesión para verificar tu cuenta de estudiante.");
       return;
     }
-    const { data } = await client.auth.getUser();
-    if (!data.user) {
-      setNotice("Inicia sesión para enviar un documento.");
+
+    // A confirmed .edu.pe account is verified on the spot.
+    if (isEduPeEmail(data.user.email ?? "")) {
+      const response = await fetch("/api/student/verify", { method: "POST" });
+      const body = (await response.json().catch(() => ({}))) as { error?: string };
+      if (response.ok) {
+        invalidatePlanSnapshot();
+        setNotice("Correo institucional verificado. Ya puedes elegir el plan Estudiante.");
+        window.setTimeout(() => window.location.reload(), 1200);
+      } else {
+        setNotice(body.error ?? "No se pudo verificar tu correo institucional.");
+      }
+      return;
+    }
+
+    if (!document) {
+      setNotice(
+        "Tu cuenta no usa un correo .edu.pe. Adjunta tu carné o constancia de estudios (PDF o imagen).",
+      );
       return;
     }
     const path = data.user.id + "/" + Date.now() + "-" + document.name;
     const upload = await client.storage.from("student-docs").upload(path, document);
-    setNotice(upload.error ? "No se pudo subir el documento." : "Documento enviado para revisión.");
+    setNotice(
+      upload.error
+        ? "No se pudo subir el documento."
+        : "Documento enviado. El equipo lo revisará y activará tu descuento.",
+    );
   }
 
   async function syncNow(): Promise<void> {
@@ -649,14 +676,12 @@ export function AccountWorkspace() {
           <div className="eyebrow">VERIFICACIÓN ESTUDIANTE</div>
           <h2>50% de descuento</h2>
           <p className="muted small">
-            Usa un correo .edu.pe o envía un documento. La revisión la realiza el equipo.
+            Si tu cuenta usa un correo .edu.pe confirmado, se verifica al instante. Si no, adjunta
+            tu carné o constancia y el equipo la revisa.
           </p>
-          <Input
-            type="email"
-            value={studentEmail}
-            onChange={(event) => setStudentEmail(event.target.value)}
-            placeholder="nombre@universidad.edu.pe"
-          />
+          <p className="small">
+            Cuenta: <strong>{email || "sin sesión iniciada"}</strong>
+          </p>
           <label className="file-input">
             <FileUp size={15} /> <span>{document?.name ?? "Adjuntar documento"}</span>
             <input

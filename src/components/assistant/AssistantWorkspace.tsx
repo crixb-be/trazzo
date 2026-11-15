@@ -11,6 +11,17 @@ import { ChatMessage } from "./ChatMessage";
 import { SuggestedPrompts } from "./SuggestedPrompts";
 import { AssistantQuota } from "./AssistantQuota";
 
+/** The API answers errors as JSON ({ error }); show that text (e.g. the daily limit). */
+function chatErrorMessage(error: Error): string {
+  try {
+    const parsed = JSON.parse(error.message) as { error?: unknown };
+    if (typeof parsed.error === "string") return parsed.error;
+  } catch {
+    // Not JSON: fall through to the generic message.
+  }
+  return "No pudimos completar la consulta. Puedes intentarlo de nuevo.";
+}
+
 export function AssistantWorkspace() {
   const searchParams = useSearchParams();
   const online = useOnlineStatus();
@@ -63,11 +74,7 @@ export function AssistantWorkspace() {
               {chat.messages.map((message) => (
                 <ChatMessage key={message.id} message={message} />
               ))}
-              {chat.error && (
-                <p className="warning">
-                  No pudimos completar la consulta. Puedes intentarlo de nuevo.
-                </p>
-              )}
+              {chat.error && <p className="warning">{chatErrorMessage(chat.error)}</p>}
             </div>
           )}
           <form className="chat-form chat-composer" onSubmit={(event) => void submit(event)}>

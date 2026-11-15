@@ -5,7 +5,8 @@ export interface PlanDefinition {
   label: string;
   prices: Record<BillingCycle, number>;
   projects: number;
-  aiQueries: number;
+  /** Assistant queries per day (Lima time). Answers built on the device do not count. */
+  aiQueriesPerDay: number;
   pdfExport: boolean;
   proCards: boolean;
   requiresStudentVerification: boolean;
@@ -17,7 +18,7 @@ export const PLANS: Record<Plan, PlanDefinition> = {
     label: "Gratis",
     prices: { monthly: 0, annual: 0 },
     projects: 1,
-    aiQueries: 10,
+    aiQueriesPerDay: 10,
     pdfExport: false,
     proCards: false,
     requiresStudentVerification: false,
@@ -27,7 +28,7 @@ export const PLANS: Record<Plan, PlanDefinition> = {
     label: "Estudiante",
     prices: { monthly: 7.99, annual: 60 },
     projects: Number.POSITIVE_INFINITY,
-    aiQueries: 200,
+    aiQueriesPerDay: 50,
     pdfExport: true,
     proCards: true,
     requiresStudentVerification: true,
@@ -37,7 +38,7 @@ export const PLANS: Record<Plan, PlanDefinition> = {
     label: "PRO",
     prices: { monthly: 14.99, annual: 109 },
     projects: Number.POSITIVE_INFINITY,
-    aiQueries: Number.POSITIVE_INFINITY,
+    aiQueriesPerDay: Number.POSITIVE_INFINITY,
     pdfExport: true,
     proCards: true,
     requiresStudentVerification: false,
@@ -119,8 +120,40 @@ export function canCreateProject(plan: Plan, currentProjects: number): boolean {
   return currentProjects < PLANS[plan].projects;
 }
 
-export function canUseAiQueries(plan: Plan, usedQueries: number): boolean {
-  return usedQueries < PLANS[plan].aiQueries;
+/** Visitors without an account, per day. */
+export const ANONYMOUS_AI_QUERIES_PER_DAY = 5;
+
+export function canUseAiQueries(plan: Plan, usedToday: number): boolean {
+  return usedToday < PLANS[plan].aiQueriesPerDay;
+}
+
+/** Calendar day in Lima (YYYY-MM-DD), the unit the assistant quota resets on. */
+export function usageDay(date: Date = new Date()): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Lima" }).format(date);
+}
+
+/** Queries already used today according to a profile row; a counter from another day is 0. */
+export function queriesUsedToday(
+  row: { ai_queries_used?: unknown; ai_queries_day?: unknown } | null | undefined,
+  now: Date = new Date(),
+): number {
+  if (row?.ai_queries_day !== usageDay(now)) return 0;
+  const used = row.ai_queries_used;
+  return typeof used === "number" && Number.isFinite(used) && used > 0 ? used : 0;
+}
+
+/**
+ * New expiry after a payment. A renewal made before the current period ends
+ * extends it instead of discarding the days already paid for.
+ */
+export function nextExpiry(
+  currentExpiresAt: string | null | undefined,
+  cycle: BillingCycle,
+  now: Date = new Date(),
+): string {
+  const current = currentExpiresAt ? Date.parse(currentExpiresAt) : Number.NaN;
+  const base = Number.isFinite(current) && current > now.getTime() ? current : now.getTime();
+  return new Date(base + subscriptionDays(cycle) * 24 * 60 * 60 * 1000).toISOString();
 }
 
 export function canExportPdf(plan: Plan): boolean {

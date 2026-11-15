@@ -12,6 +12,9 @@ import {
   monthlyEquivalent,
   subscriptionDays,
   resolveEffectivePlan,
+  nextExpiry,
+  queriesUsedToday,
+  usageDay,
 } from "./plans";
 
 describe("plans", () => {
@@ -81,5 +84,23 @@ describe("plans", () => {
       ),
     ).toBe("student");
     expect(resolveEffectivePlan({ plan: "enterprise" }, now)).toBe("free");
+  });
+
+  it("counts assistant usage per day in Lima time", () => {
+    // 03:00 UTC is still the previous day in Lima (UTC-5).
+    expect(usageDay(new Date("2026-06-16T03:00:00Z"))).toBe("2026-06-15");
+    const now = new Date("2026-06-15T18:00:00Z");
+    expect(queriesUsedToday({ ai_queries_used: 7, ai_queries_day: "2026-06-15" }, now)).toBe(7);
+    expect(queriesUsedToday({ ai_queries_used: 7, ai_queries_day: "2026-06-14" }, now)).toBe(0);
+    expect(queriesUsedToday({ ai_queries_used: 7, ai_queries_day: null }, now)).toBe(0);
+    expect(queriesUsedToday(null, now)).toBe(0);
+  });
+
+  it("extends a subscription from its current end when renewed early", () => {
+    const now = new Date("2026-06-15T00:00:00Z");
+    expect(nextExpiry(null, "monthly", now)).toBe("2026-07-15T00:00:00.000Z");
+    expect(nextExpiry("2026-06-01T00:00:00Z", "monthly", now)).toBe("2026-07-15T00:00:00.000Z");
+    expect(nextExpiry("2026-06-25T00:00:00Z", "monthly", now)).toBe("2026-07-25T00:00:00.000Z");
+    expect(nextExpiry("2026-06-25T00:00:00Z", "annual", now)).toBe("2027-06-25T00:00:00.000Z");
   });
 });
