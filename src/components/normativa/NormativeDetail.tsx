@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { ChevronDown, Lock, MessageSquare, SlidersHorizontal } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Badge, Button, Card, Chip, NumberField, PaywallModal } from "@/components/ui";
 import { RneDiagram, type DiagramOverrides } from "@/components/svg-diagrams";
 import { RNE_CARDS, type RneCard } from "@/data/seed-rne";
 import { useCard, useCards } from "@/lib/offline/hooks";
 import { canUseProCards } from "@/lib/plans/plans";
+import { paramMeta } from "@/lib/ui/param-labels";
 import { useCurrentPlan } from "@/lib/plans/use-current-plan";
 
 const legalDisclaimer =
@@ -21,6 +23,7 @@ export function NormativeDetail({ slug }: { slug: string }) {
   const [showParameters, setShowParameters] = useState(false);
   const [showLegal, setShowLegal] = useState(false);
   const { plan } = useCurrentPlan();
+  const router = useRouter();
   const [paywall, setPaywall] = useState(false);
 
   if (!card) return <DetailState message="No encontramos esta ficha normativa." />;
@@ -66,16 +69,19 @@ export function NormativeDetail({ slug }: { slug: string }) {
                 {numericParams.length === 0 ? (
                   <p className="muted small">Esta lámina no tiene parámetros editables.</p>
                 ) : (
-                  numericParams.map(([name, value]) => (
-                    <NumberField
-                      key={name}
-                      label={name.replaceAll("_", " ")}
-                      unit="m"
-                      value={Number(overrides[name] ?? value)}
-                      step={0.01}
-                      onValueChange={(next) => updateParameter(name, next ?? 0)}
-                    />
-                  ))
+                  numericParams.map(([name, value]) => {
+                    const meta = paramMeta(name);
+                    return (
+                      <NumberField
+                        key={name}
+                        label={meta.label}
+                        unit={meta.unit || undefined}
+                        value={Number(overrides[name] ?? value)}
+                        step={0.01}
+                        onValueChange={(next) => updateParameter(name, next ?? 0)}
+                      />
+                    );
+                  })
                 )}
               </div>
             )}
@@ -146,7 +152,7 @@ export function NormativeDetail({ slug }: { slug: string }) {
             <Button
               variant="primary"
               onClick={() =>
-                window.location.assign(
+                router.push(
                   "/asistente?q=" +
                     encodeURIComponent("Explícame " + card.title + " según " + card.norm_code),
                 )

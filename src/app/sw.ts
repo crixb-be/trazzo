@@ -40,9 +40,7 @@ const serwist: Serwist = new Serwist({
   skipWaiting: true,
   clientsClaim: true,
   fallbacks: {
-    entries: [
-      { url: OFFLINE_URL, matcher: ({ request }) => request.destination === "document" },
-    ],
+    entries: [{ url: OFFLINE_URL, matcher: ({ request }) => request.destination === "document" }],
   },
 });
 

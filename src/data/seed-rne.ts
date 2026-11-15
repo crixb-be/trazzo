@@ -7,7 +7,8 @@ export type SvgType =
   | "wheelchair-turn"
   | "door-clearance"
   | "light-well"
-  | "parking-stall";
+  | "parking-stall"
+  | "water-tank";
 
 export interface RneCard {
   slug: string;
@@ -40,7 +41,7 @@ export interface Material {
   notes: string;
 }
 
-export const SEED_VERSION = 4;
+export const SEED_VERSION = 5;
 
 const LEGAL_NOTE =
   "Valores referenciales según la edición indicada del RNE. Verifica la versión vigente publicada por el MVCS antes de usar en expedientes.";
@@ -432,7 +433,7 @@ export const RNE_CARDS: RneCard[] = [
     legal_note:
       "La cisterna se dimensiona con 3/4 de la dotación y el tanque con 1/3, sin bajar de 1,000 L.",
     edition: EDITION,
-    svg_type: "light-well",
+    svg_type: "water-tank",
     params: { lot_area: 200, daily_liters: 1500 },
     is_pro: false,
     verified_at: null,
@@ -462,7 +463,7 @@ export const RNE_CARDS: RneCard[] = [
     legal_note:
       "La dotación de áreas comunes o usos complementarios puede exigir una revisión adicional del proyecto sanitario.",
     edition: EDITION,
-    svg_type: "light-well",
+    svg_type: "water-tank",
     params: { bedrooms: 2, daily_liters: 850, units: 1 },
     is_pro: false,
     verified_at: null,
@@ -559,9 +560,9 @@ export const MATERIALS: Material[] = [
     unit: "varilla",
     yield_factor: 1,
     default_waste_pct: 5,
-    ref_price_pen: 4.8,
+    ref_price_pen: 24.19,
     notes:
-      "Rendimiento unitario sobre el metrado de varillas; la compra se redondea a varillas completas.",
+      "Precio por varilla de 9 m (5.04 kg a S/ 4.80 por kg, referencial); la compra se redondea a varillas completas.",
   },
   {
     code: "acero-1-2",
@@ -570,9 +571,9 @@ export const MATERIALS: Material[] = [
     unit: "varilla",
     yield_factor: 1,
     default_waste_pct: 5,
-    ref_price_pen: 4.8,
+    ref_price_pen: 42.96,
     notes:
-      "Rendimiento unitario sobre la longitud o cantidad base; considerar traslapes en el metrado.",
+      "Precio por varilla de 9 m (8.95 kg a S/ 4.80 por kg, referencial); la compra se redondea a varillas completas.",
   },
   {
     code: "acero-5-8",
@@ -581,8 +582,9 @@ export const MATERIALS: Material[] = [
     unit: "varilla",
     yield_factor: 1,
     default_waste_pct: 5,
-    ref_price_pen: 4.8,
-    notes: "Rendimiento unitario; redondeo de compra a varillas completas y ajuste por traslapes.",
+    ref_price_pen: 67.06,
+    notes:
+      "Precio por varilla de 9 m (13.97 kg a S/ 4.80 por kg, referencial); la compra se redondea a varillas completas.",
   },
   {
     code: "alambre-negro-16",

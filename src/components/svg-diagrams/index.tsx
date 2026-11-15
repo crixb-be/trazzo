@@ -5,6 +5,7 @@ import { LightWell, type LightWellProps } from "./LightWell";
 import { ParkingStall, type ParkingStallProps } from "./ParkingStall";
 import { RampSlope, type RampSlopeProps } from "./RampSlope";
 import { StairStep, type StairStepProps } from "./StairStep";
+import { WaterTank, type WaterTankProps } from "./WaterTank";
 import { WheelchairTurn, type WheelchairTurnProps } from "./WheelchairTurn";
 
 export type DiagramOverrides = Record<string, number | string>;
@@ -15,6 +16,7 @@ export type DiagramComponentProps =
   | ParkingStallProps
   | RampSlopeProps
   | StairStepProps
+  | WaterTankProps
   | WheelchairTurnProps;
 
 export const diagramRegistry: Record<SvgType, ComponentType<DiagramComponentProps>> = {
@@ -23,6 +25,7 @@ export const diagramRegistry: Record<SvgType, ComponentType<DiagramComponentProp
   "parking-stall": ParkingStall as ComponentType<DiagramComponentProps>,
   "ramp-slope": RampSlope as ComponentType<DiagramComponentProps>,
   "stair-step": StairStep as ComponentType<DiagramComponentProps>,
+  "water-tank": WaterTank as ComponentType<DiagramComponentProps>,
   "wheelchair-turn": WheelchairTurn as ComponentType<DiagramComponentProps>,
 };
 

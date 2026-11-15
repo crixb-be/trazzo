@@ -258,6 +258,7 @@ Orden propuesto por valor para el usuario frente a esfuerzo.
 - [x] Plan aprobado y decisiones registradas (sección 7).
 - [x] Bloque 1.1: plan único con caché sin conexión, vencimiento y reglas coherentes — commit `93b411e`.
 - [x] Bloque 1.2: sincronización real (envío con columnas correctas, cola que conserva fallos, descarga de proyectos, partidas y cotizaciones, mensajes honestos) — commit `bdebc49`.
+- [x] Bloque 1.3: toda la app abre sin conexión (precarga de rutas, respaldo /~offline, un solo registro del service worker) — commit `c87d5eb`.
 
 ### En curso o a medias
 
@@ -274,6 +275,6 @@ Orden propuesto por valor para el usuario frente a esfuerzo.
 
 1. Trabaja en la rama `claude/wonderful-noether-6eoymr` del repo `crixb-be/trazzo`. Ejecuta `npm ci`.
 2. Comprueba el punto de partida: `npm run typecheck && npm run lint && npm test` deben pasar (156 pruebas al cierre de la auditoría).
-3. Siguiente paso: ejecutar el **bloque 1.3** de la sección 6 (sin conexión de verdad: precarga de rutas y respaldo `/~offline` en `src/app/sw.ts` y `next.config.mjs`).
+3. Siguiente paso: ejecutar el **bloque 1.4** de la sección 6 (errores puntuales T-07, T-08, T-10, T-14, T-20 a T-23).
 4. Si el usuario no ha aprobado, no modifiques código: pide la aprobación y las respuestas de la sección 7.
 5. Tras cada bloque: verifica, haz commit y push, y actualiza esta sección con el hash del commit y, si algo queda a medias, el archivo y la línea exactos.

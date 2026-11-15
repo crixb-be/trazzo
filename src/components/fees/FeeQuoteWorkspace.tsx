@@ -198,7 +198,7 @@ export function FeeQuoteWorkspace() {
     setNotice("Cotización duplicada.");
   };
   const remove = async (): Promise<void> => {
-    if (!activeQuote || !window.confirm("¿Eliminar " + activeQuote.code + "—")) return;
+    if (!activeQuote || !window.confirm("¿Eliminar " + activeQuote.code + "?")) return;
     await deleteFeeQuote(activeQuote.id);
     newQuote();
     setNotice("Cotización eliminada.");

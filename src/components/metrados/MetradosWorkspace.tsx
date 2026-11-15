@@ -235,7 +235,9 @@ export function MetradosWorkspace() {
 
     autoTable(pdf, {
       startY: 48,
-      head: [["Partida", "Material", "Und.", "Cantidad", "Desperd.", "Total", "Subtotal S/"]],
+      head: [
+        ["Partida", "Material", "Und.", "Cantidad", "Desperd.", "P. unit.", "Total", "Subtotal S/"],
+      ],
       body: takeoffs.map((takeoff) => {
         const material = catalog.find((item) => item.code === takeoff.materialCode);
 
@@ -250,7 +252,7 @@ export function MetradosWorkspace() {
           takeoff.subtotalPen.toFixed(2),
         ];
       }),
-      foot: [["", "", "", "", "", "TOTAL", "S/ " + totals.grandTotal.toFixed(2)]],
+      foot: [["", "", "", "", "", "", "TOTAL", "S/ " + totals.grandTotal.toFixed(2)]],
       styles: { fontSize: 8 },
       headStyles: { fillColor: [212, 163, 89] },
     });
@@ -338,6 +340,7 @@ export function MetradosWorkspace() {
                 materials={catalog}
                 draft={draft}
                 setDraft={setDraft}
+                onCancelEdit={() => setDraft({ ...emptyDraft })}
                 onSave={() => void saveDraft()}
                 onEdit={editTakeoff}
                 onDelete={(takeoff) => void removeTakeoff(takeoff)}
