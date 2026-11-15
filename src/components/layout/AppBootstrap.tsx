@@ -1,15 +1,15 @@
 ﻿"use client";
 
 import { useEffect } from "react";
-import { ensureSeeded } from "@/lib/offline/db";
-import { pullRemote, startOnlineSync } from "@/lib/offline/sync";
+import { db, ensureSeeded } from "@/lib/offline/db";
+import { startOnlineSync, syncNow } from "@/lib/offline/sync";
 
 export function AppBootstrap() {
   useEffect(() => {
     void ensureSeeded().then(() => {
-      if (typeof navigator !== "undefined" && navigator.onLine) {
-        void pullRemote().catch(() => undefined);
-      }
+      // Older versions wrote one row per connection change; clear them once.
+      void db?.meta.where("key").startsWith("online:").delete();
+      if (typeof navigator !== "undefined" && navigator.onLine) void syncNow();
     });
 
     return startOnlineSync();

@@ -1,4 +1,5 @@
 ﻿import { db, createLocalUuid, type Project, type Takeoff } from "./db";
+import { scheduleSync } from "./sync";
 
 async function enqueue(
   table: "projects" | "takeoffs",
@@ -12,6 +13,7 @@ async function enqueue(
     payload,
     createdAt: new Date().toISOString(),
   });
+  scheduleSync();
 }
 
 export async function saveProject(

@@ -11,7 +11,7 @@ import { computeProjectTotals, computeTakeoffLine } from "@/lib/calculators/take
 import { type Project, type Takeoff } from "@/lib/offline/db";
 import { useMaterials, useProjects, useTakeoffs, useSyncStatus } from "@/lib/offline/hooks";
 import { deleteProject, deleteTakeoff, saveProject, saveTakeoff } from "@/lib/offline/repositories";
-import { flushOutbox, pullRemote } from "@/lib/offline/sync";
+import { describeSyncResult, syncNow as runSync } from "@/lib/offline/sync";
 import { canCreateProject, canExportPdf } from "@/lib/plans/plans";
 import { useCurrentPlan } from "@/lib/plans/use-current-plan";
 import { ProjectList } from "./ProjectList";
@@ -277,13 +277,7 @@ export function MetradosWorkspace() {
   }
 
   async function syncNow(): Promise<void> {
-    try {
-      await flushOutbox();
-      await pullRemote();
-      setNotice("Sincronización completada.");
-    } catch {
-      setNotice("No se pudo sincronizar. Tus cambios locales permanecen guardados.");
-    }
+    setNotice(describeSyncResult(await runSync()));
   }
 
   return (

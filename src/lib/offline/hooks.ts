@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db, ensureSeeded, type FeeQuote, type Project, type Takeoff } from "./db";
 import { getStudioProfile } from "./profile";
@@ -55,34 +55,28 @@ export function useSyncStatus(): SyncStatus {
     lastSync: null,
     error: null,
   });
+  const online = useOnlineStatus();
 
   useEffect(() => startOnlineSync(), []);
-  return status;
+  return { ...status, online };
 }
 
+function subscribeToConnection(onChange: () => void): () => void {
+  window.addEventListener("online", onChange);
+  window.addEventListener("offline", onChange);
+  return () => {
+    window.removeEventListener("online", onChange);
+    window.removeEventListener("offline", onChange);
+  };
+}
+
+/** Connection state straight from the browser events; nothing is written to the database. */
 export function useOnlineStatus(): boolean {
-  const online = useLiveQuery(
-    async () => (typeof navigator !== "undefined" ? navigator.onLine : false),
-    [],
-    true,
+  return useSyncExternalStore(
+    subscribeToConnection,
+    () => navigator.onLine,
+    () => true,
   );
-
-  useEffect(() => {
-    const update = (): void => {
-      void db?.meta.put({
-        key: "online:" + Date.now(),
-        value: navigator.onLine ? "true" : "false",
-      });
-    };
-    window.addEventListener("online", update);
-    window.addEventListener("offline", update);
-    return () => {
-      window.removeEventListener("online", update);
-      window.removeEventListener("offline", update);
-    };
-  }, []);
-
-  return online;
 }
 
 export function useSeeded(): boolean {

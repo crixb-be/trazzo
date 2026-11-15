@@ -19,7 +19,7 @@ import { SEED_VERSION } from "@/data/seed-rne";
 import { db } from "@/lib/offline/db";
 import { getStudioProfile, saveStudioProfile } from "@/lib/offline/profile";
 import { useStudioProfile, useSyncStatus } from "@/lib/offline/hooks";
-import { flushOutbox, pullRemote } from "@/lib/offline/sync";
+import { describeSyncResult, syncNow as runSync } from "@/lib/offline/sync";
 import {
   formatPlanPrice,
   isEduPeEmail,
@@ -320,19 +320,14 @@ export function AccountWorkspace() {
   }
 
   async function syncNow(): Promise<void> {
-    try {
-      await flushOutbox();
-      await pullRemote();
-      setNotice("Sincronización completada.");
-    } catch {
-      setNotice("No se pudo sincronizar; tus datos locales están intactos.");
-    }
+    setNotice(describeSyncResult(await runSync()));
   }
 
   async function resetLocal(): Promise<void> {
     if (!window.confirm("¿Restablecer todos los proyectos y datos locales?")) return;
     await db?.delete();
-    setNotice("Datos locales restablecidos. Recarga para volver a sembrar las fichas.");
+    // The connection is closed after deleting: reload so the app reopens and reseeds it.
+    window.location.reload();
   }
 
   async function installApp(): Promise<void> {
