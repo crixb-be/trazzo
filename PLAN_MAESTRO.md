@@ -2,7 +2,7 @@
 
 > Auditoría y hoja de ruta para convertir TRAZZO en la herramienta de bolsillo de arquitectura y obra (Perú / LatAm).
 > Fecha de la auditoría: 2026-11-15 · Rama: `claude/wonderful-noether-6eoymr` · Último commit de código revisado: `35f7176`.
-> **Estado: plan pendiente de aprobación. No se ha modificado código de la app en esta fase.**
+> **Estado: plan aprobado por el usuario el 2026-11-15. En ejecución; el avance real está en la sección 9.**
 
 ## Cómo usar este documento
 
@@ -196,18 +196,19 @@ Criterio de salida de la Fase 1: un usuario Pro crea 3 proyectos sin señal, exp
 
 Orden propuesto por valor para el usuario frente a esfuerzo.
 
-| Bloque                                       | Qué se añade                                                                                                                                                                                           | Archivos                                                                                                                                                                       |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **2.1 Medidas de bolsillo**                  | Fichas visuales de medidas antropométricas, mobiliario y ambientes mínimos (baño, cocina, dormitorio, clóset, comedor, escritorio, circulaciones, alturas de montaje), con dibujos propios y buscador. | Nueva ruta `src/app/(dashboard)/medidas/page.tsx`, `src/components/medidas/*`, `src/data/medidas.ts`, nuevas láminas en `src/components/svg-diagrams/`, navegación             |
-| **2.2 Calculadoras de materiales**           | Concreto por resistencia, muro de ladrillo (soga, cabeza, canto), tarrajeo, contrapiso, cerámico y porcelanato, pintura, acero (kg ↔ varillas), losa aligerada. Botón "Enviar a metrado".              | `src/lib/calculators/materials/*.ts` (+ pruebas), `src/components/calculators/materials/*`, `CalculatorWorkspace.tsx`, `src/data/rendimientos.ts`                              |
-| **2.3 Utilidades de campo**                  | Conversor de unidades (incluye pulgadas de fierro y tubería), pendientes (% ↔ grados ↔ relación), área de terrenos irregulares, escala de planos.                                                      | `src/lib/calculators/units.ts`, `slope.ts`, `area.ts` (+ pruebas), `src/components/calculators/tools/*`                                                                        |
-| **2.4 Cabida de terreno**                    | Con área de lote, coeficiente, área libre, altura y retiros: área techada máxima, pisos y área vendible estimada.                                                                                      | `src/lib/calculators/cabida.ts` (+ pruebas), `src/components/calculators/CabidaCalculator.tsx`                                                                                 |
-| **2.5 Más calculadoras del RNE**             | Aforo por uso, aparatos sanitarios por uso, iluminación y ventilación natural, estacionamientos accesibles.                                                                                            | `src/lib/calculators/occupancy.ts`, `fixtures.ts`, `daylight.ts` (+ pruebas) y sus componentes                                                                                 |
-| **2.6 Metrados 2.0**                         | Partidas con receta (un muro genera ladrillo, cemento y arena), capítulos, lista de compras, precios propios, duplicar proyecto, formulario según unidad, vista de tarjetas en móvil, ratio por m².    | `src/lib/calculators/takeoff.ts`, nuevo `src/data/partidas.ts`, `src/lib/offline/db.ts` (versión 4), `MetradosWorkspace.tsx`, `TakeoffTable.tsx`, `ProjectList.tsx`, migración |
-| **2.7 Biblioteca RNE ampliada y verificada** | Verificación de las 17 fichas y ampliación a normas de uso diario (A.020, A.070, A.080, A.130 completo, IS.010, estructuras básicas), con artículo y resolución; favoritos y recientes.                | `src/data/seed-rne.ts` (posible división por norma), `NormativaCatalog.tsx`, `NormativeDetail.tsx`, `HomeDashboard.tsx`, `src/lib/offline/db.ts`                               |
-| **2.8 Asistente útil en obra**               | Respuesta local sin conexión, historial guardado, enlaces a la ficha y a la calculadora relacionada.                                                                                                   | `AssistantWorkspace.tsx`, `ChatMessage.tsx`, `src/lib/rag/retrieve.ts`, `src/lib/offline/db.ts`                                                                                |
-| **2.9 Buscador universal**                   | Un solo buscador para fichas, medidas, calculadoras, proyectos y cotizaciones.                                                                                                                         | `GlobalSearch.tsx`, `src/lib/search/search.ts`, nuevo `src/lib/search/catalog.ts` (+ pruebas)                                                                                  |
-| **2.10 Honorarios por pasos**                | Formulario dividido en pasos con total fijo, y envío del PDF con el menú de compartir del teléfono.                                                                                                    | `QuoteForm.tsx` (dividir en `src/components/fees/steps/*`), `FeeQuoteWorkspace.tsx`, `QuoteSummary.tsx`                                                                        |
+| Bloque                                            | Qué se añade                                                                                                                                                                                                                                                                                          | Archivos                                                                                                                                                                       |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **2.0 Matriz de relaciones** (pedido del usuario) | Herramienta de programación arquitectónica: lista de ambientes, matriz triangular de relaciones (necesaria, deseable, innecesaria) con ponderación, ranking por ambiente y diagrama de relaciones generado; se guarda en el dispositivo y se exporta a imagen o PDF. Se ejecuta primero en la Fase 2. | Nueva ruta `src/app/(dashboard)/matriz/page.tsx`, `src/components/matrix/*`, `src/lib/matrix/relations.ts` (+ pruebas), `src/lib/offline/db.ts`, navegación e Inicio           |
+| **2.1 Medidas de bolsillo**                       | Fichas visuales de medidas antropométricas, mobiliario y ambientes mínimos (baño, cocina, dormitorio, clóset, comedor, escritorio, circulaciones, alturas de montaje), con dibujos propios y buscador.                                                                                                | Nueva ruta `src/app/(dashboard)/medidas/page.tsx`, `src/components/medidas/*`, `src/data/medidas.ts`, nuevas láminas en `src/components/svg-diagrams/`, navegación             |
+| **2.2 Calculadoras de materiales**                | Concreto por resistencia, muro de ladrillo (soga, cabeza, canto), tarrajeo, contrapiso, cerámico y porcelanato, pintura, acero (kg ↔ varillas), losa aligerada. Botón "Enviar a metrado".                                                                                                             | `src/lib/calculators/materials/*.ts` (+ pruebas), `src/components/calculators/materials/*`, `CalculatorWorkspace.tsx`, `src/data/rendimientos.ts`                              |
+| **2.3 Utilidades de campo**                       | Conversor de unidades (incluye pulgadas de fierro y tubería), pendientes (% ↔ grados ↔ relación), área de terrenos irregulares, escala de planos.                                                                                                                                                     | `src/lib/calculators/units.ts`, `slope.ts`, `area.ts` (+ pruebas), `src/components/calculators/tools/*`                                                                        |
+| **2.4 Cabida de terreno**                         | Con área de lote, coeficiente, área libre, altura y retiros: área techada máxima, pisos y área vendible estimada.                                                                                                                                                                                     | `src/lib/calculators/cabida.ts` (+ pruebas), `src/components/calculators/CabidaCalculator.tsx`                                                                                 |
+| **2.5 Más calculadoras del RNE**                  | Aforo por uso, aparatos sanitarios por uso, iluminación y ventilación natural, estacionamientos accesibles.                                                                                                                                                                                           | `src/lib/calculators/occupancy.ts`, `fixtures.ts`, `daylight.ts` (+ pruebas) y sus componentes                                                                                 |
+| **2.6 Metrados 2.0**                              | Partidas con receta (un muro genera ladrillo, cemento y arena), capítulos, lista de compras, precios propios, duplicar proyecto, formulario según unidad, vista de tarjetas en móvil, ratio por m².                                                                                                   | `src/lib/calculators/takeoff.ts`, nuevo `src/data/partidas.ts`, `src/lib/offline/db.ts` (versión 4), `MetradosWorkspace.tsx`, `TakeoffTable.tsx`, `ProjectList.tsx`, migración |
+| **2.7 Biblioteca RNE ampliada y verificada**      | Verificación de las 17 fichas y ampliación a normas de uso diario (A.020, A.070, A.080, A.130 completo, IS.010, estructuras básicas), con artículo y resolución; favoritos y recientes.                                                                                                               | `src/data/seed-rne.ts` (posible división por norma), `NormativaCatalog.tsx`, `NormativeDetail.tsx`, `HomeDashboard.tsx`, `src/lib/offline/db.ts`                               |
+| **2.8 Asistente útil en obra**                    | Respuesta local sin conexión, historial guardado, enlaces a la ficha y a la calculadora relacionada.                                                                                                                                                                                                  | `AssistantWorkspace.tsx`, `ChatMessage.tsx`, `src/lib/rag/retrieve.ts`, `src/lib/offline/db.ts`                                                                                |
+| **2.9 Buscador universal**                        | Un solo buscador para fichas, medidas, calculadoras, proyectos y cotizaciones.                                                                                                                                                                                                                        | `GlobalSearch.tsx`, `src/lib/search/search.ts`, nuevo `src/lib/search/catalog.ts` (+ pruebas)                                                                                  |
+| **2.10 Honorarios por pasos**                     | Formulario dividido en pasos con total fijo, y envío del PDF con el menú de compartir del teléfono.                                                                                                                                                                                                   | `QuoteForm.tsx` (dividir en `src/components/fees/steps/*`), `FeeQuoteWorkspace.tsx`, `QuoteSummary.tsx`                                                                        |
 
 ### FASE 3 — Pulido visual y detalles profesionales
 
@@ -223,19 +224,16 @@ Orden propuesto por valor para el usuario frente a esfuerzo.
 
 ---
 
-## 7. Decisiones que necesito de ti
+## 7. Decisiones tomadas (2026-11-15)
 
-Si no respondes alguna, seguiré la opción marcada como **propuesta**.
-
-1. **Barra inferior de 5 destinos.** **Propuesta:** Inicio · Normas · Calcular · Proyectos (metrados y honorarios juntos) · Asistente, con Cuenta en el avatar de arriba. Alternativa: dejar las 6 actuales y solo agrandar la letra.
-2. **Qué es gratis y qué es de pago.** **Propuesta:** gratis = todas las calculadoras, fichas básicas, 1 proyecto, 10 consultas al mes y PDF con marca de agua; Estudiante y Pro = proyectos ilimitados, PDF limpio, fichas Pro y más consultas. Sin cuenta se aplican las reglas de Gratis en todas las pantallas.
-3. **Fuente para verificar el RNE.** Necesito que me pases los PDF oficiales vigentes, o que confirmes que puedo consultarlos en la web del MVCS o SENCICO. Sin fuente, el bloque 2.7 solo puede ampliar fichas dejándolas "Por verificar".
-4. **Fuente de precios y rendimientos.** ¿Tienes una fuente preferida (revista, proveedor, tus propios precios)? **Propuesta:** valores referenciales con fecha visible y siempre editables por el usuario.
-5. **CI en GitHub Actions** (bloque 1.8). **Propuesta:** sí; corre en cada push y no cuesta en repos con minutos gratuitos.
-6. **Medidas de bolsillo** (bloque 2.1). Los dibujos y textos serán propios; no se copiará material de Neufert por derechos de autor. Confirma que te parece bien.
-7. **Orden de la Fase 2.** **Propuesta:** el de la tabla (2.1 → 2.10). Dime si alguna herramienta te urge más.
-
----
+1. **Barra inferior de 5 destinos: aceptada.** Inicio · Normas · Calcular · Proyectos (metrados y honorarios juntos) · Asistente, con Cuenta en el avatar.
+2. **Gratis frente a pago: aceptado, con un cambio en el asistente.** El usuario considera poco 10 mensajes al mes. Queda así: Gratis **10 consultas por día**, Estudiante 50 por día, Pro ilimitado. Las respuestas armadas en el dispositivo sin usar el modelo no cuentan. El resto se mantiene: Gratis tiene todas las calculadoras, fichas básicas, 1 proyecto y PDF con marca de agua; sin cuenta se aplican las reglas de Gratis en todas las pantallas. Los límites viven en `src/lib/plans/plans.ts`.
+3. **Fuente del RNE:** el usuario entregará el PDF actualizado del RNE y libros de arquitectura. Los bloques 2.1 y 2.7 dependen de esos archivos; hasta recibirlos, las fichas nuevas quedan "Por verificar". Los libros se usan como referencia para valores y criterios: los dibujos y textos de la app son propios.
+4. **Precios y rendimientos: aceptado.** Valores referenciales con fecha visible y editables por el usuario.
+5. **CI en GitHub Actions: activar** (bloque 1.8).
+6. **Medidas de bolsillo con dibujos y textos propios: aceptado.**
+7. **Orden de la Fase 2: a criterio del ejecutor.** Se añade el bloque 2.0, Matriz de relaciones, y va primero.
+8. **Nueva herramienta pedida: matriz de relaciones (interacción)** → bloque 2.0.
 
 ## 8. Protocolo de ejecución y continuidad
 
@@ -249,7 +247,7 @@ Si no respondes alguna, seguiré la opción marcada como **propuesta**.
 
 ## 9. ESTADO DE AVANCE Y HANDOFF
 
-**Última actualización:** 2026-11-15 — fin de la auditoría, antes de la aprobación.
+**Última actualización:** 2026-11-15 — plan aprobado; empieza la Fase 1.
 
 ### Completado
 
@@ -257,6 +255,7 @@ Si no respondes alguna, seguiré la opción marcada como **propuesta**.
 - [x] Benchmark y brechas (sección 5).
 - [x] Hoja de ruta por fases y bloques (sección 6).
 - [x] Trabajo previo a este plan: foto de perfil en Cuenta — commit `35f7176`.
+- [x] Plan aprobado y decisiones registradas (sección 7).
 
 ### En curso o a medias
 
@@ -264,9 +263,9 @@ Si no respondes alguna, seguiré la opción marcada como **propuesta**.
 
 ### Pendiente
 
-- [ ] Aprobación del plan y respuestas a la sección 7.
+- [ ] Recibir del usuario el PDF del RNE y los libros (necesarios para 2.1 y 2.7).
 - [ ] Fase 1: bloques 1.1 a 1.8 (ninguno iniciado).
-- [ ] Fase 2: bloques 2.1 a 2.10.
+- [ ] Fase 2: bloques 2.0 a 2.10.
 - [ ] Fase 3: bloques 3.1 a 3.7.
 
 ### Instrucción para continuar (otra sesión u otra IA)
