@@ -1,14 +1,22 @@
-﻿"use client";
+"use client";
 
 import { Check, Cloud, Download, FileUp, RefreshCw, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Badge, Button, Card, Input } from "@/components/ui";
+import { Badge, BillingToggle, Button, Card, Input } from "@/components/ui";
 import { SEED_VERSION } from "@/data/seed-rne";
 import { db } from "@/lib/offline/db";
+import { getProfessionalProfile, saveProfessionalProfile } from "@/lib/offline/profile";
 import { useSyncStatus } from "@/lib/offline/hooks";
 import { flushOutbox, pullRemote } from "@/lib/offline/sync";
-import { isEduPeEmail, PLANS, type Plan } from "@/lib/plans/plans";
+import {
+  formatPlanPrice,
+  isEduPeEmail,
+  monthlyEquivalent,
+  PLANS,
+  type BillingCycle,
+  type Plan,
+} from "@/lib/plans/plans";
 import { createClient } from "@/lib/supabase/client";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -30,10 +38,18 @@ export function AccountWorkspace() {
   const [studentVerified, setStudentVerified] = useState(false);
   const [studentEmail, setStudentEmail] = useState("");
   const [name, setName] = useState("");
-  const [cip, setCip] = useState("");
+  const [capNumber, setCapNumber] = useState("");
+  const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
   const [document, setDocument] = useState<File | null>(null);
   const [notice, setNotice] = useState("");
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+
+  useEffect(() => {
+    void getProfessionalProfile().then((profile) => {
+      setName(profile.fullName);
+      setCapNumber(profile.capNumber);
+    });
+  }, []);
 
   useEffect(() => {
     const client = createClient();
@@ -45,13 +61,15 @@ export function AccountWorkspace() {
         setStudentEmail(data.user.email ?? "");
         const profile = await client
           .from("profiles")
-          .select("plan,student_verified")
+          .select("plan,student_verified,full_name,cap_number")
           .eq("id", data.user.id)
           .maybeSingle();
         if (profile.data?.plan === "student" || profile.data?.plan === "pro") {
           setCurrentPlan(profile.data.plan);
         }
         setStudentVerified(Boolean(profile.data?.student_verified));
+        if (typeof profile.data?.full_name === "string") setName(profile.data.full_name);
+        if (typeof profile.data?.cap_number === "string") setCapNumber(profile.data.cap_number);
       });
     }
 
@@ -63,6 +81,21 @@ export function AccountWorkspace() {
     return () => window.removeEventListener("beforeinstallprompt", handleInstall);
   }, []);
 
+  async function saveProfile(): Promise<void> {
+    await saveProfessionalProfile({ fullName: name, capNumber });
+    const client = createClient();
+    if (client) {
+      const { data } = await client.auth.getUser();
+      if (data.user) {
+        await client
+          .from("profiles")
+          .update({ full_name: name, cap_number: capNumber })
+          .eq("id", data.user.id);
+      }
+    }
+    setNotice("Perfil guardado.");
+  }
+
   async function choosePlan(plan: Plan): Promise<void> {
     if (plan === "free") return;
     if (!configured) {
@@ -72,7 +105,7 @@ export function AccountWorkspace() {
     const response = await fetch("/api/payments/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan }),
+      body: JSON.stringify({ plan, cycle: billingCycle }),
     });
     const data = (await response.json()) as { init_point?: string; error?: string };
     if (!response.ok || !data.init_point) {
@@ -171,16 +204,20 @@ export function AccountWorkspace() {
           </div>
           <div className="field">
             <label>
-              CIP <span className="muted">(opcional)</span>
+              N° de Colegiatura CAP <span className="muted">(opcional)</span>
             </label>
             <Input
-              value={cip}
-              onChange={(event) => setCip(event.target.value)}
-              placeholder="Colegio de Ingenieros / Arquitectos"
+              value={capNumber}
+              onChange={(event) => setCapNumber(event.target.value)}
+              placeholder="N° de Colegiatura CAP (opcional)"
             />
           </div>
+          <Button variant="primary" onClick={() => void saveProfile()}>
+            Guardar perfil
+          </Button>
           <p className="legal">
-            Los datos de identidad se guardan cuando Supabase está configurado.
+            Se guardan en este dispositivo y aparecen en tus propuestas de honorarios. Con una
+            sesión de Supabase también se sincronizan con tu cuenta.
           </p>
         </Card>
 
@@ -214,6 +251,7 @@ export function AccountWorkspace() {
 
       <section className="account-section">
         <div className="eyebrow">PLANES</div>
+        <BillingToggle value={billingCycle} onChange={setBillingCycle} />
         <div className="plan-grid">
           {(Object.entries(PLANS) as Array<[Plan, (typeof PLANS)[Plan]]>).map(
             ([plan, definition]) => (
@@ -221,8 +259,16 @@ export function AccountWorkspace() {
                 {currentPlan === plan && <Badge variant="ok">Plan actual</Badge>}
                 <div className="plan-name">{definition.label}</div>
                 <div className="price">
-                  {definition.pricePen === 0 ? "Gratis" : "S/ " + definition.pricePen.toFixed(2)}
-                  <small>{definition.pricePen > 0 ? " / mes" : ""}</small>
+                  {formatPlanPrice(plan, billingCycle)}
+                  {plan !== "free" && billingCycle === "annual" && (
+                    <small className="muted plan-equivalent">
+                      ≈ S/ {monthlyEquivalent(plan, billingCycle).toFixed(2)} / mes · ahorra{" "}
+                      {Math.round(
+                        (1 - definition.prices.annual / (definition.prices.monthly * 12)) * 100,
+                      )}
+                      %
+                    </small>
+                  )}
                 </div>
                 <ul>
                   {features[plan].map((feature) => (

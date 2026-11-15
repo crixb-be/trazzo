@@ -1,0 +1,848 @@
+"use client";
+
+import { ChevronDown, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Card, Input, NumberField, Select } from "@/components/ui";
+import {
+  DEFAULT_CONDITIONS,
+  DEFAULT_FEE_RATES,
+  defaultDeliverables,
+  defaultSchedule,
+  FEE_TYPOLOGIES,
+  formatPen,
+  PAYMENT_PRESETS,
+  paymentAmounts,
+  validatePaymentPlan,
+  type FeeQuoteResult,
+  type FeeRates,
+  type FeeScope,
+  type LicenseModality,
+  type PaymentInstallment,
+} from "@/lib/calculators/fees";
+import type { FeeQuoteDraft } from "@/lib/offline/fee-quotes";
+
+interface QuoteFormProps {
+  draft: FeeQuoteDraft;
+  result: FeeQuoteResult;
+  onChange: (draft: FeeQuoteDraft) => void;
+  onTouchDeliverables: () => void;
+  onTouchSchedule: () => void;
+}
+
+const specialtyLabels = {
+  estructuras: "Estructuras",
+  sanitarias: "Inst. Sanitarias",
+  electricas: "Inst. Eléctricas",
+} as const;
+const modalityOptions = (["A", "B", "C", "D"] as LicenseModality[]).map((value) => ({
+  value,
+  label: "Modalidad " + value,
+}));
+
+function numberFrom(event: React.ChangeEvent<HTMLInputElement>): number {
+  return Number(event.target.value);
+}
+function updateRates(rates: FeeRates, patch: Partial<FeeRates>): FeeRates {
+  return { ...rates, ...patch };
+}
+
+export function QuoteForm({
+  draft,
+  result,
+  onChange,
+  onTouchDeliverables,
+  onTouchSchedule,
+}: QuoteFormProps) {
+  const [showRates, setShowRates] = useState(false);
+  const input = draft.input;
+  const scope = input.scope;
+  const lineAmount = (key: string): number =>
+    result.lines.find((line) => line.key === key)?.amount ?? 0;
+  const changeInput = (next: Partial<typeof input>): void =>
+    onChange({ ...draft, input: { ...input, ...next } });
+  const changeScope = (next: Partial<FeeScope>): void =>
+    changeInput({ scope: { ...scope, ...next } });
+  const changeDeliverable = (index: number, value: string): void => {
+    onTouchDeliverables();
+    onChange({
+      ...draft,
+      deliverables: draft.deliverables.map((item, itemIndex) =>
+        itemIndex === index ? value : item,
+      ),
+    });
+  };
+  const changeCondition = (index: number, value: string): void =>
+    onChange({
+      ...draft,
+      conditions: draft.conditions.map((item, itemIndex) => (itemIndex === index ? value : item)),
+    });
+  const changePayment = (index: number, patch: Partial<PaymentInstallment>): void =>
+    onChange({
+      ...draft,
+      payment: {
+        ...draft.payment,
+        installments: draft.payment.installments.map((item, itemIndex) =>
+          itemIndex === index ? { ...item, ...patch } : item,
+        ),
+      },
+    });
+  const paymentValues = paymentAmounts(result.total, draft.payment.installments);
+  const paymentValidation = validatePaymentPlan(draft.payment.installments);
+
+  return (
+    <div className="quote-form">
+      <Card>
+        <div className="eyebrow">01 / DATOS DEL PROYECTO</div>
+        <div className="form-grid two-columns">
+          <div className="field">
+            <label>Nombre del proyecto</label>
+            <Input
+              value={draft.projectName}
+              onChange={(event) => onChange({ ...draft, projectName: event.target.value })}
+              placeholder="Casa Miraflores"
+            />
+          </div>
+          <div className="field">
+            <label>Cliente</label>
+            <Input
+              value={draft.clientName}
+              onChange={(event) => onChange({ ...draft, clientName: event.target.value })}
+              placeholder="Nombre del cliente"
+            />
+          </div>
+          <div className="field">
+            <label>Ubicación</label>
+            <Input
+              value={draft.location}
+              onChange={(event) => onChange({ ...draft, location: event.target.value })}
+              placeholder="Distrito, ciudad"
+            />
+          </div>
+          <Select
+            label="Tipología"
+            value={input.typology}
+            onChange={(event) =>
+              changeInput({ typology: event.target.value as typeof input.typology })
+            }
+            options={FEE_TYPOLOGIES}
+          />
+          <NumberField
+            label="Área techada"
+            unit="m²"
+            value={input.areaM2}
+            onChange={(event) => changeInput({ areaM2: numberFrom(event) })}
+          />
+          <NumberField
+            label="Pisos"
+            value={input.floors}
+            step={1}
+            onChange={(event) => changeInput({ floors: numberFrom(event) })}
+          />
+          <NumberField
+            label="Plazo total"
+            unit="semanas"
+            value={input.weeks}
+            step={1}
+            onChange={(event) => changeInput({ weeks: numberFrom(event) })}
+          />
+        </div>
+      </Card>
+
+      <Card>
+        <div className="eyebrow">02 / ALCANCE Y ESPECIALIDADES</div>
+        <div className="scope-list">
+          <div className="scope-option">
+            <label>
+              <input
+                type="checkbox"
+                checked={scope.design}
+                onChange={(event) => changeScope({ design: event.target.checked })}
+              />
+              <span>
+                <strong>Diseño arquitectónico</strong>
+                <small>Anteproyecto y documentación base</small>
+              </span>
+            </label>
+            <strong className="mono">{formatPen(lineAmount("design"))}</strong>
+          </div>
+          <div className="scope-option">
+            <label>
+              <input
+                type="checkbox"
+                checked={scope.expediente.enabled}
+                onChange={(event) =>
+                  changeScope({
+                    expediente: { ...scope.expediente, enabled: event.target.checked },
+                  })
+                }
+              />
+              <span>
+                <strong>Expediente de especialidades</strong>
+                <small>Planos y memorias técnicas</small>
+              </span>
+            </label>
+            <strong className="mono">{formatPen(lineAmount("expediente"))}</strong>
+            {scope.expediente.enabled && (
+              <div className="scope-sub-fields">
+                <div className="checkbox-grid">
+                  {(Object.keys(specialtyLabels) as Array<keyof typeof specialtyLabels>).map(
+                    (specialty) => (
+                      <label key={specialty}>
+                        <input
+                          type="checkbox"
+                          checked={scope.expediente[specialty]}
+                          onChange={(event) =>
+                            changeScope({
+                              expediente: {
+                                ...scope.expediente,
+                                [specialty]: event.target.checked,
+                              },
+                            })
+                          }
+                        />
+                        {specialtyLabels[specialty]}
+                      </label>
+                    ),
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="scope-option">
+            <label>
+              <input
+                type="checkbox"
+                checked={scope.renders.enabled}
+                onChange={(event) =>
+                  changeScope({ renders: { ...scope.renders, enabled: event.target.checked } })
+                }
+              />
+              <span>
+                <strong>Renders y recorrido virtual</strong>
+                <small>Imágenes de presentación</small>
+              </span>
+            </label>
+            <strong className="mono">{formatPen(lineAmount("renders"))}</strong>
+            {scope.renders.enabled && (
+              <div className="scope-sub-fields">
+                <NumberField
+                  label="Cantidad de renders"
+                  value={scope.renders.count}
+                  step={1}
+                  onChange={(event) =>
+                    changeScope({ renders: { ...scope.renders, count: numberFrom(event) } })
+                  }
+                />
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={scope.renders.virtualTour}
+                    onChange={(event) =>
+                      changeScope({
+                        renders: { ...scope.renders, virtualTour: event.target.checked },
+                      })
+                    }
+                  />{" "}
+                  Recorrido virtual
+                </label>
+              </div>
+            )}
+          </div>
+          <div className="scope-option">
+            <label>
+              <input
+                type="checkbox"
+                checked={scope.license.enabled}
+                onChange={(event) =>
+                  changeScope({ license: { ...scope.license, enabled: event.target.checked } })
+                }
+              />
+              <span>
+                <strong>Gestión de licencia</strong>
+                <small>Expediente para trámite municipal</small>
+              </span>
+            </label>
+            <strong className="mono">{formatPen(lineAmount("license"))}</strong>
+            {scope.license.enabled && (
+              <div className="scope-sub-fields">
+                <Select
+                  label="Modalidad"
+                  value={scope.license.modality}
+                  options={modalityOptions}
+                  onChange={(event) =>
+                    changeScope({
+                      license: {
+                        ...scope.license,
+                        modality: event.target.value as LicenseModality,
+                      },
+                    })
+                  }
+                />
+              </div>
+            )}
+          </div>
+          <div className="scope-option">
+            <label>
+              <input
+                type="checkbox"
+                checked={scope.supervision.enabled}
+                onChange={(event) =>
+                  changeScope({
+                    supervision: { ...scope.supervision, enabled: event.target.checked },
+                  })
+                }
+              />
+              <span>
+                <strong>Supervisión de obra</strong>
+                <small>Visitas o porcentaje del presupuesto</small>
+              </span>
+            </label>
+            <strong className="mono">{formatPen(lineAmount("supervision"))}</strong>
+            {scope.supervision.enabled && (
+              <div className="scope-sub-fields">
+                <div className="radio-row">
+                  <label>
+                    <input
+                      type="radio"
+                      checked={scope.supervision.mode === "visits"}
+                      onChange={() =>
+                        changeScope({ supervision: { ...scope.supervision, mode: "visits" } })
+                      }
+                    />{" "}
+                    Visitas
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      checked={scope.supervision.mode === "percent"}
+                      onChange={() =>
+                        changeScope({ supervision: { ...scope.supervision, mode: "percent" } })
+                      }
+                    />{" "}
+                    Porcentaje
+                  </label>
+                </div>
+                {scope.supervision.mode === "visits" && (
+                  <NumberField
+                    label="Visitas por semana"
+                    value={scope.supervision.visitsPerWeek}
+                    step={1}
+                    onChange={(event) =>
+                      changeScope({
+                        supervision: { ...scope.supervision, visitsPerWeek: numberFrom(event) },
+                      })
+                    }
+                  />
+                )}
+                <NumberField
+                  label="Semanas de supervisión"
+                  value={scope.supervision.weeks}
+                  step={1}
+                  onChange={(event) =>
+                    changeScope({ supervision: { ...scope.supervision, weeks: numberFrom(event) } })
+                  }
+                />
+              </div>
+            )}
+          </div>
+          <div className="scope-option">
+            <label>
+              <input
+                type="checkbox"
+                checked={scope.execution.enabled}
+                onChange={(event) => changeScope({ execution: { enabled: event.target.checked } })}
+              />
+              <span>
+                <strong>Dirección técnica y administración</strong>
+                <small>Gestión de la ejecución</small>
+              </span>
+            </label>
+            <strong className="mono">{formatPen(lineAmount("execution"))}</strong>
+            {scope.execution.enabled && (
+              <div className="scope-sub-fields">
+                <p className="muted small">
+                  Presupuesto usado: {formatPen(result.constructionBudget)}
+                </p>
+                <div className="field">
+                  <label>Presupuesto referencial de obra (S/)</label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={input.constructionBudget ?? ""}
+                    placeholder={String(result.constructionBudget)}
+                    onChange={(event) =>
+                      changeInput({
+                        constructionBudget: event.target.value === "" ? null : numberFrom(event),
+                      })
+                    }
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      <Card className="rates-card">
+        <button className="collapse-trigger" type="button" onClick={() => setShowRates(!showRates)}>
+          <span>
+            <span className="eyebrow">03 / TARIFAS REFERENCIALES</span>
+            <small>Tarifas referenciales del mercado peruano; ajústalas a tu práctica.</small>
+          </span>
+          <ChevronDown size={18} className={showRates ? "rotated" : ""} />
+        </button>
+        {showRates && (
+          <div className="rates-panel">
+            <div className="form-grid two-columns">
+              <NumberField
+                label="Diseño por m²"
+                value={input.rates.designPerM2[input.typology]}
+                onChange={(event) =>
+                  changeInput({
+                    rates: updateRates(input.rates, {
+                      designPerM2: {
+                        ...input.rates.designPerM2,
+                        [input.typology]: numberFrom(event),
+                      },
+                    }),
+                  })
+                }
+              />
+              <NumberField
+                label="Factor por piso extra"
+                value={input.rates.floorFactorPerExtraFloor}
+                onChange={(event) =>
+                  changeInput({
+                    rates: updateRates(input.rates, {
+                      floorFactorPerExtraFloor: numberFrom(event),
+                    }),
+                  })
+                }
+              />
+              <NumberField
+                label="Factor máximo"
+                value={input.rates.maxFloorFactor}
+                onChange={(event) =>
+                  changeInput({
+                    rates: updateRates(input.rates, { maxFloorFactor: numberFrom(event) }),
+                  })
+                }
+              />
+              <NumberField
+                label="Estructuras por m²"
+                value={input.rates.specialtyPerM2.estructuras}
+                onChange={(event) =>
+                  changeInput({
+                    rates: updateRates(input.rates, {
+                      specialtyPerM2: {
+                        ...input.rates.specialtyPerM2,
+                        estructuras: numberFrom(event),
+                      },
+                    }),
+                  })
+                }
+              />
+              <NumberField
+                label="Sanitarias por m²"
+                value={input.rates.specialtyPerM2.sanitarias}
+                onChange={(event) =>
+                  changeInput({
+                    rates: updateRates(input.rates, {
+                      specialtyPerM2: {
+                        ...input.rates.specialtyPerM2,
+                        sanitarias: numberFrom(event),
+                      },
+                    }),
+                  })
+                }
+              />
+              <NumberField
+                label="Eléctricas por m²"
+                value={input.rates.specialtyPerM2.electricas}
+                onChange={(event) =>
+                  changeInput({
+                    rates: updateRates(input.rates, {
+                      specialtyPerM2: {
+                        ...input.rates.specialtyPerM2,
+                        electricas: numberFrom(event),
+                      },
+                    }),
+                  })
+                }
+              />
+              <NumberField
+                label="Render unitario"
+                value={input.rates.renderUnit}
+                onChange={(event) =>
+                  changeInput({
+                    rates: updateRates(input.rates, { renderUnit: numberFrom(event) }),
+                  })
+                }
+              />
+              <NumberField
+                label="Recorrido virtual"
+                value={input.rates.virtualTour}
+                onChange={(event) =>
+                  changeInput({
+                    rates: updateRates(input.rates, { virtualTour: numberFrom(event) }),
+                  })
+                }
+              />
+              <NumberField
+                label="Licencia A"
+                value={input.rates.licenseByModality.A}
+                onChange={(event) =>
+                  changeInput({
+                    rates: updateRates(input.rates, {
+                      licenseByModality: { ...input.rates.licenseByModality, A: numberFrom(event) },
+                    }),
+                  })
+                }
+              />
+              <NumberField
+                label="Licencia B"
+                value={input.rates.licenseByModality.B}
+                onChange={(event) =>
+                  changeInput({
+                    rates: updateRates(input.rates, {
+                      licenseByModality: { ...input.rates.licenseByModality, B: numberFrom(event) },
+                    }),
+                  })
+                }
+              />
+              <NumberField
+                label="Licencia C"
+                value={input.rates.licenseByModality.C}
+                onChange={(event) =>
+                  changeInput({
+                    rates: updateRates(input.rates, {
+                      licenseByModality: { ...input.rates.licenseByModality, C: numberFrom(event) },
+                    }),
+                  })
+                }
+              />
+              <NumberField
+                label="Licencia D"
+                value={input.rates.licenseByModality.D}
+                onChange={(event) =>
+                  changeInput({
+                    rates: updateRates(input.rates, {
+                      licenseByModality: { ...input.rates.licenseByModality, D: numberFrom(event) },
+                    }),
+                  })
+                }
+              />
+              <NumberField
+                label="Visita de supervisión"
+                value={input.rates.supervisionVisit}
+                onChange={(event) =>
+                  changeInput({
+                    rates: updateRates(input.rates, { supervisionVisit: numberFrom(event) }),
+                  })
+                }
+              />
+              <NumberField
+                label="Supervisión (%)"
+                value={input.rates.supervisionPct}
+                step={0.01}
+                onChange={(event) =>
+                  changeInput({
+                    rates: updateRates(input.rates, { supervisionPct: numberFrom(event) }),
+                  })
+                }
+              />
+              <NumberField
+                label="Costo obra por m²"
+                value={input.rates.constructionCostPerM2[input.typology]}
+                onChange={(event) =>
+                  changeInput({
+                    rates: updateRates(input.rates, {
+                      constructionCostPerM2: {
+                        ...input.rates.constructionCostPerM2,
+                        [input.typology]: numberFrom(event),
+                      },
+                    }),
+                  })
+                }
+              />
+              <NumberField
+                label="Ejecución (%)"
+                value={input.rates.executionPct}
+                step={0.01}
+                onChange={(event) =>
+                  changeInput({
+                    rates: updateRates(input.rates, { executionPct: numberFrom(event) }),
+                  })
+                }
+              />
+            </div>
+            <button
+              className="btn btn-ghost"
+              type="button"
+              onClick={() => changeInput({ rates: DEFAULT_FEE_RATES })}
+            >
+              Restablecer tarifas
+            </button>
+          </div>
+        )}
+      </Card>
+
+      <Card>
+        <div className="eyebrow">04 / ENTREGABLES</div>
+        <div className="editable-list">
+          {draft.deliverables.map((item, index) => (
+            <div className="editable-row" key={index}>
+              <Input
+                value={item}
+                onChange={(event) => changeDeliverable(index, event.target.value)}
+              />
+              <button
+                className="icon-btn"
+                type="button"
+                onClick={() => {
+                  onTouchDeliverables();
+                  onChange({
+                    ...draft,
+                    deliverables: draft.deliverables.filter((_, itemIndex) => itemIndex !== index),
+                  });
+                }}
+                aria-label="Eliminar entregable"
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className="inline-actions">
+          <button
+            className="btn btn-ghost"
+            type="button"
+            onClick={() => {
+              onTouchDeliverables();
+              onChange({ ...draft, deliverables: [...draft.deliverables, "Nuevo entregable"] });
+            }}
+          >
+            <Plus size={15} /> Agregar entregable
+          </button>
+          <button
+            className="btn btn-ghost"
+            type="button"
+            onClick={() => {
+              onTouchDeliverables();
+              onChange({ ...draft, deliverables: defaultDeliverables(input) });
+            }}
+          >
+            Regenerar desde alcance
+          </button>
+        </div>
+      </Card>
+
+      <Card>
+        <div className="eyebrow">05 / FORMA DE PAGO</div>
+        <Select
+          label="Preset"
+          value={draft.payment.presetId}
+          options={PAYMENT_PRESETS.map((preset) => ({ value: preset.id, label: preset.label }))}
+          onChange={(event) => {
+            const preset =
+              PAYMENT_PRESETS.find((item) => item.id === event.target.value) ?? PAYMENT_PRESETS[0]!;
+            onChange({
+              ...draft,
+              payment: {
+                presetId: preset.id,
+                installments: preset.installments.map((item) => ({ ...item })),
+              },
+            });
+          }}
+        />{" "}
+        <div className="payment-rows">
+          {draft.payment.installments.map((installment, index) => (
+            <div className="payment-row" key={index}>
+              <Input
+                value={installment.label}
+                onChange={(event) => changePayment(index, { label: event.target.value })}
+              />
+              <NumberField
+                label="%"
+                value={installment.pct}
+                onChange={(event) => changePayment(index, { pct: numberFrom(event) })}
+              />
+              <span className="mono payment-amount">{formatPen(paymentValues[index] ?? 0)}</span>
+              <button
+                className="icon-btn"
+                type="button"
+                onClick={() =>
+                  onChange({
+                    ...draft,
+                    payment: {
+                      ...draft.payment,
+                      installments: draft.payment.installments.filter(
+                        (_, itemIndex) => itemIndex !== index,
+                      ),
+                      presetId: "custom",
+                    },
+                  })
+                }
+                aria-label="Eliminar cuota"
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
+          ))}
+        </div>
+        {draft.payment.presetId === "custom" && (
+          <button
+            className="btn btn-ghost"
+            type="button"
+            onClick={() =>
+              onChange({
+                ...draft,
+                payment: {
+                  ...draft.payment,
+                  installments: [...draft.payment.installments, { label: "Nueva cuota", pct: 0 }],
+                },
+              })
+            }
+          >
+            <Plus size={15} /> Agregar cuota
+          </button>
+        )}
+      </Card>
+
+      <Card>
+        <div className="eyebrow">06 / CRONOGRAMA</div>
+        <div className="schedule-rows">
+          {draft.schedule.map((milestone, index) => (
+            <div className="schedule-row" key={index}>
+              <Input
+                value={milestone.label}
+                onChange={(event) => {
+                  onTouchSchedule();
+                  onChange({
+                    ...draft,
+                    schedule: draft.schedule.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, label: event.target.value } : item,
+                    ),
+                  });
+                }}
+              />
+              <NumberField
+                label="Desde"
+                value={milestone.fromWeek}
+                step={1}
+                onChange={(event) => {
+                  onTouchSchedule();
+                  onChange({
+                    ...draft,
+                    schedule: draft.schedule.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, fromWeek: numberFrom(event) } : item,
+                    ),
+                  });
+                }}
+              />
+              <NumberField
+                label="Hasta"
+                value={milestone.toWeek}
+                step={1}
+                onChange={(event) => {
+                  onTouchSchedule();
+                  onChange({
+                    ...draft,
+                    schedule: draft.schedule.map((item, itemIndex) =>
+                      itemIndex === index ? { ...item, toWeek: numberFrom(event) } : item,
+                    ),
+                  });
+                }}
+              />
+              <button
+                className="icon-btn"
+                type="button"
+                onClick={() => {
+                  onTouchSchedule();
+                  onChange({
+                    ...draft,
+                    schedule: draft.schedule.filter((_, itemIndex) => itemIndex !== index),
+                  });
+                }}
+                aria-label="Eliminar hito"
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
+          ))}
+        </div>
+        <div className="inline-actions">
+          <button
+            className="btn btn-ghost"
+            type="button"
+            onClick={() => {
+              onTouchSchedule();
+              onChange({
+                ...draft,
+                schedule: [
+                  ...draft.schedule,
+                  { label: "Nuevo hito", fromWeek: 1, toWeek: input.weeks },
+                ],
+              });
+            }}
+          >
+            <Plus size={15} /> Agregar hito
+          </button>
+          <button
+            className="btn btn-ghost"
+            type="button"
+            onClick={() => {
+              onTouchSchedule();
+              onChange({ ...draft, schedule: defaultSchedule(input) });
+            }}
+          >
+            Regenerar
+          </button>
+        </div>
+      </Card>
+
+      <Card>
+        <div className="eyebrow">07 / CONDICIONES ESPECÍFICAS</div>
+        <div className="editable-list">
+          {draft.conditions.map((item, index) => (
+            <div className="editable-row" key={index}>
+              <Input
+                value={item}
+                onChange={(event) => changeCondition(index, event.target.value)}
+              />
+              <button
+                className="icon-btn"
+                type="button"
+                onClick={() =>
+                  onChange({
+                    ...draft,
+                    conditions: draft.conditions.filter((_, itemIndex) => itemIndex !== index),
+                  })
+                }
+                aria-label="Eliminar condición"
+              >
+                <Trash2 size={15} />
+              </button>
+            </div>
+          ))}
+        </div>
+        <button
+          className="btn btn-ghost"
+          type="button"
+          onClick={() =>
+            onChange({ ...draft, conditions: [...draft.conditions, "Nueva condición"] })
+          }
+        >
+          <Plus size={15} /> Agregar condición
+        </button>
+        <button
+          className="btn btn-ghost"
+          type="button"
+          onClick={() => onChange({ ...draft, conditions: [...DEFAULT_CONDITIONS] })}
+        >
+          Restablecer condiciones
+        </button>
+      </Card>
+    </div>
+  );
+}

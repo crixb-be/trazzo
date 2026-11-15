@@ -1,6 +1,7 @@
-﻿"use client";
+"use client";
 
 export { Badge } from "./Badge";
+export { BillingToggle } from "./BillingToggle";
 export { Button } from "./Button";
 export { Card } from "./Card";
 export { CheckList } from "./CheckList";
@@ -15,6 +16,7 @@ export { Select } from "./Select";
 export { Tabs } from "./Tabs";
 export { ThemeToggle } from "./ThemeToggle";
 export type { BadgeProps, BadgeVariant } from "./Badge";
+export type { BillingToggleProps } from "./BillingToggle";
 export type { ButtonProps, ButtonSize, ButtonVariant } from "./Button";
 export type { CardProps } from "./Card";
 export type { CheckListProps } from "./CheckList";

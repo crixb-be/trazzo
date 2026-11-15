@@ -1433,7 +1433,7 @@ button {
     position: fixed;
     inset: auto 0 0;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, minmax(0, 1fr));
     gap: 2px;
     padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
     min-height: 62px;
@@ -2352,11 +2352,506 @@ button {
   display: none;
 }
 
+/* Honorarios, billing and proposal presentation */
+.billing-toggle,
+.tax-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-2);
+}
+.billing-toggle button,
+.tax-toggle button {
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  border-radius: 999px;
+  padding: 7px 11px;
+  font-size: 12px;
+}
+.billing-toggle button.active,
+.tax-toggle button.active {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+}
+.billing-savings {
+  color: var(--accent);
+  font-size: 10px;
+  margin-left: 4px;
+}
+.plan-equivalent {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+}
+.fees-page {
+  display: grid;
+  gap: 22px;
+}
+.fees-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr) minmax(300px, 340px);
+  gap: 20px;
+  align-items: start;
+}
+.quote-sidebar {
+  min-width: 0;
+}
+.sidebar-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.saved-quotes-list {
+  display: grid;
+  gap: 7px;
+}
+.saved-quote {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  padding: 11px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+}
+.saved-quote:hover,
+.saved-quote.active {
+  border-color: var(--accent);
+  background: var(--surface-2);
+}
+.saved-quote strong {
+  color: var(--accent);
+  font: 10px "JetBrains Mono";
+}
+.saved-quote span {
+  font-weight: 600;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.saved-quote small {
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.saved-quote b {
+  justify-self: end;
+  font-size: 12px;
+}
+.sidebar-actions,
+.inline-actions,
+.summary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.quote-editor {
+  min-width: 0;
+}
+.quote-form {
+  display: grid;
+  gap: 14px;
+}
+.form-grid {
+  display: grid;
+  gap: 12px;
+}
+.two-columns {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.scope-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+.scope-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 12px;
+}
+.scope-option > label {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  min-width: 0;
+}
+.scope-option > label > span {
+  display: grid;
+  gap: 3px;
+}
+.scope-option small,
+.collapse-trigger small {
+  color: var(--muted);
+  font-size: 11px;
+}
+.scope-sub-fields {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 10px;
+  padding: 10px 0 0 25px;
+  border-top: 1px solid var(--border);
+}
+.checkbox-grid,
+.radio-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+.checkbox-label,
+.radio-row label,
+.checkbox-grid label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.rates-card {
+  padding: 0;
+  overflow: hidden;
+}
+.collapse-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  padding: 20px;
+  text-align: left;
+}
+.collapse-trigger > span {
+  display: grid;
+  gap: 6px;
+}
+.rotated {
+  transform: rotate(180deg);
+}
+.rates-panel {
+  display: grid;
+  gap: 14px;
+  padding: 0 20px 20px;
+  border-top: 1px solid var(--border);
+}
+.editable-list {
+  display: grid;
+  gap: 7px;
+  margin: 12px 0;
+}
+.editable-row {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+}
+.editable-row .input {
+  min-width: 0;
+  flex: 1;
+}
+.payment-rows,
+.schedule-rows {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+.payment-row,
+.schedule-row {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+.payment-row > .input {
+  min-width: 110px;
+  flex: 1;
+}
+.payment-row .field,
+.schedule-row .field {
+  min-width: 82px;
+  flex: 0 1 110px;
+}
+.payment-amount {
+  min-width: 90px;
+  padding-bottom: 9px;
+  text-align: right;
+}
+.quote-summary {
+  position: sticky;
+  top: 92px;
+  min-width: 0;
+}
+.summary-lines {
+  display: grid;
+  gap: 12px;
+  margin: 16px 0;
+}
+.summary-line,
+.summary-total-row,
+.summary-tax-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.summary-line > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+.summary-line small {
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.35;
+}
+.summary-line > .mono {
+  white-space: nowrap;
+  font-size: 12px;
+}
+.summary-total-row {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  font-size: 13px;
+}
+.tax-toggle {
+  margin: 14px 0;
+  width: 100%;
+}
+.tax-toggle button {
+  flex: 1;
+  font-size: 11px;
+}
+.summary-tax-row {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 7px;
+}
+.grand-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 15px;
+  border-top: 1px solid var(--accent);
+  color: var(--accent);
+}
+.grand-total strong {
+  font-size: 21px;
+}
+.payment-ok {
+  color: var(--ok);
+  font-size: 12px;
+  margin: 8px 0 0;
+}
+.payment-danger {
+  color: var(--danger);
+  font-size: 12px;
+  margin: 8px 0 0;
+}
+.quote-warnings {
+  display: grid;
+  gap: 5px;
+  margin-top: 14px;
+  color: var(--danger);
+  font-size: 11px;
+}
+.quote-warnings p,
+.notice-inline {
+  margin: 0;
+}
+.summary-actions {
+  display: grid;
+}
+.summary-actions .btn {
+  width: 100%;
+  justify-content: center;
+}
+.notice-inline,
+.profile-hint {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.profile-hint a {
+  color: var(--accent);
+}
+.proposal-modal {
+  width: min(100%, 900px);
+  max-height: calc(100vh - 28px);
+  overflow: auto;
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+.proposal-sheet {
+  position: relative;
+  max-width: 794px;
+  margin: auto;
+  padding: 48px;
+  background: #fff;
+  color: #1a1b1f;
+  box-shadow: 0 18px 60px rgb(0 0 0 / 0.3);
+  overflow: hidden;
+}
+.proposal-header,
+.proposal-client-grid,
+.proposal-signatures {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.proposal-header {
+  align-items: start;
+}
+.proposal-header > div {
+  display: grid;
+  gap: 4px;
+}
+.proposal-header > div:last-child {
+  text-align: right;
+}
+.proposal-header strong {
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+.proposal-header small,
+.proposal-client-grid small,
+.proposal-signatures small {
+  color: #6b6d75;
+  font-size: 9px;
+}
+.proposal-rule {
+  height: 1px;
+  margin: 16px 0 18px;
+  background: #b5822f;
+}
+.proposal-client-grid {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.proposal-client-grid > div,
+.proposal-signatures > div {
+  display: grid;
+  gap: 5px;
+}
+.proposal-client-grid strong {
+  font-size: 11px;
+}
+.proposal-sheet h3 {
+  margin: 23px 0 8px;
+  border-bottom: 1px solid #b5822f;
+  padding-bottom: 5px;
+  color: #b5822f;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+.proposal-key-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.6fr 1fr 1.6fr;
+  gap: 7px 12px;
+  font-size: 10px;
+}
+.proposal-key-grid span {
+  color: #6b6d75;
+}
+.proposal-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 9px;
+}
+.proposal-table th,
+.proposal-table td {
+  padding: 6px;
+  border-bottom: 1px solid #ddd9d0;
+  text-align: left;
+  vertical-align: top;
+}
+.proposal-table th:last-child,
+.proposal-table td:last-child {
+  text-align: right;
+}
+.proposal-table thead th {
+  background: #f3f1ec;
+  color: #b5822f;
+}
+.proposal-table tfoot tr:last-child th {
+  color: #1a1b1f;
+  font-size: 10px;
+}
+.proposal-sheet ul {
+  display: grid;
+  gap: 5px;
+  margin: 8px 0;
+  padding-left: 0;
+  list-style: none;
+  font-size: 10px;
+  line-height: 1.45;
+}
+.proposal-signatures {
+  margin-top: 38px;
+  padding-top: 18px;
+}
+.proposal-signatures > div {
+  border-top: 1px solid #b5822f;
+  padding-top: 7px;
+}
+.proposal-sheet.with-watermark {
+}
+.preview-watermark {
+  position: absolute;
+  inset: 45% auto auto 6%;
+  transform: rotate(-30deg);
+  color: rgb(130 130 130 / 0.18);
+  font-size: 24px;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.calculator-tiles {
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+}
+
+.form-grid > * {
+  min-width: 0;
+}
+/* Laptops: three columns leave the form too narrow; the saved list moves on top. */
+@media (max-width: 1439px) {
+  .fees-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
+  }
+  .quote-sidebar {
+    grid-column: 1 / -1;
+  }
+  .quote-sidebar .saved-quotes-list {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  }
+}
+
 /*
  * Responsive overrides for component rules declared after the base media
  * queries above; they must come last to win the cascade.
  */
 @media (max-width: 1023px) {
+  /* Six destinations: tighter side padding keeps "Honorarios" readable at 360px. */
+  .bottom-nav a {
+    padding-left: 2px;
+    padding-right: 2px;
+  }
   .header-brand {
     display: grid;
   }
@@ -2385,6 +2880,12 @@ button {
   .header-title .eyebrow {
     display: none;
   }
+  .bottom-nav a span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
   .header-title strong {
     max-width: 100%;
     overflow: hidden;
@@ -2406,11 +2907,39 @@ button {
   .detail-copy > h1 {
     font-size: 26px;
   }
+  .fees-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .quote-editor {
+    order: 1;
+  }
+  .quote-summary {
+    position: static;
+    order: 2;
+  }
+  .quote-sidebar {
+    order: 3;
+  }
+  .saved-quotes-list {
+    max-height: 260px;
+    overflow: auto;
+  }
   /* minmax(0, 1fr) lets long mono labels wrap instead of widening the page */
   .calculator-tiles,
   .category-grid,
   .plan-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .scope-sub-fields {
+    grid-template-columns: 1fr;
+    padding-left: 0;
+  }
+  .payment-row,
+  .schedule-row {
+    flex-wrap: wrap;
+  }
+  .payment-row > .input {
+    flex-basis: 100%;
   }
   .norm-grid,
   .dashboard-columns {

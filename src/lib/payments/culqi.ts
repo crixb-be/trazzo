@@ -1,4 +1,5 @@
-﻿import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
+import { isBillingCycle, type BillingCycle } from "@/lib/plans/plans";
 
 export interface CulqiEvent {
   id: string;
@@ -6,6 +7,7 @@ export interface CulqiEvent {
   status: string;
   userId: string | null;
   plan: "student" | "pro" | null;
+  cycle: BillingCycle;
   payload: unknown;
 }
 
@@ -35,6 +37,10 @@ export function parseCulqiEvent(payload: unknown): CulqiEvent {
   const metadata = asRecord(data.metadata);
   const planValue = metadata.plan;
   const plan = planValue === "student" || planValue === "pro" ? planValue : null;
+  const cycle =
+    typeof metadata.cycle === "string" && isBillingCycle(metadata.cycle)
+      ? metadata.cycle
+      : "monthly";
 
   return {
     id: typeof root.id === "string" ? root.id : "",
@@ -42,6 +48,7 @@ export function parseCulqiEvent(payload: unknown): CulqiEvent {
     status: typeof data.status === "string" ? data.status : "",
     userId: typeof metadata.user_id === "string" ? metadata.user_id : null,
     plan,
+    cycle,
     payload,
   };
 }

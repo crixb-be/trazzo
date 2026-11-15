@@ -1,4 +1,5 @@
-﻿import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
+import { isBillingCycle, type BillingCycle } from "@/lib/plans/plans";
 
 export interface MercadoPagoSignature {
   timestamp: string;
@@ -14,6 +15,7 @@ export interface MercadoPagoPayment {
 export interface ExternalReference {
   userId: string;
   plan: "student" | "pro";
+  cycle: BillingCycle;
 }
 
 function safeHexEqual(left: string, right: string): boolean {
@@ -62,7 +64,9 @@ export async function fetchPayment(
 }
 
 export function parseExternalReference(value: string | null | undefined): ExternalReference | null {
-  const [userId, plan] = (value ?? "").split(":");
+  const [userId, plan, cycleValue] = (value ?? "").split(":");
   if (!userId || (plan !== "student" && plan !== "pro")) return null;
-  return { userId, plan };
+  const cycle = cycleValue ?? "monthly";
+  if (!isBillingCycle(cycle)) return null;
+  return { userId, plan, cycle };
 }

@@ -1,4 +1,4 @@
-﻿import { db, ensureSeeded, type Outbox, type Project, type Takeoff } from "./db";
+import { db, ensureSeeded, type FeeQuote, type Outbox, type Project, type Takeoff } from "./db";
 import { createClient } from "@/lib/supabase/client";
 import { canUseProCards, type Plan } from "@/lib/plans/plans";
 
@@ -29,28 +29,53 @@ async function currentPlan(): Promise<Plan> {
   return plan === "student" || plan === "pro" ? plan : "free";
 }
 
-async function writeRemoteItem(item: Outbox): Promise<void> {
+async function writeRemoteItem(item: Outbox): Promise<boolean> {
   const client = createClient();
-  if (!client) return;
+  if (!client) return false;
 
   if (item.table === "projects") {
     if (item.op === "delete") {
       const payload = item.payload as { id: string };
       await client.from("projects").delete().eq("id", payload.id);
-      return;
+      return true;
     }
-
     await client.from("projects").upsert(item.payload as Record<string, unknown>);
-    return;
+    return true;
   }
 
+  if (item.table === "takeoffs") {
+    if (item.op === "delete") {
+      const payload = item.payload as { id: string };
+      await client.from("project_takeoffs").delete().eq("id", payload.id);
+      return true;
+    }
+    await client.from("project_takeoffs").upsert(item.payload as Record<string, unknown>);
+    return true;
+  }
+
+  const { data: authData } = await client.auth.getUser();
+  if (!authData.user) return false;
+  const payload = item.payload as FeeQuote | { id: string };
   if (item.op === "delete") {
-    const payload = item.payload as { id: string };
-    await client.from("project_takeoffs").delete().eq("id", payload.id);
-    return;
+    const { error } = await client.from("fee_quotes").delete().eq("id", payload.id);
+    return !error;
   }
-
-  await client.from("project_takeoffs").upsert(item.payload as Record<string, unknown>);
+  const quote = payload as FeeQuote;
+  const { error } = await client.from("fee_quotes").upsert({
+    id: quote.id,
+    user_id: authData.user.id,
+    code: quote.code,
+    project_name: quote.projectName,
+    client_name: quote.clientName,
+    location: quote.location,
+    typology: quote.input.typology,
+    area_m2: quote.input.areaM2,
+    total_pen: quote.totals.total,
+    data: quote,
+    created_at: quote.createdAt,
+    updated_at: quote.updatedAt,
+  });
+  return !error;
 }
 
 /** Sends queued project and takeoff writes without clearing failed operations. */
@@ -64,8 +89,8 @@ export async function flushOutbox(): Promise<void> {
   try {
     const pending = await db.outbox.orderBy("id").toArray();
     for (const item of pending) {
-      await writeRemoteItem(item);
-      if (item.id !== undefined) await db.outbox.delete(item.id);
+      const written = await writeRemoteItem(item);
+      if (written && item.id !== undefined) await db.outbox.delete(item.id);
     }
     await db.meta.put({
       key: "lastSync",

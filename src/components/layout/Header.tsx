@@ -11,6 +11,7 @@ const titles: Record<string, string> = {
   "/normativa": "Biblioteca RNE",
   "/calculadoras": "Calculadoras técnicas",
   "/metrados": "Proyectos y metrados",
+  "/honorarios": "Honorarios y propuestas",
   "/asistente": "Asistente RNE",
   "/cuenta": "Cuenta y planes",
 };

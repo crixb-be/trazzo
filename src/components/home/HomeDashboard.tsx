@@ -1,7 +1,7 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Calculator, BookOpen, FolderOpen, Plus } from "lucide-react";
+import { ArrowUpRight, BookOpen, Briefcase, Calculator, FolderOpen, Plus } from "lucide-react";
 import { useLiveQuery } from "dexie-react-hooks";
 import { Card, GlobalSearch, Badge, EmptyState } from "@/components/ui";
 import { RNE_CARDS, type RneCategory } from "@/data/seed-rne";
@@ -21,6 +21,7 @@ const calculators = [
   { title: "Rampas", detail: "Pendientes A.120", href: "/calculadoras?tab=rampas" },
   { title: "Agua", detail: "IS.010", href: "/calculadoras?tab=agua" },
   { title: "Pozos de luz", detail: "H/3 · H/4", href: "/calculadoras?tab=pozos" },
+  { title: "Honorarios", detail: "Cotiza y exporta PDF", href: "/honorarios" },
 ];
 
 function projectTotal(
@@ -87,7 +88,11 @@ export function HomeDashboard() {
           {calculators.map((calculator) => (
             <Link className="calculator-tile" href={calculator.href} key={calculator.title}>
               <span className="tile-icon">
-                <Calculator size={18} aria-hidden="true" />
+                {calculator.href === "/honorarios" ? (
+                  <Briefcase size={18} aria-hidden="true" />
+                ) : (
+                  <Calculator size={18} aria-hidden="true" />
+                )}
               </span>
               <span>
                 <strong>{calculator.title}</strong>

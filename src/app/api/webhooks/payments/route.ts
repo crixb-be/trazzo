@@ -1,10 +1,11 @@
-﻿import { createAdminClient } from "@/lib/supabase/admin";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   fetchPayment,
   parseExternalReference,
   verifyMercadoPagoSignature,
 } from "@/lib/payments/mercadopago";
 import { parseCulqiEvent, verifyCulqiSignature } from "@/lib/payments/culqi";
+import { subscriptionDays, type BillingCycle } from "@/lib/plans/plans";
 
 export const runtime = "nodejs";
 
@@ -14,14 +15,15 @@ function asRecord(value: unknown): WebhookPayload {
   return typeof value === "object" && value !== null ? (value as WebhookPayload) : {};
 }
 
-function addSubscriptionDays(): string {
-  return new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+function addSubscriptionDays(cycle: BillingCycle): string {
+  return new Date(Date.now() + subscriptionDays(cycle) * 24 * 60 * 60 * 1000).toISOString();
 }
 
 async function applyPlan(
   admin: NonNullable<ReturnType<typeof createAdminClient>>,
   userId: string,
   plan: "student" | "pro",
+  cycle: BillingCycle,
 ): Promise<void> {
   const { data: profile } = await admin
     .from("profiles")
@@ -37,7 +39,7 @@ async function applyPlan(
     .from("profiles")
     .update({
       plan,
-      subscription_expires_at: addSubscriptionDays(),
+      subscription_expires_at: addSubscriptionDays(cycle),
       ai_queries_used: 0,
     })
     .eq("id", userId);
@@ -72,6 +74,7 @@ export async function POST(request: Request): Promise<Response> {
   let userId: string | null = null;
   let plan: "student" | "pro" | null = null;
   let approved = false;
+  let cycle: BillingCycle = "monthly";
 
   if (provider === "mercadopago") {
     const secret = process.env.MP_WEBHOOK_SECRET;
@@ -97,6 +100,7 @@ export async function POST(request: Request): Promise<Response> {
     const reference = parseExternalReference(payment.external_reference);
     userId = reference?.userId ?? null;
     plan = reference?.plan ?? null;
+    cycle = reference?.cycle ?? "monthly";
     approved = payment.status === "approved";
   } else {
     const secret = process.env.CULQI_WEBHOOK_SECRET;
@@ -111,6 +115,7 @@ export async function POST(request: Request): Promise<Response> {
     eventId = event.id;
     userId = event.userId;
     plan = event.plan;
+    cycle = event.cycle;
     approved = event.event === "charge.creation.succeeded" && event.status === "succeeded";
   }
 
@@ -136,7 +141,7 @@ export async function POST(request: Request): Promise<Response> {
   });
 
   if (approved && userId && plan) {
-    await applyPlan(admin, userId, plan);
+    await applyPlan(admin, userId, plan, cycle);
   }
 
   return Response.json({ received: true });

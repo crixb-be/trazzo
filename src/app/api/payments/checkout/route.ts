@@ -1,11 +1,12 @@
-﻿import { z } from "zod";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { PLANS } from "@/lib/plans/plans";
+import { planPrice, PLANS } from "@/lib/plans/plans";
 
 export const runtime = "nodejs";
 
 const checkoutSchema = z.object({
   plan: z.enum(["student", "pro"]),
+  cycle: z.enum(["monthly", "annual"]).default("monthly"),
 });
 
 export async function POST(request: Request): Promise<Response> {
@@ -54,14 +55,14 @@ export async function POST(request: Request): Promise<Response> {
     body: JSON.stringify({
       items: [
         {
-          id: "trazzo-" + body.plan,
-          title: "TRAZZO " + plan.label,
+          id: "trazzo-" + body.plan + "-" + body.cycle,
+          title: "TRAZZO " + plan.label + " ? " + (body.cycle === "annual" ? "Anual" : "Mensual"),
           quantity: 1,
           currency_id: "PEN",
-          unit_price: plan.pricePen,
+          unit_price: planPrice(body.plan, body.cycle),
         },
       ],
-      external_reference: user.id + ":" + body.plan,
+      external_reference: user.id + ":" + body.plan + ":" + body.cycle,
       back_urls: {
         success: appUrl + "/cuenta?payment=success",
         failure: appUrl + "/cuenta?payment=failure",

@@ -1,5 +1,11 @@
-﻿import Dexie, { type Table } from "dexie";
+import Dexie, { type Table } from "dexie";
 import { MATERIALS, RNE_CARDS, SEED_VERSION, type Material, type RneCard } from "@/data/seed-rne";
+import type {
+  FeeQuoteInput,
+  Milestone,
+  PaymentInstallment,
+  PaymentPreset,
+} from "@/lib/calculators/fees";
 
 export type SyncState = "local" | "pending" | "synced";
 export type ProjectStatus = "activo" | "pausado" | "cerrado";
@@ -35,8 +41,25 @@ export interface Meta {
   value: string;
 }
 
-export type OutboxTable = "projects" | "takeoffs";
+export type OutboxTable = "projects" | "takeoffs" | "fee_quotes";
 export type OutboxOperation = "upsert" | "delete";
+
+export interface FeeQuote {
+  id: string;
+  code: string;
+  projectName: string;
+  clientName: string;
+  location: string;
+  input: FeeQuoteInput;
+  deliverables: string[];
+  schedule: Milestone[];
+  payment: { presetId: PaymentPreset["id"]; installments: PaymentInstallment[] };
+  conditions: string[];
+  totals: { subtotal: number; taxAmount: number; total: number };
+  createdAt: string;
+  updatedAt: string;
+  syncState: SyncState;
+}
 
 export interface Outbox {
   id?: number;
@@ -53,6 +76,7 @@ export class TrazzoDB extends Dexie {
   takeoffs!: Table<Takeoff, string>;
   meta!: Table<Meta, string>;
   outbox!: Table<Outbox, number>;
+  fee_quotes!: Table<FeeQuote, string>;
 
   constructor() {
     super("TrazzoDB");
@@ -63,6 +87,15 @@ export class TrazzoDB extends Dexie {
       takeoffs: "id,projectId,updatedAt,syncState",
       meta: "key",
       outbox: "++id,table,createdAt",
+    });
+    this.version(2).stores({
+      rneCards: "slug,norm_code,category,*keywords",
+      materials: "code,category",
+      projects: "id,updatedAt,syncState",
+      takeoffs: "id,projectId,updatedAt,syncState",
+      meta: "key",
+      outbox: "++id,table,createdAt",
+      fee_quotes: "id,code,updatedAt,syncState",
     });
   }
 }

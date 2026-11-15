@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
   canCreateProject,
   canExportPdf,
@@ -7,12 +7,23 @@ import {
   isEduPeEmail,
   isPlan,
   PLANS,
+  annualSavingsPct,
+  formatPlanPrice,
+  monthlyEquivalent,
+  subscriptionDays,
 } from "./plans";
 
 describe("plans", () => {
   it("defines the requested prices", () => {
-    expect(PLANS.pro.pricePen).toBe(19.9);
-    expect(PLANS.student.pricePen).toBe(9.95);
+    expect(PLANS.pro.prices).toEqual({ monthly: 14.99, annual: 109 });
+    expect(PLANS.student.prices).toEqual({ monthly: 7.99, annual: 60 });
+    expect(annualSavingsPct("student")).toBe(37);
+    expect(annualSavingsPct("pro")).toBe(39);
+    expect(monthlyEquivalent("pro", "annual")).toBe(9.08);
+    expect(subscriptionDays("monthly")).toBe(30);
+    expect(subscriptionDays("annual")).toBe(365);
+    expect(formatPlanPrice("student", "monthly")).toBe("S/ 7.99 / mes");
+    expect(formatPlanPrice("student", "annual")).toBe("S/ 60.00 / a\u00f1o");
   });
 
   it("limits free projects", () => {

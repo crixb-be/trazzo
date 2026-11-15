@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   BookOpen,
   Calculator,
+  Briefcase,
   ChevronRight,
   ClipboardList,
   Home,
@@ -17,6 +18,7 @@ const items = [
   { href: "/normativa", label: "Normativa", icon: BookOpen },
   { href: "/calculadoras", label: "Calculadoras", icon: Calculator },
   { href: "/metrados", label: "Metrados", icon: ClipboardList },
+  { href: "/honorarios", label: "Honorarios", icon: Briefcase },
   { href: "/asistente", label: "Asistente", icon: MessageSquare },
   { href: "/cuenta", label: "Cuenta", icon: UserRound },
 ] as const;

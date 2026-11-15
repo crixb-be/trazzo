@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { BookOpen, Calculator, ClipboardList, Home, MessageSquare } from "lucide-react";
+import { BookOpen, Briefcase, Calculator, ClipboardList, Home, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -9,6 +9,7 @@ const items = [
   ["/normativa", "Normativa", BookOpen],
   ["/calculadoras", "Calcular", Calculator],
   ["/metrados", "Metrados", ClipboardList],
+  ["/honorarios", "Honorarios", Briefcase],
   ["/asistente", "IA", MessageSquare],
 ] as const;
 

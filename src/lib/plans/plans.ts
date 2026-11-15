@@ -1,48 +1,85 @@
-﻿export type Plan = "free" | "student" | "pro";
+export type Plan = "free" | "student" | "pro";
+export type BillingCycle = "monthly" | "annual";
 
 export interface PlanDefinition {
   label: string;
-  price: number;
-  pricePen: number;
+  prices: Record<BillingCycle, number>;
   projects: number;
   aiQueries: number;
   pdfExport: boolean;
   proCards: boolean;
   requiresStudentVerification: boolean;
+  proposalPdf: boolean;
 }
 
 export const PLANS: Record<Plan, PlanDefinition> = {
   free: {
     label: "Gratis",
-    price: 0,
-    pricePen: 0,
+    prices: { monthly: 0, annual: 0 },
     projects: 1,
     aiQueries: 10,
     pdfExport: false,
     proCards: false,
     requiresStudentVerification: false,
+    proposalPdf: false,
   },
   student: {
     label: "Estudiante",
-    price: 9.95,
-    pricePen: 9.95,
+    prices: { monthly: 7.99, annual: 60 },
     projects: Number.POSITIVE_INFINITY,
     aiQueries: 200,
     pdfExport: true,
     proCards: true,
     requiresStudentVerification: true,
+    proposalPdf: true,
   },
   pro: {
     label: "PRO",
-    price: 19.9,
-    pricePen: 19.9,
+    prices: { monthly: 14.99, annual: 109 },
     projects: Number.POSITIVE_INFINITY,
     aiQueries: Number.POSITIVE_INFINITY,
     pdfExport: true,
     proCards: true,
     requiresStudentVerification: false,
+    proposalPdf: true,
   },
 };
+
+export function planPrice(plan: Plan, cycle: BillingCycle): number {
+  return PLANS[plan].prices[cycle];
+}
+
+export function annualSavingsPct(plan: Plan): number {
+  const monthly = PLANS[plan].prices.monthly;
+  const annual = PLANS[plan].prices.annual;
+  if (monthly === 0) return 0;
+  return Math.round((1 - annual / (monthly * 12)) * 100);
+}
+
+export function monthlyEquivalent(plan: Plan, cycle: BillingCycle): number {
+  return cycle === "annual"
+    ? Math.round((planPrice(plan, cycle) / 12) * 100) / 100
+    : planPrice(plan, cycle);
+}
+
+export function subscriptionDays(cycle: BillingCycle): number {
+  return cycle === "annual" ? 365 : 30;
+}
+
+export function isBillingCycle(value: string): value is BillingCycle {
+  return value === "monthly" || value === "annual";
+}
+
+export function canExportCleanProposal(plan: Plan): boolean {
+  return PLANS[plan].proposalPdf;
+}
+
+export function formatPlanPrice(plan: Plan, cycle: BillingCycle): string {
+  const price = planPrice(plan, cycle);
+  return price === 0
+    ? "Gratis"
+    : "S/ " + price.toFixed(2) + (cycle === "annual" ? " / año" : " / mes");
+}
 
 export function isPlan(value: string): value is Plan {
   return value === "free" || value === "student" || value === "pro";

@@ -1,8 +1,9 @@
-﻿"use client";
+"use client";
 
 import { useEffect } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db, ensureSeeded, type Project, type Takeoff } from "./db";
+import { db, ensureSeeded, type FeeQuote, type Project, type Takeoff } from "./db";
+import { getProfessionalProfile } from "./profile";
 import { getSyncStatus, startOnlineSync, type SyncStatus } from "./sync";
 
 export function useCards() {
@@ -85,4 +86,18 @@ export function useOnlineStatus(): boolean {
 
 export function useSeeded(): boolean {
   return useCards().length > 0;
+}
+
+export function useFeeQuotes(): FeeQuote[] {
+  return (
+    useLiveQuery(
+      async () => (db ? db.fee_quotes.orderBy("updatedAt").reverse().toArray() : []),
+      [],
+      [],
+    ) ?? []
+  );
+}
+
+export function useProfessionalProfile(): { fullName: string; capNumber: string } {
+  return useLiveQuery(() => getProfessionalProfile(), [], { fullName: "", capNumber: "" });
 }
