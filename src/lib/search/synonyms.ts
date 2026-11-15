@@ -1,3 +1,4 @@
+import { expandColloquialQuery } from "./colloquial";
 import { normalize, tokenize } from "./normalize";
 
 export const SYNONYM_GROUPS: string[][] = [
@@ -61,6 +62,14 @@ export const RELATED_TERMS: Record<string, string[]> = {
   cisterna: ["dotacion", "agua"],
 };
 
+/** RELATED_TERMS keyed by normalized term ("baño" → "bano") so lookups match normalized queries. */
+const NORMALIZED_RELATED_TERMS = new Map(
+  Object.entries(RELATED_TERMS).map(([term, related]) => [normalize(term), related]),
+);
+
+/** Weight for RNE terms implied by everyday wording ("medida" → "ancho mínimo"). */
+const COLLOQUIAL_WEIGHT = 0.5;
+
 export interface WeightedToken {
   token: string;
   weight: number;
@@ -99,7 +108,7 @@ function termsForQuery(queryTokens: string[]): string[] {
       phrase.includes(" ") &&
       queryTokens.some((_, index) => phraseMatches(queryTokens, index, phrase))
     ) {
-      terms.add(phrase);
+      terms.add(normalize(phrase));
     }
   }
   return [...terms];
@@ -120,7 +129,13 @@ export function weightedTokens(query: string): WeightedToken[] {
         if (synonym !== term) addToken(output, synonym, 0.6, false);
       }
     }
-    for (const related of RELATED_TERMS[term] ?? []) addToken(output, related, 0.35, false);
+    for (const related of NORMALIZED_RELATED_TERMS.get(term) ?? []) {
+      addToken(output, related, 0.35, false);
+    }
+  }
+
+  for (const term of expandColloquialQuery(query).technicalTerms) {
+    addToken(output, term, COLLOQUIAL_WEIGHT, false);
   }
 
   return [...output.values()];

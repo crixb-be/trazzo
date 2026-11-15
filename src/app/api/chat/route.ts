@@ -8,7 +8,9 @@ import { google } from "@ai-sdk/google";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { streamClaudeAnswer, type ChatTurn } from "@/lib/ai/anthropic";
 import { retrieve } from "@/lib/rag/retrieve";
+import { expandColloquialQuery } from "@/lib/search/colloquial";
 import { buildLocalAnswer, buildSystemPrompt, NO_RESULT_ANSWER } from "@/lib/rag/prompt";
 import { canUseAiQueries, isPlan, type Plan } from "@/lib/plans/plans";
 
@@ -98,6 +100,61 @@ function streamPlainText(text: string, sources: SourceData[]): Response {
   return createUIMessageStreamResponse({ stream });
 }
 
+type Provider = "anthropic" | "openai" | "google" | "local";
+
+const PROVIDER_KEYS: Record<Exclude<Provider, "local">, string> = {
+  anthropic: "ANTHROPIC_API_KEY",
+  openai: "OPENAI_API_KEY",
+  google: "GOOGLE_GENERATIVE_AI_API_KEY",
+};
+
+/**
+ * AI_PROVIDER picks a provider explicitly when its key is present; otherwise
+ * the first configured one wins (Anthropic, OpenAI, Google), else local mode.
+ */
+function selectProvider(): Provider {
+  const preferred = process.env.AI_PROVIDER?.trim().toLowerCase();
+  if (preferred && preferred in PROVIDER_KEYS) {
+    const key = PROVIDER_KEYS[preferred as keyof typeof PROVIDER_KEYS];
+    if (process.env[key]) return preferred as Provider;
+  }
+  for (const provider of ["anthropic", "openai", "google"] as const) {
+    if (process.env[PROVIDER_KEYS[provider]]) return provider;
+  }
+  return "local";
+}
+
+const REFUSAL_ANSWER =
+  "No puedo responder esa consulta. Reformúlala como una pregunta técnica sobre el RNE.";
+
+function streamClaude(system: string, turns: ChatTurn[], sources: SourceData[]): Response {
+  const stream = createUIMessageStream<ServerChatMessage>({
+    execute: async ({ writer }) => {
+      writer.write({ type: "data-sources", data: sources });
+      writer.write({ type: "text-start", id: "trazzo-answer" });
+      let wroteText = false;
+      const { stopReason } = await streamClaudeAnswer(system, turns, (delta) => {
+        wroteText = true;
+        writer.write({ type: "text-delta", id: "trazzo-answer", delta });
+      });
+      if (stopReason === "refusal") {
+        writer.write({
+          type: "text-delta",
+          id: "trazzo-answer",
+          delta: (wroteText ? "\n\n" : "") + REFUSAL_ANSWER,
+        });
+      }
+      writer.write({ type: "text-end", id: "trazzo-answer" });
+    },
+    onError: (error) => {
+      console.error("Error de Claude en /api/chat", error);
+      return "No pudimos completar la respuesta del asistente.";
+    },
+  });
+
+  return createUIMessageStreamResponse({ stream });
+}
+
 export async function POST(request: Request): Promise<Response> {
   let parsed: z.infer<typeof requestSchema>;
 
@@ -170,33 +227,37 @@ export async function POST(request: Request): Promise<Response> {
       await increment();
     }
 
-    const chunks = await retrieve(query);
+    const provider = selectProvider();
+    // With a model we hand it up to 6 related cards to synthesise; without one,
+    // the local answer keeps to the few clearly relevant cards.
+    const chunks = await retrieve(query, provider === "local" ? "extractive" : "synthesis");
     const sources = chunks.map((chunk) => ({ slug: chunk.slug, citation: chunk.citation }));
 
     if (!chunks.length) {
       return streamPlainText(NO_RESULT_ANSWER, []);
     }
 
-    const model = process.env.GOOGLE_GENERATIVE_AI_API_KEY
-      ? google("gemini-2.0-flash")
-      : process.env.OPENAI_API_KEY
-        ? openai("gpt-4o-mini")
-        : null;
-
-    if (!model) {
+    if (provider === "local") {
       return streamPlainText(buildLocalAnswer(query, chunks), sources);
     }
 
+    const system = buildSystemPrompt(chunks, expandColloquialQuery(query).technicalTerms);
+    const turns: ChatTurn[] = parsed.messages
+      .slice(-6)
+      .filter((message) => message.role !== "system")
+      .map((message) => ({
+        role: message.role as "user" | "assistant",
+        text: getMessageText(message),
+      }));
+
+    if (provider === "anthropic") {
+      return streamClaude(system, turns, sources);
+    }
+
     const result = streamText({
-      model,
-      system: buildSystemPrompt(chunks),
-      messages: parsed.messages
-        .slice(-6)
-        .filter((message) => message.role !== "system")
-        .map((message) => ({
-          role: message.role as "user" | "assistant",
-          content: getMessageText(message),
-        })),
+      model: provider === "openai" ? openai("gpt-4o-mini") : google("gemini-2.0-flash"),
+      system,
+      messages: turns.map((turn) => ({ role: turn.role, content: turn.text })),
       temperature: 0.1,
     });
 

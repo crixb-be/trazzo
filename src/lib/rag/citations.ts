@@ -1,4 +1,4 @@
-﻿import { RNE_CARDS } from "@/data/seed-rne";
+import { RNE_CARDS } from "@/data/seed-rne";
 import { normalize } from "@/lib/search/normalize";
 
 export interface CitationSegment {
@@ -10,12 +10,42 @@ export interface CitationSegment {
 
 const CITATION_PATTERN = /\[([A-Z]{1,3}\.\d{3}\s+[^\]]+)\]/g;
 
+/** Separator between the norm reference and the card title in a citation. */
+export const CITATION_TITLE_SEPARATOR = " · ";
+
+/**
+ * Card-specific citation, e.g. "[A.120 Art. 9 · Ancho de puerta accesible]".
+ * Several cards share one article (A.120 Art. 9 covers ramps, doors, parking…),
+ * so the title is what lets each citation link to the card actually used.
+ */
+export function citationForCard(card: {
+  norm_code: string;
+  article: string;
+  title: string;
+}): string {
+  const articleShort = card.article.split(" - ")[0].trim();
+  return `[${card.norm_code} ${articleShort}${CITATION_TITLE_SEPARATOR}${card.title}]`;
+}
+
 function findSlug(citation: string): string | null {
   const firstSpace = citation.indexOf(" ");
   if (firstSpace < 0) return null;
 
   const normCode = citation.slice(0, firstSpace);
-  const article = normalize(citation.slice(firstSpace + 1));
+  const rest = citation.slice(firstSpace + 1);
+  const separatorIndex = rest.indexOf(CITATION_TITLE_SEPARATOR.trim());
+
+  // Card-specific form: match the title within the norm.
+  if (separatorIndex >= 0) {
+    const title = normalize(rest.slice(separatorIndex + 1));
+    const byTitle = RNE_CARDS.find(
+      (candidate) => candidate.norm_code === normCode && normalize(candidate.title) === title,
+    );
+    if (byTitle) return byTitle.slug;
+  }
+
+  // Legacy form "[A.120 Art. 9 - Accesibilidad]": first card of that article.
+  const article = normalize(separatorIndex >= 0 ? rest.slice(0, separatorIndex) : rest);
   const card = RNE_CARDS.find(
     (candidate) =>
       candidate.norm_code === normCode &&
