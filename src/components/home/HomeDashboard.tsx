@@ -8,6 +8,8 @@ import { RNE_CARDS, type RneCategory } from "@/data/seed-rne";
 import { db, type Project } from "@/lib/offline/db";
 import { useCards, useProjects, useSyncStatus } from "@/lib/offline/hooks";
 
+import { useLibraryActivity } from "@/lib/offline/library";
+
 const categories: Array<{ name: RneCategory; label: string }> = [
   { name: "Accesibilidad", label: "Accesibilidad" },
   { name: "Circulación", label: "Circulación" },
@@ -47,7 +49,13 @@ export function HomeDashboard() {
   for (const card of cards)
     categoryCounts.set(card.category, (categoryCounts.get(card.category) ?? 0) + 1);
 
-  const recentCards = cards.length > 0 ? cards.slice(0, 4) : RNE_CARDS.slice(0, 4);
+  const activity = useLibraryActivity();
+  const recentCards = activity
+    .filter((a) => a.visitedAt)
+    .sort((a, b) => b.visitedAt.localeCompare(a.visitedAt))
+    .map((a) => (cards.length ? cards : RNE_CARDS).find((c) => c.slug === a.slug))
+    .filter((c): c is (typeof RNE_CARDS)[number] => !!c)
+    .slice(0, 4);
   const activeProjects = projects.filter((project) => project.status === "activo").slice(0, 3);
 
   return (

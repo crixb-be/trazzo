@@ -1,4 +1,4 @@
-﻿import type { ComponentType, ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 import type { RneCard, SvgType } from "@/data/seed-rne";
 import { DoorClearance, type DoorClearanceProps } from "./DoorClearance";
 import { LightWell, type LightWellProps } from "./LightWell";
@@ -20,6 +20,17 @@ export type DiagramComponentProps =
   | WheelchairTurnProps;
 
 export const diagramRegistry: Record<SvgType, ComponentType<DiagramComponentProps>> = {
+  reference: () => (
+    <svg viewBox="0 0 400 260" role="img" aria-label="Guía de revisión documental">
+      <rect x="100" y="30" width="200" height="190" fill="none" stroke="currentColor" />
+      <text x="200" y="100" textAnchor="middle" fill="currentColor">
+        RNE · Por verificar
+      </text>
+      <text x="200" y="150" textAnchor="middle" fill="currentColor">
+        Contrastar fuente oficial
+      </text>
+    </svg>
+  ),
   "door-clearance": DoorClearance as ComponentType<DiagramComponentProps>,
   "light-well": LightWell as ComponentType<DiagramComponentProps>,
   "parking-stall": ParkingStall as ComponentType<DiagramComponentProps>,
