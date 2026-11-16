@@ -11,6 +11,7 @@
   --ok: #6fbf8e;
   --highlight: #22d3ee;
   --on-accent: #151515;
+  --on-danger: #151515;
 
   /* Multiplica toda la letra; lo cambia «Tamaño de letra» en Cuenta. */
   --font-scale: 1;
@@ -41,8 +42,11 @@ html:not(.dark) {
   --surface-2: #efede8;
   --border: #e2dfd8;
   --text: #1a1b1f;
-  --muted: #6b6d75;
-  --accent: #b5822f;
+  /* Muted and accent are dark enough to read as text (4.5:1) on every light surface. */
+  --muted: #5f6169;
+  --accent: #8a5a12;
+  --on-accent: #fff;
+  --on-danger: #fff;
   --danger: #c2410c;
   --ok: #15803d;
   --highlight: #0891b2;
@@ -62,6 +66,7 @@ html.obra {
   --ok: #00591f;
   --highlight: #004f63;
   --on-accent: #fff;
+  --on-danger: #fff;
 }
 html[data-text="grande"] {
   --font-scale: 1.15;

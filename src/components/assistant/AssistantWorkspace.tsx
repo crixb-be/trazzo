@@ -160,7 +160,12 @@ export function AssistantWorkspace() {
                 <Square size={15} />
               </Button>
             ) : (
-              <Button type="submit" variant="primary" disabled={!historyReady || !input.trim()}>
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={!historyReady || !input.trim()}
+                aria-label="Enviar consulta"
+              >
                 <Send size={16} />
               </Button>
             )}

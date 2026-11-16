@@ -336,6 +336,7 @@
 }
 .profile-hint a {
   color: var(--accent);
+  text-decoration: underline;
 }
 .proposal-modal {
   width: min(100%, 900px);

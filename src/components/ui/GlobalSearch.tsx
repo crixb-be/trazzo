@@ -112,8 +112,10 @@ export function GlobalSearch({
         />
         <kbd>{variant === "inline" ? "Enter" : "Ctrl K"}</kbd>
       </div>
+      {/* The list stays in the page (hidden) so the combobox always has a target. */}
+      {!(open && query) && <div id={listId} role="listbox" aria-label="Resultados" hidden />}
       {open && query && (
-        <div className="search-results" id={listId} role="listbox">
+        <div className="search-results" id={listId} role="listbox" aria-label="Resultados">
           {results.length > 0 ? (
             results.map((card, index) => (
               <button
@@ -130,7 +132,9 @@ export function GlobalSearch({
               </button>
             ))
           ) : (
-            <p className="muted small">Sin resultados locales.</p>
+            <p className="muted small" role="option" aria-selected="false" aria-disabled="true">
+              Sin resultados locales.
+            </p>
           )}
         </div>
       )}
