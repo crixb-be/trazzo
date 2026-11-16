@@ -11,9 +11,13 @@ import { WaterCalculator } from "./WaterCalculator";
 
 import { MaterialsCalculator } from "./materials/MaterialsCalculator";
 
-type CalculatorTab = "materiales" | "escaleras" | "rampas" | "agua" | "pozos" | "evacuacion";
+import { FieldTools } from "./tools/FieldTools";
+
+type CalculatorTab =
+  "utilidades" | "materiales" | "escaleras" | "rampas" | "agua" | "pozos" | "evacuacion";
 
 const tabs: Array<{ id: CalculatorTab; label: string }> = [
+  { id: "utilidades", label: "Utilidades de campo" },
   { id: "materiales", label: "Materiales" },
   { id: "escaleras", label: "Escaleras" },
   { id: "rampas", label: "Rampas" },
@@ -84,6 +88,7 @@ export function CalculatorWorkspace() {
         Valores referenciales según la edición indicada del RNE. Verifica la versión vigente
         publicada por el MVCS antes de usar en expedientes.
       </div>
+      {activeTab === "utilidades" && <FieldTools />}
       {activeTab === "materiales" && <MaterialsCalculator />}
       {activeTab === "escaleras" && <StairCalculator />}
       {activeTab === "rampas" && <RampCalculator />}
