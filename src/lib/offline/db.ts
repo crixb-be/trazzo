@@ -101,6 +101,8 @@ export class TrazzoDB extends Dexie {
   fee_quotes!: Table<FeeQuote, string>;
   studio_profile!: Table<StudioProfile, string>;
 
+  project_options!: Table<{ projectId: string; area: number }, string>;
+
   constructor() {
     super("TrazzoDB");
     this.version(1).stores({
@@ -120,6 +122,7 @@ export class TrazzoDB extends Dexie {
       outbox: "++id,table,createdAt",
       fee_quotes: "id,code,updatedAt,syncState",
     });
+    this.version(4).stores({ project_options: "projectId" });
     this.version(3).stores({
       rneCards: "slug,norm_code,category,*keywords",
       materials: "code,category",

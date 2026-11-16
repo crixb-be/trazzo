@@ -15,6 +15,7 @@ import { deleteProject, deleteTakeoff, saveProject, saveTakeoff } from "@/lib/of
 import { describeSyncResult, syncNow as runSync } from "@/lib/offline/sync";
 import { canCreateProject, canExportPdf } from "@/lib/plans/plans";
 import { useCurrentPlan } from "@/lib/plans/use-current-plan";
+import { TakeoffExtras } from "./TakeoffExtras";
 import { ProjectList } from "./ProjectList";
 import { TakeoffTable, type TakeoffDraft } from "./TakeoffTable";
 
@@ -352,6 +353,13 @@ export function MetradosWorkspace() {
                   </div>
                 </div>
               </div>
+              <TakeoffExtras
+                key={activeProject.id}
+                project={activeProject}
+                lines={takeoffs}
+                canDuplicate={canCreateProject(plan, projects.length)}
+                onDuplicate={(p) => setSelectedId(p.id)}
+              />
               <TakeoffTable
                 takeoffs={takeoffs}
                 materials={catalog}
