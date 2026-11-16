@@ -9,9 +9,12 @@ import { RampCalculator } from "./RampCalculator";
 import { StairCalculator } from "./StairCalculator";
 import { WaterCalculator } from "./WaterCalculator";
 
-type CalculatorTab = "escaleras" | "rampas" | "agua" | "pozos" | "evacuacion";
+import { MaterialsCalculator } from "./materials/MaterialsCalculator";
+
+type CalculatorTab = "materiales" | "escaleras" | "rampas" | "agua" | "pozos" | "evacuacion";
 
 const tabs: Array<{ id: CalculatorTab; label: string }> = [
+  { id: "materiales", label: "Materiales" },
   { id: "escaleras", label: "Escaleras" },
   { id: "rampas", label: "Rampas" },
   { id: "agua", label: "Dotación de agua" },
@@ -46,7 +49,7 @@ export function CalculatorWorkspace() {
             Resultados referenciales para anteproyecto, revisión y coordinación de obra.
           </p>
         </div>
-        <span className="mono small muted">5 módulos</span>
+        <span className="mono small muted">{tabs.length} módulos</span>
       </div>
       <label className="calculator-selector" htmlFor="calculator-select">
         Calculadora
@@ -81,6 +84,7 @@ export function CalculatorWorkspace() {
         Valores referenciales según la edición indicada del RNE. Verifica la versión vigente
         publicada por el MVCS antes de usar en expedientes.
       </div>
+      {activeTab === "materiales" && <MaterialsCalculator />}
       {activeTab === "escaleras" && <StairCalculator />}
       {activeTab === "rampas" && <RampCalculator />}
       {activeTab === "agua" && <WaterCalculator />}
