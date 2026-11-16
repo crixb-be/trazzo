@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Wifi, WifiOff } from "lucide-react";
 import { useSyncStatus } from "@/lib/offline/hooks";

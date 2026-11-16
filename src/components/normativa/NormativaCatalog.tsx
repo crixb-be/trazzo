@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Lock, Search, SlidersHorizontal } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Badge, Card, Chip, EmptyState, Input, PaywallModal } from "@/components/ui";
+import { Badge, Card, Chip, EmptyState, Input, LoadingState, PaywallModal } from "@/components/ui";
 import { useLibraryActivity } from "@/lib/offline/library";
 import type { RneCategory } from "@/data/seed-rne";
 import { useCards } from "@/lib/offline/hooks";
@@ -96,7 +96,7 @@ export function NormativaCatalog() {
   const hasProAccess = canUseProCards(plan);
 
   if (!loaded && cards.length === 0) {
-    return <CatalogState message="Cargando fichas locales…" />;
+    return <LoadingState label="Cargando fichas guardadas en este dispositivo…" rows={4} />;
   }
 
   if (loadError) {
@@ -187,6 +187,7 @@ export function NormativaCatalog() {
 
       {filteredCards.length === 0 ? (
         <EmptyState
+          icon={<Search size={22} />}
           title="No encontramos fichas"
           description="Prueba con una norma, un artículo o jerga de obra como garganta o vano."
           action={

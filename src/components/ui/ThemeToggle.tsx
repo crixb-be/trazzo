@@ -1,32 +1,25 @@
-﻿"use client";
+"use client";
 
-import { Moon, Sun } from "lucide-react";
-import { useEffect, useState } from "react";
+import { HardHat, Moon, Sun } from "lucide-react";
+import { nextTheme, themeLabel } from "@/lib/ui/display";
+import { useDisplay } from "@/lib/ui/use-display";
 
+/** Cycles dark → light → site mode (high contrast for direct sun). */
 export function ThemeToggle() {
-  const [dark, setDark] = useState(true);
-
-  useEffect(() => {
-    const isDark = localStorage.getItem("trazzo-theme") !== "light";
-    setDark(isDark);
-    document.documentElement.classList.toggle("dark", isDark);
-  }, []);
-
-  function toggleTheme(): void {
-    const nextDark = !dark;
-    setDark(nextDark);
-    localStorage.setItem("trazzo-theme", nextDark ? "dark" : "light");
-    document.documentElement.classList.toggle("dark", nextDark);
-  }
+  const { theme, setTheme } = useDisplay();
+  const upcoming = nextTheme(theme);
 
   return (
     <button
       className="icon-btn"
       type="button"
-      onClick={toggleTheme}
-      aria-label={dark ? "Usar tema claro" : "Usar tema oscuro"}
+      onClick={() => setTheme(upcoming)}
+      aria-label={"Tema " + themeLabel(theme) + ". Cambiar a " + themeLabel(upcoming)}
+      title={"Tema: " + themeLabel(theme)}
     >
-      {dark ? <Sun size={17} /> : <Moon size={17} />}
+      {theme === "dark" && <Moon size={17} aria-hidden="true" />}
+      {theme === "light" && <Sun size={17} aria-hidden="true" />}
+      {theme === "obra" && <HardHat size={17} aria-hidden="true" />}
     </button>
   );
 }

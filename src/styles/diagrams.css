@@ -1,0 +1,38 @@
+/* Láminas SVG. */
+/* SVG plate typography: fixed px sizes, never scaled with geometry */
+.diagram-title,
+.diagram-reference,
+.diagram-mono,
+.diagram-note,
+.diagram-accent,
+.diagram-label-text {
+  fill: var(--text);
+  stroke: none;
+  font-family: var(--font-mono), "JetBrains Mono", monospace;
+}
+.diagram-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+.diagram-reference {
+  fill: var(--accent);
+  font-size: 11px;
+}
+.diagram-mono {
+  font-size: 11px;
+}
+.diagram-note {
+  fill: var(--muted);
+  font-size: 11px;
+}
+.diagram-accent {
+  fill: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+}
+.diagram-label-text {
+  fill: var(--muted);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}

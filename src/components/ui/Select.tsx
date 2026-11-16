@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import type { SelectHTMLAttributes } from "react";
+import { useId, type SelectHTMLAttributes } from "react";
 
 export interface SelectOption {
   value: string;
@@ -12,11 +12,14 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
   options: SelectOption[];
 }
 
-export function Select({ label, options, className = "", ...props }: SelectProps) {
+export function Select({ label, options, className = "", id, ...props }: SelectProps) {
+  // The label must point at the control or screen readers announce a nameless list.
+  const generatedId = useId();
+  const selectId = id ?? generatedId;
   return (
     <div className="field">
-      {label && <label>{label}</label>}
-      <select className={"select " + className} {...props}>
+      {label && <label htmlFor={selectId}>{label}</label>}
+      <select className={"select " + className} id={selectId} {...props}>
         {options.map((option) => (
           <option value={option.value} key={option.value}>
             {option.label}

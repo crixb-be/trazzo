@@ -1,0 +1,122 @@
+/* Avisos flotantes, diálogo y conmutador de proyectos. */
+/* ------------------------------------------------------------------ */
+/* Feedback: floating notices and confirmation dialog                  */
+/* ------------------------------------------------------------------ */
+.toast-region {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 40;
+  display: grid;
+  gap: var(--space-2);
+  width: min(92vw, 460px);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--text-md);
+  line-height: 1.4;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.28);
+  pointer-events: auto;
+  animation: toast-in 180ms ease-out;
+}
+.toast > span {
+  flex: 1;
+  min-width: 0;
+}
+.toast > svg {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+.toast-ok {
+  border-left-color: var(--ok);
+}
+.toast-ok > svg {
+  color: var(--ok);
+}
+.toast-error {
+  border-left-color: var(--danger);
+}
+.toast-error > svg {
+  color: var(--danger);
+}
+.toast-action {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--accent);
+  font-weight: 600;
+}
+.toast-close {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+.confirm-modal {
+  width: min(100%, 420px);
+}
+.confirm-modal h2 {
+  margin: 0 0 8px;
+  font-size: calc(18px * var(--font-scale));
+}
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+.modal-backdrop {
+  z-index: 50;
+}
+/* Metrados / Honorarios share the "Proyectos" tab. */
+.projects-switch {
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-1);
+  margin-bottom: 18px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+.projects-switch a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: var(--text-md);
+  text-decoration: none;
+}
+.projects-switch a.active {
+  background: var(--surface-2);
+  color: var(--accent);
+  font-weight: 600;
+}

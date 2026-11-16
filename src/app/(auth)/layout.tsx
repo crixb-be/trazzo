@@ -1,4 +1,4 @@
-﻿import { AuthCard } from "@/components/auth/AuthCard";
+import { AuthCard } from "@/components/auth/AuthCard";
 
 export default function AuthLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

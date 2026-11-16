@@ -1,11 +1,16 @@
-﻿import type { MetadataRoute } from "next";
+import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "TRAZZO · RNE Pro Perú",
     short_name: "TRAZZO",
     description: "Herramientas RNE offline-first para arquitectura y obra.",
+    id: "/",
+    lang: "es-PE",
     start_url: "/",
+    scope: "/",
+    orientation: "portrait",
+    categories: ["productivity", "utilities", "business"],
     display: "standalone",
     background_color: "#121316",
     theme_color: "#d4a359",

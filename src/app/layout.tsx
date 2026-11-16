@@ -1,5 +1,6 @@
-﻿import type { Metadata, Viewport } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
+import { NO_FLASH_DISPLAY_SCRIPT } from "@/lib/ui/display";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -27,18 +28,11 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-const noFlashTheme = [
-  "try {",
-  '  const theme = localStorage.getItem("trazzo-theme");',
-  '  document.documentElement.classList.toggle("dark", theme !== "light");',
-  "} catch (_) {}",
-].join("\n");
-
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="es" className="dark" suppressHydrationWarning>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: noFlashTheme }} />
+        <script dangerouslySetInnerHTML={{ __html: NO_FLASH_DISPLAY_SCRIPT }} />
       </head>
       <body className={inter.variable + " " + mono.variable}>{children}</body>
     </html>

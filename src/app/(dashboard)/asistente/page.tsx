@@ -1,9 +1,10 @@
-﻿import { Suspense } from "react";
+import { Suspense } from "react";
 import { AssistantWorkspace } from "@/components/assistant/AssistantWorkspace";
+import { LoadingState } from "@/components/ui/LoadingState";
 
 export default function AssistantPage() {
   return (
-    <Suspense fallback={<div className="state-panel">Cargando asistente…</div>}>
+    <Suspense fallback={<LoadingState label="Cargando asistente…" />}>
       <AssistantWorkspace />
     </Suspense>
   );

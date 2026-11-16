@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { Check, Edit3, FolderOpen, Plus, Trash2 } from "lucide-react";
@@ -103,6 +103,7 @@ export function ProjectList({
       </div>
       {projects.length === 0 ? (
         <EmptyState
+          icon={<FolderOpen size={22} />}
           title="Sin proyectos"
           description="Crea uno para empezar a ordenar partidas."
           action={

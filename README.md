@@ -99,19 +99,42 @@ Para generar iconos PNG:
 
 Se generan iconos de 192 y 512 px, variantes maskable y apple-touch-icon.png dentro de public/icons.
 
-## Capacitor para iOS y Android
+## App nativa con Capacitor (iOS y Android)
 
-Construye la aplicación web, configura la URL de despliegue y sincroniza las plataformas:
+TRAZZO necesita su servidor (asistente, pagos, cuenta), así que la app nativa es un contenedor que carga el sitio desplegado. `capacitor.config.ts` toma la dirección de `CAPACITOR_SERVER_URL` y `capacitor/www` contiene solo dos páginas propias: un aviso de configuración y la pantalla «sin conexión» del primer arranque. Después de la primera carga, el service worker hace que la app abra sin señal igual que en el navegador.
 
-    npm run build
-    $env:CAPACITOR_SERVER_URL="https://tu-dominio.example"
-    npx cap add ios
+Requisitos en tu computadora (no están en el repositorio): Android Studio para Android; una Mac con Xcode para iOS.
+
+    npm install @capacitor/android @capacitor/ios
+    export CAPACITOR_SERVER_URL="https://tu-dominio.example"   # PowerShell: $env:CAPACITOR_SERVER_URL="..."
     npx cap add android
+    npx cap add ios
     npx cap sync
-    npx cap open ios
     npx cap open android
+    npx cap open ios
 
-Abre iOS con Xcode y Android con Android Studio. En producción, sirve la aplicación en HTTPS y valida la política de almacenamiento local de cada plataforma.
+Reglas de la dirección: debe ser `https`. Solo se acepta `http` para `localhost`, `127.0.0.1` o `10.0.2.2` (emulador de Android) durante el desarrollo. Cada vez que cambies la dirección o actualices un plugin, ejecuta `npx cap sync`.
+
+### Cámara
+
+«Tomar foto» en Proyectos usa `@capacitor/camera` dentro de la app nativa y el selector de cámara del teléfono en el navegador. Las fotos se reducen a 1280 px y se guardan en el dispositivo (hasta 30 por proyecto); viajan en la copia de seguridad.
+
+Permisos que debes declarar después de `cap add`:
+
+- iOS, en `ios/App/App/Info.plist`: `NSCameraUsageDescription` («TRAZZO usa la cámara para registrar fotos de obra en tus proyectos») y `NSPhotoLibraryUsageDescription` / `NSPhotoLibraryAddUsageDescription` si permites elegir de la galería.
+- Android: el plugin no exige permisos adicionales para tomar fotos con la cámara del sistema. Si tu `AndroidManifest.xml` declara `android.permission.CAMERA`, Android obliga a pedirlo en tiempo de ejecución.
+
+### Antes de publicar en las tiendas
+
+- **Identidad:** `appId` es `pe.trazzo.app`. Confírmalo antes del primer envío: no se puede cambiar después.
+- **Íconos y pantalla de inicio:** genera los recursos nativos con `npx @capacitor/assets generate` a partir de un ícono de 1024 px y una imagen de inicio. Los de `public/icons` son para la web.
+- **Versión:** sube `versionCode` / `versionName` (Android) y `CFBundleVersion` / `CFBundleShortVersionString` (iOS) en cada envío.
+- **Pagos:** hoy los planes se cobran con Mercado Pago en la web. Apple y Google exigen su propio sistema de compras para suscripciones digitales dentro de la app. Opciones: ocultar la compra en la app nativa y vender solo en la web, o integrar las compras de cada tienda. Sin resolverlo, es probable que rechacen la app.
+- **App Store, contenido mínimo:** Apple rechaza apps que son solo un sitio web empaquetado. Ayuda destacar lo que funciona sin conexión y la cámara; aun así, el resultado de la revisión no está garantizado.
+- **Privacidad:** publica una política de privacidad con URL pública y declara los datos que se recogen (correo de la cuenta, datos de proyectos sincronizados, documento de verificación de estudiante). Ambas tiendas piden también una forma de eliminar la cuenta.
+- **Pruebas en dispositivo:** instala en un teléfono real y comprueba inicio de sesión, modo sin conexión tras la primera carga, cámara, compartir imagen/PDF y la copia de seguridad.
+
+Estado: la configuración se validó con `npx cap add android` y `npx cap sync` (copian `capacitor/www` y registran el plugin de cámara). No se compiló ni se probó ninguna app nativa: eso requiere Android Studio o Xcode.
 
 ## Pagos
 

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { ArrowRight, KeyRound, Mail, UserRound } from "lucide-react";
@@ -64,8 +64,10 @@ export function AuthCard({ mode }: { mode: "login" | "register" }) {
 
   return (
     <Card className="auth-card">
-      <Link className="auth-brand" href="/" aria-label="Volver a TRAZZO">
-        <span className="brand-mark">T</span>
+      <Link className="auth-brand" href="/" title="Volver al inicio">
+        <span className="brand-mark" aria-hidden="true">
+          T
+        </span>
         <span>
           <strong>TRAZZO</strong>
           <small>RNE PRO · PERÚ</small>

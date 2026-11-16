@@ -98,7 +98,12 @@ describe("takeoff calculators", () => {
 
 it("agrupa cantidades de compra y conserva capítulos", async () => {
   const { shoppingList, chapterFor } = await import("./takeoff");
-  expect(shoppingList([{materialCode:"cemento",total:2,subtotalPen:60},{materialCode:"cemento",total:3,subtotalPen:100}])).toEqual([{code:"cemento",quantity:5,cost:160}]);
+  expect(
+    shoppingList([
+      { materialCode: "cemento", total: 2, subtotalPen: 60 },
+      { materialCode: "cemento", total: 3, subtotalPen: 100 },
+    ]),
+  ).toEqual([{ code: "cemento", quantity: 5, cost: 160 }]);
   expect(chapterFor("[Estructuras] Columna")).toBe("Estructuras");
   expect(chapterFor("Columna")).toBe("Sin capítulo");
 });

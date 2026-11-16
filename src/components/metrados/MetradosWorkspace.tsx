@@ -11,6 +11,7 @@ import { MATERIALS } from "@/data/seed-rne";
 import { computeProjectTotals, computeTakeoffLine } from "@/lib/calculators/takeoff";
 import { type Project, type Takeoff } from "@/lib/offline/db";
 import { useMaterials, useProjects, useTakeoffs, useSyncStatus } from "@/lib/offline/hooks";
+import { ProjectHub } from "./ProjectHub";
 import { deleteProject, deleteTakeoff, saveProject, saveTakeoff } from "@/lib/offline/repositories";
 import { describeSyncResult, syncNow as runSync } from "@/lib/offline/sync";
 import { canCreateProject, canExportPdf } from "@/lib/plans/plans";
@@ -329,6 +330,7 @@ export function MetradosWorkspace() {
         <main className="takeoff-main">
           {!activeProject ? (
             <EmptyState
+              icon={<FileText size={22} />}
               title="Selecciona o crea un proyecto"
               description="El plan Gratis incluye un proyecto local."
             />
@@ -374,6 +376,7 @@ export function MetradosWorkspace() {
                 onEdit={editTakeoff}
                 onDelete={(takeoff) => void removeTakeoff(takeoff)}
               />
+              <ProjectHub key={"hub-" + activeProject.id} project={activeProject} />
               {Object.keys(totals.byMaterial).length > 0 && (
                 <Card className="material-totals">
                   <div className="eyebrow">TOTALES POR MATERIAL</div>

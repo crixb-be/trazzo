@@ -1,4 +1,4 @@
-﻿import { useId } from "react";
+import { useId } from "react";
 import { createDiagramScale, DiagramFrame, finiteOr } from "./DiagramFrame";
 import { Dimension } from "./Dimension";
 

@@ -1,4 +1,4 @@
-﻿-- TRAZZO / Supabase schema
+-- TRAZZO / Supabase schema
 -- Source of truth: ARCHITECTURE.md, sections 5 and 10.
 -- This migration is intentionally explicit so the local and hosted modes share
 -- the same constraints, indexes and authorization model.

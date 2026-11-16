@@ -26,6 +26,7 @@ import {
   saveFeeQuote,
   type FeeQuoteDraft,
 } from "@/lib/offline/fee-quotes";
+import { QuoteProjectLink } from "./QuoteProjectLink";
 import { useFeeQuotes, useStudioProfile } from "@/lib/offline/hooks";
 import { loadCustomFeeRates, saveCustomFeeRates } from "@/lib/offline/fee-rates";
 import type { FeeQuote } from "@/lib/offline/db";
@@ -266,6 +267,7 @@ export function FeeQuoteWorkspace() {
               </button>
             ))}
           </div>
+          {activeQuote && <QuoteProjectLink quoteId={activeQuote.id} />}
           {activeQuote && (
             <div className="sidebar-actions">
               <Button variant="secondary" onClick={() => void duplicate()}>

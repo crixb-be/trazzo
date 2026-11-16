@@ -1,0 +1,173 @@
+/* Dato visible, herramientas y módulos de la Fase 2. */
+/* Bloque 1.7: dato visible durante la edición y acceso directo. */
+.home-hero {
+  padding-block: 16px;
+}
+.home-hero .page-title {
+  font-size: clamp(24px, 4vw, 36px);
+}
+.calculator-selector {
+  display: none;
+}
+.calculator-result-bar {
+  position: fixed;
+  bottom: 16px;
+  left: 280px;
+  right: 24px;
+  z-index: 35;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 12px 16px;
+  background: var(--bg, #fff);
+  color: var(--text, #17211b);
+  border: 2px solid var(--accent, #547d57);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 4px 24px #0002;
+}
+.calculator-result-bar strong,
+.calculator-result-bar small {
+  display: block;
+}
+.calculator-result-bar strong {
+  font-size: calc(20px * var(--font-scale));
+}
+.calculators-page {
+  padding-bottom: 150px;
+}
+@media (max-width: 900px) {
+  .calculator-result-bar {
+    left: 12px;
+    right: 12px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+  .calculator-result-bar > span {
+    display: none;
+  }
+  .calculator-selector {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .calculator-tabs {
+    display: none;
+  }
+  .detail-layout {
+    display: flex;
+    flex-direction: column;
+  }
+  .detail-copy {
+    order: -1;
+  }
+}
+.matrix-controls {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+}
+.matrix-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.relation-table {
+  border-collapse: collapse;
+}
+.relation-table th,
+.relation-table td {
+  padding: 8px;
+  border: 1px solid var(--border);
+  min-width: 150px;
+}
+.relation-diagram {
+  width: 100%;
+  max-width: 850px;
+  margin-top: 20px;
+  border-radius: var(--radius-lg);
+}
+.matrix-controls .hero-actions {
+  flex-wrap: wrap;
+}
+.matrix-controls .hero-actions label {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+.matrix-controls .field-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+}
+.matrix-controls .field-grid > * {
+  min-width: 0;
+}
+.relation-diagram {
+  height: auto;
+}
+@media (max-width: 700px) {
+  .takeoff-table thead {
+    display: none;
+  }
+  .takeoff-table,
+  .takeoff-table tbody,
+  .takeoff-table tr,
+  .takeoff-table td {
+    display: block;
+    width: 100%;
+  }
+  .takeoff-table tr {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 12px;
+    margin-block: 12px;
+  }
+  .takeoff-table td {
+    border: 0;
+    padding: 4px;
+  }
+  .takeoff-table td:nth-child(8)::before {
+    content: "P. unit.: ";
+  }
+  .takeoff-table td:nth-child(9)::before {
+    content: "Cantidad total: ";
+  }
+  .takeoff-table td:nth-child(10)::before {
+    content: "Subtotal: ";
+  }
+  .takeoff-table td:nth-child(n + 3):nth-child(-n + 7) {
+    display: none;
+  }
+}
+.quote-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.quote-steps [aria-current="step"] {
+  border: 2px solid var(--accent);
+}
+.quote-form {
+  padding-bottom: 160px;
+}
+.quote-total-fixed {
+  position: fixed;
+  left: 260px;
+  right: 24px;
+  bottom: 16px;
+  z-index: 35;
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  padding: 10px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+@media (max-width: 900px) {
+  .quote-total-fixed {
+    left: 12px;
+    right: 12px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+  .quote-form {
+    padding-bottom: 210px;
+  }
+}

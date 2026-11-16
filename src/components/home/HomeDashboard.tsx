@@ -9,6 +9,8 @@ import { db, type Project } from "@/lib/offline/db";
 import { useCards, useProjects, useSyncStatus } from "@/lib/offline/hooks";
 
 import { useLibraryActivity } from "@/lib/offline/library";
+import { resolveTools } from "@/lib/onboarding/onboarding";
+import { useOnboarding } from "@/lib/onboarding/use-onboarding";
 
 const categories: Array<{ name: RneCategory; label: string }> = [
   { name: "Accesibilidad", label: "Accesibilidad" },
@@ -16,17 +18,6 @@ const categories: Array<{ name: RneCategory; label: string }> = [
   { name: "Seguridad", label: "Seguridad" },
   { name: "Sanitarias", label: "Sanitarias" },
   { name: "Estacionamientos", label: "Estacionamientos" },
-];
-
-const calculators = [
-  { title: "Medidas de bolsillo", detail: "Mobiliario y ambientes", href: "/medidas" },
-  { title: "Matriz de relaciones", detail: "Programa arquitectónico", href: "/matriz" },
-  { title: "Escaleras", detail: "2cp + p", href: "/calculadoras?tab=escaleras" },
-  { title: "Rampas", detail: "Pendientes A.120", href: "/calculadoras?tab=rampas" },
-  { title: "Agua", detail: "IS.010", href: "/calculadoras?tab=agua" },
-  { title: "Pozos de luz", detail: "H/3 · H/4", href: "/calculadoras?tab=pozos" },
-  { title: "Evacuación", detail: "Aforo y salidas", href: "/calculadoras?tab=evacuacion" },
-  { title: "Honorarios", detail: "Cotiza y exporta PDF", href: "/honorarios" },
 ];
 
 function projectTotal(
@@ -43,6 +34,9 @@ export function HomeDashboard() {
   const projects = useProjects();
   const takeoffs = useLiveQuery(async () => (db ? db.takeoffs.toArray() : []), [], []) ?? [];
   const sync = useSyncStatus();
+  const onboarding = useOnboarding();
+  const calculators = resolveTools(onboarding.state?.tools ?? []);
+  const personalised = (onboarding.state?.tools.length ?? 0) > 0;
 
   const categoryCounts = new Map<RneCategory, number>();
   for (const category of categories) categoryCounts.set(category.name, 0);
@@ -73,7 +67,7 @@ export function HomeDashboard() {
         <div className="section-heading">
           <div>
             <div className="eyebrow">ACCESO RÁPIDO</div>
-            <h2>Herramientas de proyecto</h2>
+            <h2>{personalised ? "Tus herramientas" : "Herramientas de proyecto"}</h2>
           </div>
           <Link className="source-link" href="/calculadoras">
             Ver todas
@@ -81,9 +75,9 @@ export function HomeDashboard() {
         </div>
         <div className="calculator-tiles">
           {calculators.map((calculator) => (
-            <Link className="calculator-tile" href={calculator.href} key={calculator.title}>
+            <Link className="calculator-tile" href={calculator.href} key={calculator.id}>
               <span className="tile-icon">
-                {calculator.href === "/honorarios" ? (
+                {calculator.href === "/honorarios" || calculator.href === "/metrados" ? (
                   <Briefcase size={18} aria-hidden="true" />
                 ) : (
                   <Calculator size={18} aria-hidden="true" />
@@ -131,6 +125,7 @@ export function HomeDashboard() {
           </div>
           {activeProjects.length === 0 ? (
             <EmptyState
+              icon={<FolderOpen size={22} />}
               title="Aún no hay proyectos"
               description="Crea un proyecto de metrados. Se guarda primero en este dispositivo."
               action={

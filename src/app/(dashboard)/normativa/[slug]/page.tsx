@@ -1,4 +1,4 @@
-﻿import { notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import { NormativeDetail } from "@/components/normativa/NormativeDetail";
 import { RNE_CARDS } from "@/data/seed-rne";
 

@@ -4,7 +4,6 @@ import {
   Camera,
   Check,
   Cloud,
-  Download,
   FileUp,
   FolderOpen,
   Images,
@@ -14,7 +13,19 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import { Badge, BillingToggle, Button, Card, confirmDialog, Input, toast } from "@/components/ui";
+import {
+  Badge,
+  BillingToggle,
+  Button,
+  Card,
+  confirmDialog,
+  DisplaySettings,
+  Input,
+  toast,
+} from "@/components/ui";
+import { BackupCard } from "./BackupCard";
+import { FavoriteToolsEditor } from "@/components/onboarding/FavoriteToolsEditor";
+import { InstallGuide } from "@/components/onboarding/InstallGuide";
 import { SEED_VERSION } from "@/data/seed-rne";
 import { db } from "@/lib/offline/db";
 import { getStudioProfile, saveStudioProfile } from "@/lib/offline/profile";
@@ -34,11 +45,6 @@ import { createClient } from "@/lib/supabase/client";
 import { prepareAvatar } from "@/lib/ui/avatar";
 import { prepareLogo } from "@/lib/ui/logo";
 import { isValidRuc } from "@/lib/validation";
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-}
 
 const features: Record<Plan, string[]> = {
   free: [
@@ -90,7 +96,6 @@ export function AccountWorkspace() {
   const [document, setDocument] = useState<File | null>(null);
   // Notices float above the page: this screen is long and a message at the end went unseen.
   const setNotice = (message: string): void => toast(message);
-  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
     void getStudioProfile().then((profile) => {
@@ -136,13 +141,6 @@ export function AccountWorkspace() {
         if (typeof profile.data?.cap_number === "string") setCapNumber(profile.data.cap_number);
       });
     }
-
-    function handleInstall(event: Event): void {
-      event.preventDefault();
-      setInstallPrompt(event as BeforeInstallPromptEvent);
-    }
-    window.addEventListener("beforeinstallprompt", handleInstall);
-    return () => window.removeEventListener("beforeinstallprompt", handleInstall);
   }, []);
 
   async function saveProfile(): Promise<void> {
@@ -363,12 +361,6 @@ export function AccountWorkspace() {
     await db?.delete();
     // The connection is closed after deleting: reload so the app reopens and reseeds it.
     window.location.reload();
-  }
-
-  async function installApp(): Promise<void> {
-    if (!installPrompt) return;
-    await installPrompt.prompt();
-    setInstallPrompt(null);
   }
 
   return (
@@ -611,6 +603,11 @@ export function AccountWorkspace() {
           </div>
         </Card>
         <Card>
+          <div className="eyebrow">PANTALLA</div>
+          <h2>Tema y tamaño de letra</h2>
+          <DisplaySettings />
+        </Card>
+        <Card>
           <div className="eyebrow">SINCRONIZACIÓN</div>
           <h2>{sync.online ? "Listo para sincronizar" : "Trabajando sin conexión"}</h2>
           <div className="sync-details">
@@ -711,14 +708,23 @@ export function AccountWorkspace() {
             <span>Catálogo</span>
             <span className="mono">v{SEED_VERSION}</span>
           </div>
-          {installPrompt && (
-            <Button variant="ghost" onClick={() => void installApp()}>
-              <Download size={15} /> Instalar aplicación
-            </Button>
-          )}
           <Link href="/normativa" className="btn">
             <FileUp size={15} /> Revisar fichas
           </Link>
+        </Card>
+      </section>
+
+      <section className="account-grid account-section">
+        <BackupCard plan={currentPlan} />
+        <Card>
+          <div className="eyebrow">INICIO</div>
+          <h2>Tus herramientas</h2>
+          <FavoriteToolsEditor />
+        </Card>
+        <Card>
+          <div className="eyebrow">INSTALACIÓN</div>
+          <h2>TRAZZO en tu pantalla de inicio</h2>
+          <InstallGuide />
         </Card>
       </section>
 

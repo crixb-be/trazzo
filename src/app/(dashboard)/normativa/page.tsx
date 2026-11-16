@@ -1,9 +1,10 @@
-﻿import { Suspense } from "react";
+import { Suspense } from "react";
 import { NormativaCatalog } from "@/components/normativa/NormativaCatalog";
+import { LoadingState } from "@/components/ui/LoadingState";
 
 export default function NormativaPage() {
   return (
-    <Suspense fallback={<div className="state-panel">Cargando normativa…</div>}>
+    <Suspense fallback={<LoadingState label="Cargando normativa…" />}>
       <NormativaCatalog />
     </Suspense>
   );
