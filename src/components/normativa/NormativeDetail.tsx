@@ -5,10 +5,12 @@ import { ChevronDown, Lock, MessageSquare, SlidersHorizontal } from "lucide-reac
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Badge, Button, Card, Chip, NumberField, PaywallModal } from "@/components/ui";
+import { ShareResult } from "@/components/ui/ShareResult";
 import { RneDiagram, type DiagramOverrides } from "@/components/svg-diagrams";
 import { RNE_CARDS, type RneCard } from "@/data/seed-rne";
 import { useCard, useCards } from "@/lib/offline/hooks";
 import { canUseProCards } from "@/lib/plans/plans";
+import { cardSheet } from "@/lib/share/result-sheet";
 import { paramMeta } from "@/lib/ui/param-labels";
 import { useCurrentPlan } from "@/lib/plans/use-current-plan";
 
@@ -175,6 +177,7 @@ export function NormativeDetail({ slug }: { slug: string }) {
             >
               <MessageSquare size={16} /> Preguntar al asistente
             </Button>
+            {!locked && <ShareResult sheet={cardSheet(card)} diagramScope=".detail-layout" />}
           </div>
 
           <section className="related-section">

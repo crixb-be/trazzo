@@ -250,3 +250,14 @@ html.obra .calculator-result-bar {
   margin: 0;
   color: var(--ok);
 }
+
+/* Compartir resultado o ficha. */
+.share-result {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: 14px;
+}
+.detail-actions .share-result {
+  margin-top: 12px;
+}

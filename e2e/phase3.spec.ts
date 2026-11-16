@@ -80,3 +80,32 @@ test.describe("bienvenida", () => {
     await expect(page.locator(".calculator-tile strong")).toHaveCount(8);
   });
 });
+
+test("resultado y ficha se comparten como imagen y PDF", async ({ page }) => {
+  const { readFileSync } = await import("node:fs");
+  await page.goto("/calculadoras?tab=escaleras");
+  const imageDownload = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Compartir imagen" }).click();
+  const image = await imageDownload;
+  expect(image.suggestedFilename()).toMatch(/^trazzo-\d+-contrapasos\.png$/);
+  await image.saveAs("test-results/compartir-escalera.png");
+  const png = readFileSync("test-results/compartir-escalera.png");
+  expect(png.subarray(1, 4).toString()).toBe("PNG");
+  expect(png.readUInt32BE(16)).toBe(1080);
+  expect(png.length).toBeGreaterThan(20000);
+
+  await page.goto("/normativa/escalera-paso-contrapaso");
+  const pdfDownload = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Compartir PDF" }).click();
+  const pdf = await pdfDownload;
+  expect(pdf.suggestedFilename()).toMatch(/^trazzo-.+\.pdf$/);
+  await pdf.saveAs("test-results/compartir-ficha.pdf");
+  const bytes = readFileSync("test-results/compartir-ficha.pdf");
+  expect(bytes.subarray(0, 4).toString()).toBe("%PDF");
+  // La lámina va incrustada como imagen.
+  expect(bytes.includes("/Subtype /Image")).toBe(true);
+
+  const cardImage = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Compartir imagen" }).click();
+  await (await cardImage).saveAs("test-results/compartir-ficha.png");
+});

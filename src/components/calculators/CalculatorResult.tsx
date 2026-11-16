@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { Button, CheckList, Card } from "@/components/ui";
+import { ShareResult } from "@/components/ui/ShareResult";
 import type { CalcCheck } from "@/lib/calculators/types";
+import { calculatorSheet } from "@/lib/share/result-sheet";
 
 export function CopyResultButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -64,6 +66,10 @@ export function CalculatorResult({
             {warning}
           </p>
         ))}
+        <ShareResult
+          sheet={calculatorSheet({ eyebrow, main, details, checks, warnings })}
+          diagramScope=".calculator-visual"
+        />
       </Card>
     </>
   );
