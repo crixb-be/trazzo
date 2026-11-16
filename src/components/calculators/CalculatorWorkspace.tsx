@@ -13,10 +13,13 @@ import { MaterialsCalculator } from "./materials/MaterialsCalculator";
 
 import { FieldTools } from "./tools/FieldTools";
 
+import { CabidaCalculator } from "./CabidaCalculator";
+
 type CalculatorTab =
-  "utilidades" | "materiales" | "escaleras" | "rampas" | "agua" | "pozos" | "evacuacion";
+  "cabida" | "utilidades" | "materiales" | "escaleras" | "rampas" | "agua" | "pozos" | "evacuacion";
 
 const tabs: Array<{ id: CalculatorTab; label: string }> = [
+  { id: "cabida", label: "Cabida de terreno" },
   { id: "utilidades", label: "Utilidades de campo" },
   { id: "materiales", label: "Materiales" },
   { id: "escaleras", label: "Escaleras" },
@@ -88,6 +91,7 @@ export function CalculatorWorkspace() {
         Valores referenciales según la edición indicada del RNE. Verifica la versión vigente
         publicada por el MVCS antes de usar en expedientes.
       </div>
+      {activeTab === "cabida" && <CabidaCalculator />}
       {activeTab === "utilidades" && <FieldTools />}
       {activeTab === "materiales" && <MaterialsCalculator />}
       {activeTab === "escaleras" && <StairCalculator />}
