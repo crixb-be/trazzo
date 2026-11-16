@@ -262,9 +262,11 @@ Orden propuesto por valor para el usuario frente a esfuerzo.
 
 - [x] 1.8 Rendimiento y red de seguridad — `8f7597c`. PDF diferido en Metrados/Honorarios; búsqueda con retardo de 300 ms; ESLint 9 y reglas Next activas en build; GitHub Actions con typecheck/lint/pruebas/build/Playwright; humo móvil ejecutado con Chromium del sistema (descarga Playwright bloqueada por HTTP 403). 170 pruebas, lint sin errores (5 avisos existentes de imágenes), build y humo pasan. JS inicial: Metrados 233 kB, Honorarios 240 kB.
 
+- [x] 2.0 Matriz de relaciones — `93ec91d`. Ruta `/matriz`, acceso en Inicio y menú, hasta 20 ambientes editables, matriz triangular, pesos configurables, ranking y diagrama con leyenda. Guardado en IndexedDB (`meta`, clave `relation-matrix`), exportación SVG y PDF con diagrama, ranking y tabla de pares; PDF cargado solo al exportar. Ruta precargada para uso sin conexión. Typecheck, lint, 174 pruebas unitarias y build pasan. Dos pruebas de navegador verifican resultado fijo a 390 px, persistencia, eliminación, descargas SVG/PDF, ausencia de desbordamiento y recarga sin conexión. Revisión visual móvil realizada.
+
 ### Pendiente
 
-- [ ] Fase 2: 2.0 a 2.10; empezar por matriz de relaciones.
+- [ ] Fase 2: bloques 2.1 a 2.10. Siguiente: 2.1 Medidas de bolsillo; mantener los valores «Por verificar» hasta contrastarlos con los documentos del usuario.
 - [ ] Fase 3: 3.1 a 3.7.
 - [ ] Recibir PDF del RNE y libros para contrastar 2.1 y 2.7. No marcar valores como verificados sin fuentes.
 
