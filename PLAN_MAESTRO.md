@@ -248,7 +248,7 @@ Orden propuesto por valor para el usuario frente a esfuerzo.
 
 ## 9. ESTADO DE AVANCE Y HANDOFF
 
-**Última actualización:** 2026-11-16. Historial contrastado con Git; rama de trabajo `work` (incluye el merge `95e85d6`).
+**Última actualización:** 2026-11-16. Historial contrastado con Git; rama de trabajo `claude/wonderful-noether-6eoymr` (incluye el merge `95e85d6`).
 
 ### Completado
 
@@ -264,9 +264,28 @@ Orden propuesto por valor para el usuario frente a esfuerzo.
 
 - [x] 2.0 Matriz de relaciones — `93ec91d`. Ruta `/matriz`, acceso en Inicio y menú, hasta 20 ambientes editables, matriz triangular, pesos configurables, ranking y diagrama con leyenda. Guardado en IndexedDB (`meta`, clave `relation-matrix`), exportación SVG y PDF con diagrama, ranking y tabla de pares; PDF cargado solo al exportar. Ruta precargada para uso sin conexión. Typecheck, lint, 174 pruebas unitarias y build pasan. Dos pruebas de navegador verifican resultado fijo a 390 px, persistencia, eliminación, descargas SVG/PDF, ausencia de desbordamiento y recarga sin conexión. Revisión visual móvil realizada.
 
+### Ejecución 2.1–2.5 (2026-11-16)
+
+Se ejecutaron en orden, con typecheck, lint, pruebas unitarias y build satisfactorios **antes de pasar al bloque siguiente**. Lint conserva los cinco avisos existentes sobre imágenes; build conserva avisos del SDK de IA y detección del plugin Next, sin errores.
+
+| Bloque | Commit                                                                                | Entregado                                                                                                                                                                                                                                                                                                                                                      | Pruebas unitarias |
+| ------ | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| 2.1    | `d2871b5`                                                                             | `/medidas`: 11 fichas con dibujos SVG propios, búsqueda tolerante a tildes, categorías, antropometría, mobiliario, baño, cocina, dormitorio, clóset, comedor, escritorio, circulación y alturas. Accesos en Inicio/menú y precarga sin conexión.                                                                                                               | 174               |
+| 2.2    | `0aea9f9`                                                                             | Concreto por resistencia, ladrillo en soga/cabeza/canto, tarrajeo, contrapiso, cerámico, porcelanato, pintura, acero kg↔varillas y losa aligerada. Rendimientos, dimensiones, merma y precios editables; fecha visible. Envío atómico al proyecto de metrado con cantidades finales (sin duplicar merma), control de errores y bloqueo de reenvío sin cambios. | 180               |
+| 2.3    | `bcbdb60`                                                                             | Conversión de longitud/área/volumen/masa y pulgadas fraccionarias; pendientes %↔grados↔1:n; área por coordenadas con detección de cruces; escala cm de plano↔m reales.                                                                                                                                                                                         | 185               |
+| 2.4    | `b6dc175`                                                                             | Cabida con lote rectangular, coeficiente, área libre, alturas y cuatro retiros; huella, área techada máxima, pisos por altura, plantas completas/parcial y proporción vendible editable.                                                                                                                                                                       | 189               |
+| 2.5    | Commit de este bloque (`feat(rne): aforo, sanitarios, luz y plazas accesibles (2.5)`) | Aforo por uso con factor editable, aparatos sanitarios por uso y población separada, iluminación/ventilación con porcentajes editables y áreas disponibles, reserva de estacionamientos accesibles. Integradas al selector completo de calculadoras.                                                                                                           | 193               |
+
+**Límites de contenido:** las fichas 2.1 son referencias de diseño **Por verificar**, no mínimos legales; falta contrastarlas con los libros/PDF del usuario. Los rendimientos de 2.2 son estimaciones editables, no un diseño de mezcla o estructural; losa excluye acero y encofrado. Los perfiles/tablas de 2.5 también están **Por verificar**, con supuestos y referencias visibles: no certifican cumplimiento del RNE vigente. Sanitarios estima grupos de hombres/mujeres para oficinas/comercio/restaurante; dotación independiente de personal y aparatos accesibles requiere revisión específica. La validación documental sigue pendiente y no se afirma haberla realizado.
+
+**Verificación adicional:** pruebas de navegador para medidas, cabida, aforo, utilidades y envío de materiales a un proyecto, además de las pruebas existentes de matriz sin conexión y barra fija móvil.
+
+**Punto de parada solicitado:** 2.5 implementado. No iniciar 2.6 hasta que el usuario revise este avance.
+
 ### Pendiente
 
-- [ ] Fase 2: bloques 2.1 a 2.10. Siguiente: 2.1 Medidas de bolsillo; mantener los valores «Por verificar» hasta contrastarlos con los documentos del usuario.
+- [ ] Fase 2: bloques 2.6 a 2.10. En pausa para revisión del usuario tras 2.5.
+- [ ] Contrastar fichas de medidas y perfiles/tablas de las calculadoras RNE con documentos vigentes antes de marcarlos verificados.
 - [ ] Fase 3: 3.1 a 3.7.
 - [ ] Recibir PDF del RNE y libros para contrastar 2.1 y 2.7. No marcar valores como verificados sin fuentes.
 

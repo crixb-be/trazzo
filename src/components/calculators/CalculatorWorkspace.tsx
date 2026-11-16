@@ -15,10 +15,24 @@ import { FieldTools } from "./tools/FieldTools";
 
 import { CabidaCalculator } from "./CabidaCalculator";
 
+import { RneExtraCalculators, type RneTool } from "./RneExtraCalculators";
+
 type CalculatorTab =
-  "cabida" | "utilidades" | "materiales" | "escaleras" | "rampas" | "agua" | "pozos" | "evacuacion";
+  | RneTool
+  | "cabida"
+  | "utilidades"
+  | "materiales"
+  | "escaleras"
+  | "rampas"
+  | "agua"
+  | "pozos"
+  | "evacuacion";
 
 const tabs: Array<{ id: CalculatorTab; label: string }> = [
+  { id: "aforo", label: "Aforo" },
+  { id: "sanitarios", label: "Aparatos sanitarios" },
+  { id: "luz", label: "Luz y ventilación" },
+  { id: "parking", label: "Plazas accesibles" },
   { id: "cabida", label: "Cabida de terreno" },
   { id: "utilidades", label: "Utilidades de campo" },
   { id: "materiales", label: "Materiales" },
@@ -91,6 +105,9 @@ export function CalculatorWorkspace() {
         Valores referenciales según la edición indicada del RNE. Verifica la versión vigente
         publicada por el MVCS antes de usar en expedientes.
       </div>
+      {(["aforo", "sanitarios", "luz", "parking"] as string[]).includes(activeTab) && (
+        <RneExtraCalculators key={activeTab} tool={activeTab as RneTool} />
+      )}
       {activeTab === "cabida" && <CabidaCalculator />}
       {activeTab === "utilidades" && <FieldTools />}
       {activeTab === "materiales" && <MaterialsCalculator />}
