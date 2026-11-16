@@ -109,3 +109,54 @@ test("resultado y ficha se comparten como imagen y PDF", async ({ page }) => {
   await page.getByRole("button", { name: "Compartir imagen" }).click();
   await (await cardImage).saveAs("test-results/compartir-ficha.png");
 });
+
+test("el proyecto reúne cálculos y la copia de seguridad los restaura", async ({ page }) => {
+  await page.goto("/metrados");
+  await page.getByRole("button", { name: "Nuevo proyecto" }).click();
+  await page.getByPlaceholder("Casa Miraflores").fill("Casa eje");
+  await page.getByRole("button", { name: "Crear proyecto", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Cálculos guardados" })).toBeVisible();
+
+  await page.goto("/calculadoras?tab=escaleras");
+  await page.getByRole("button", { name: "Guardar en proyecto" }).click();
+  await page.getByRole("button", { name: "Guardar", exact: true }).click();
+  await expect(page.getByText("Cálculo guardado en Casa eje.")).toBeVisible();
+
+  await page.goto("/metrados");
+  const hub = page.locator(".project-hub");
+  await expect(hub.getByText(/\d+ contrapasos/)).toBeVisible();
+
+  // Copia a archivo.
+  await page.goto("/cuenta");
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Descargar copia" }).click();
+  const file = await download;
+  expect(file.suggestedFilename()).toMatch(/^trazzo-copia-\d{4}-\d{2}-\d{2}\.json$/);
+  await file.saveAs("test-results/copia.json");
+
+  // Se borra todo lo del dispositivo y se restaura desde el archivo.
+  await page.getByRole("button", { name: "Restablecer datos" }).click();
+  await page.getByRole("button", { name: "Restablecer", exact: true }).click();
+  await page.waitForLoadState("load");
+  await page.goto("/metrados");
+  await expect(page.getByText("Casa eje")).toHaveCount(0);
+
+  await page.goto("/cuenta");
+  await page.getByLabel("Archivo de copia de seguridad").setInputFiles("test-results/copia.json");
+  await expect(page.getByRole("alertdialog")).toContainText("1 proyecto(s)");
+  await page.getByRole("button", { name: "Restaurar", exact: true }).click();
+  await expect(page.getByText("Copia restaurada.")).toBeVisible();
+
+  await page.goto("/metrados");
+  await expect(page.getByRole("heading", { name: "Casa eje" })).toBeVisible();
+  await expect(page.locator(".project-hub").getByText(/\d+ contrapasos/)).toBeVisible();
+
+  // Un archivo cualquiera se rechaza con un motivo.
+  await page.goto("/cuenta");
+  await page.getByLabel("Archivo de copia de seguridad").setInputFiles({
+    name: "otro.json",
+    mimeType: "application/json",
+    buffer: Buffer.from('{"hola":1}'),
+  });
+  await expect(page.getByText("El archivo no es una copia de TRAZZO.")).toBeVisible();
+});

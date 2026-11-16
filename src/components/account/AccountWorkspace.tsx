@@ -23,6 +23,7 @@ import {
   Input,
   toast,
 } from "@/components/ui";
+import { BackupCard } from "./BackupCard";
 import { FavoriteToolsEditor } from "@/components/onboarding/FavoriteToolsEditor";
 import { InstallGuide } from "@/components/onboarding/InstallGuide";
 import { SEED_VERSION } from "@/data/seed-rne";
@@ -714,6 +715,7 @@ export function AccountWorkspace() {
       </section>
 
       <section className="account-grid account-section">
+        <BackupCard plan={currentPlan} />
         <Card>
           <div className="eyebrow">INICIO</div>
           <h2>Tus herramientas</h2>

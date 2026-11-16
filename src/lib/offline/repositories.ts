@@ -38,9 +38,20 @@ export async function deleteProject(id: string): Promise<void> {
   if (!localDb) return;
   await localDb.transaction(
     "rw",
-    [localDb.projects, localDb.takeoffs, localDb.outbox],
+    [
+      localDb.projects,
+      localDb.takeoffs,
+      localDb.outbox,
+      localDb.project_notes,
+      localDb.project_links,
+      localDb.project_options,
+    ],
     async () => {
       await localDb.projects.delete(id);
+      // Everything that hangs from the project goes with it; quotes stay, unlinked.
+      await localDb.project_notes.where("projectId").equals(id).delete();
+      await localDb.project_links.where("projectId").equals(id).delete();
+      await localDb.project_options.delete(id);
       const takeoffs = await localDb.takeoffs.where("projectId").equals(id).toArray();
       await localDb.takeoffs.bulkDelete(takeoffs.map((takeoff) => takeoff.id));
       await enqueue("projects", "delete", { id });

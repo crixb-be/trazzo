@@ -261,3 +261,71 @@ html.obra .calculator-result-bar {
 .detail-actions .share-result {
   margin-top: 12px;
 }
+
+/* Proyecto como eje: cálculos guardados, cotizaciones y copia de seguridad. */
+.save-to-project {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-2);
+  margin-top: 10px;
+}
+.save-to-project label {
+  display: grid;
+  gap: 4px;
+  flex: 1 1 180px;
+  font-size: var(--text-xs);
+  color: var(--muted);
+}
+.calculator-result > .btn {
+  margin-top: 10px;
+}
+.project-hub h3 {
+  margin: 14px 0 8px;
+  font-size: var(--text-md);
+}
+.project-hub-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-2);
+}
+.project-hub-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: start;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+.project-hub-list li > svg {
+  margin-top: 4px;
+}
+.project-hub-list summary {
+  cursor: pointer;
+  min-height: 32px;
+}
+.project-hub-list summary strong,
+.project-hub-list a strong {
+  display: block;
+}
+.project-hub-list small {
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+.project-hub-list p {
+  margin: 6px 0 0;
+}
+.project-hub-list a {
+  color: var(--text);
+  text-decoration: none;
+}
+.quote-project-link {
+  display: grid;
+  gap: 4px;
+  margin-top: 12px;
+  font-size: var(--text-xs);
+  color: var(--muted);
+}

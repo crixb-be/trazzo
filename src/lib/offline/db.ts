@@ -91,6 +91,29 @@ export interface Outbox {
   createdAt: string;
 }
 
+export interface ProjectNoteRow {
+  label: string;
+  value: string;
+  status?: "ok" | "fail";
+}
+
+/** A calculator result kept with a project so it can be reviewed later. */
+export interface ProjectNote {
+  id: string;
+  projectId: string;
+  eyebrow: string;
+  title: string;
+  subtitle: string;
+  rows: ProjectNoteRow[];
+  notes: string[];
+  createdAt: string;
+}
+
+export interface ProjectLink {
+  quoteId: string;
+  projectId: string;
+}
+
 export class TrazzoDB extends Dexie {
   rneCards!: Table<RneCard, string>;
   materials!: Table<Material, string>;
@@ -104,6 +127,10 @@ export class TrazzoDB extends Dexie {
   project_options!: Table<{ projectId: string; area: number }, string>;
 
   library_activity!: Table<{ slug: string; favorite: boolean; visitedAt: string }, string>;
+  /** Calculator results saved inside a project. Kept on this device. */
+  project_notes!: Table<ProjectNote, string>;
+  /** Which project a fee quote belongs to. Kept on this device. */
+  project_links!: Table<ProjectLink, string>;
   constructor() {
     super("TrazzoDB");
     this.version(1).stores({
@@ -122,6 +149,10 @@ export class TrazzoDB extends Dexie {
       meta: "key",
       outbox: "++id,table,createdAt",
       fee_quotes: "id,code,updatedAt,syncState",
+    });
+    this.version(6).stores({
+      project_notes: "id,projectId,createdAt",
+      project_links: "quoteId,projectId",
     });
     this.version(5).stores({ library_activity: "slug,visitedAt" });
     this.version(4).stores({
