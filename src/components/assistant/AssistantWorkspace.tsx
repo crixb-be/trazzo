@@ -1,11 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Send, Square } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { DefaultChatTransport } from "ai";
 import { useChat } from "@ai-sdk/react";
 import { Card, Button } from "@/components/ui";
+import type { UIMessage } from "ai";
+import { db } from "@/lib/offline/db";
+import { useCards } from "@/lib/offline/hooks";
+import { RNE_CARDS } from "@/data/seed-rne";
+import { deviceAnswer } from "@/lib/rag/device";
+import { useCurrentPlan } from "@/lib/plans/use-current-plan";
+import { canUseProCards } from "@/lib/plans/plans";
 import { useOnlineStatus } from "@/lib/offline/hooks";
 import { ChatMessage } from "./ChatMessage";
 import { SuggestedPrompts } from "./SuggestedPrompts";
@@ -29,6 +36,57 @@ export function AssistantWorkspace() {
   const chat = useChat({
     transport: new DefaultChatTransport({ api: "/api/chat" }),
   });
+  const cards = useCards();
+  const { plan } = useCurrentPlan();
+  const [historyReady, setHistoryReady] = useState(false);
+  const [historyNotice, setHistoryNotice] = useState("");
+  const writeQueue = useRef(Promise.resolve());
+  useEffect(() => {
+    let active = true;
+    void db?.meta
+      .get("assistant-history")
+      .then((row) => {
+        if (!active) return;
+        if (row) {
+          const messages = JSON.parse(row.value) as UIMessage[];
+          chat.setMessages(messages);
+        }
+        setHistoryReady(true);
+      })
+      .catch(() => {
+        setHistoryNotice("No se pudo abrir el historial local.");
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+  useEffect(() => {
+    if (!historyReady || chat.status !== "ready") return;
+    const value = JSON.stringify(chat.messages.slice(-100));
+    writeQueue.current = writeQueue.current
+      .catch(() => {})
+      .then(async () => {
+        await db?.meta.put({ key: "assistant-history", value });
+      })
+      .catch(() => setHistoryNotice("No se pudo guardar el historial."));
+  }, [chat.messages, chat.status, historyReady]);
+  async function sendPrompt(prompt: string) {
+    if (!prompt.trim() || busy || !historyReady) return;
+    setInput("");
+    if (online) {
+      await chat.sendMessage({ text: prompt });
+      return;
+    }
+    const accessible = (cards.length ? cards : RNE_CARDS).filter(
+      (c) => !c.is_pro || canUseProCards(plan),
+    );
+    const text = deviceAnswer(prompt, accessible);
+    chat.setMessages((previous) => [
+      ...previous,
+      { id: crypto.randomUUID(), role: "user", parts: [{ type: "text", text: prompt }] },
+      { id: crypto.randomUUID(), role: "assistant", parts: [{ type: "text", text }] },
+    ]);
+  }
   const busy = chat.status === "submitted" || chat.status === "streaming";
 
   useEffect(() => {
@@ -39,15 +97,11 @@ export function AssistantWorkspace() {
   async function submit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
     const prompt = input.trim();
-    if (!prompt || !online || busy) return;
-    setInput("");
-    await chat.sendMessage({ text: prompt });
+    await sendPrompt(prompt);
   }
 
   function choosePrompt(prompt: string): void {
-    if (!online || busy) return;
-    setInput("");
-    void chat.sendMessage({ text: prompt });
+    void sendPrompt(prompt);
   }
 
   return (
@@ -64,6 +118,10 @@ export function AssistantWorkspace() {
       </div>
       <div className="assistant-layout">
         <Card className="chat-card">
+          <p role="status">{historyNotice}</p>
+          <Button disabled={!historyReady || busy} onClick={() => chat.setMessages([])}>
+            Borrar historial de este dispositivo
+          </Button>
           {chat.messages.length === 0 ? (
             <div className="chat-empty">
               <div className="assistant-mark">T</div>
@@ -87,9 +145,9 @@ export function AssistantWorkspace() {
               placeholder={
                 online
                   ? "Ej. ¿qué ancho debe tener un pasadizo?"
-                  : "Sin conexión: revisa tus fichas locales"
+                  : "Pregunta sin conexión: responde la biblioteca local"
               }
-              disabled={!online || busy}
+              disabled={!historyReady || busy}
               aria-label="Pregunta al asistente RNE"
             />
             {busy ? (
@@ -102,7 +160,7 @@ export function AssistantWorkspace() {
                 <Square size={15} />
               </Button>
             ) : (
-              <Button type="submit" variant="primary" disabled={!online || !input.trim()}>
+              <Button type="submit" variant="primary" disabled={!historyReady || !input.trim()}>
                 <Send size={16} />
               </Button>
             )}
