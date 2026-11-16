@@ -3688,3 +3688,65 @@ ol.chat-md-list {
     min-height: 44px;
   }
 }
+
+/* Bloque 1.7: dato visible durante la edición y acceso directo. */
+.home-hero {
+  padding-block: 16px;
+}
+.home-hero .page-title {
+  font-size: clamp(24px, 4vw, 36px);
+}
+.calculator-selector {
+  display: none;
+}
+.calculator-result-bar {
+  position: fixed;
+  bottom: 16px;
+  left: 280px;
+  right: 24px;
+  z-index: 35;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  background: var(--bg, #fff);
+  color: var(--text, #17211b);
+  border: 2px solid var(--accent, #547d57);
+  border-radius: 12px;
+  box-shadow: 0 4px 24px #0002;
+}
+.calculator-result-bar strong,
+.calculator-result-bar small {
+  display: block;
+}
+.calculator-result-bar strong {
+  font-size: 20px;
+}
+.calculators-page {
+  padding-bottom: 150px;
+}
+@media (max-width: 900px) {
+  .calculator-result-bar {
+    left: 12px;
+    right: 12px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+  .calculator-result-bar > span {
+    display: none;
+  }
+  .calculator-selector {
+    display: grid;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+  .calculator-tabs {
+    display: none;
+  }
+  .detail-layout {
+    display: flex;
+    flex-direction: column;
+  }
+  .detail-copy {
+    order: -1;
+  }
+}

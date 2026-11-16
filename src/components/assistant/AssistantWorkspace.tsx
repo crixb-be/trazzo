@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 import { Send, Square } from "lucide-react";
@@ -45,7 +45,9 @@ export function AssistantWorkspace() {
   }
 
   function choosePrompt(prompt: string): void {
-    setInput(prompt);
+    if (!online || busy) return;
+    setInput("");
+    void chat.sendMessage({ text: prompt });
   }
 
   return (

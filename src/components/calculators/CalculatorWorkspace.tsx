@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 
@@ -48,6 +48,20 @@ export function CalculatorWorkspace() {
         </div>
         <span className="mono small muted">5 módulos</span>
       </div>
+      <label className="calculator-selector">
+        Calculadora
+        <select
+          className="input"
+          value={activeTab}
+          onChange={(event) => selectTab(event.target.value as CalculatorTab)}
+        >
+          {tabs.map((tab) => (
+            <option key={tab.id} value={tab.id}>
+              {tab.label}
+            </option>
+          ))}
+        </select>
+      </label>
       <div className="calculator-tabs" role="tablist" aria-label="Calculadoras">
         {tabs.map((tab) => (
           <button

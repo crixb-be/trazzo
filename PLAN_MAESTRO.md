@@ -248,36 +248,25 @@ Orden propuesto por valor para el usuario frente a esfuerzo.
 
 ## 9. ESTADO DE AVANCE Y HANDOFF
 
-**Última actualización:** 2026-11-15 — plan aprobado; empieza la Fase 1.
+**Última actualización:** 2026-11-16. Historial contrastado con Git; rama de trabajo `work` (incluye el merge `95e85d6`).
 
 ### Completado
 
-- [x] Auditoría técnica, de diseño y de contenido (secciones 2 a 4).
-- [x] Benchmark y brechas (sección 5).
-- [x] Hoja de ruta por fases y bloques (sección 6).
-- [x] Trabajo previo a este plan: foto de perfil en Cuenta — commit `35f7176`.
-- [x] Plan aprobado y decisiones registradas (sección 7).
-- [x] Bloque 1.1: plan único con caché sin conexión, vencimiento y reglas coherentes — commit `93b411e`.
-- [x] Bloque 1.2: sincronización real (envío con columnas correctas, cola que conserva fallos, descarga de proyectos, partidas y cotizaciones, mensajes honestos) — commit `bdebc49`.
-- [x] Bloque 1.3: toda la app abre sin conexión (precarga de rutas, respaldo /~offline, un solo registro del service worker) — commit `c87d5eb`.
-- [x] Bloque 1.4: errores puntuales (PDF de metrados, lámina de agua, unidades de parámetros, precio del acero, cancelar edición, textos dañados). T-08 pasa al bloque 1.5 — commit `02ddf68`.
-- [x] Bloque 1.5: pagos fiables, cupo diario del asistente (migración 005), verificación real de estudiante. **Requiere aplicar las migraciones 004 y 005 en Supabase** — commit `1511f00`.
-
-### En curso o a medias
-
-- [ ] Nada a medias. No se ha tocado código de la app para este plan.
+- [x] 1.1 Planes y caché — `93b411e`.
+- [x] 1.2 Sincronización — `bdebc49`.
+- [x] 1.3 Rutas sin conexión — `c87d5eb`.
+- [x] 1.4 Errores puntuales — `02ddf68`.
+- [x] 1.5 Pagos y cupos — `1511f00`. Requiere migraciones 004 y 005 en Supabase; no verificadas contra servicio real.
+- [x] 1.6 Base móvil — `9475f67`.
+- [x] 1.7 Llegar al dato rápido — commit de este bloque: barra fija compartida por las cinco calculadoras, selector completo móvil, inicio compacto con accesos a los cinco módulos, contenido de ficha antes de lámina en móvil y sugerencias que envían la consulta. Typecheck, lint y 170 pruebas pasan.
 
 ### Pendiente
 
-- [ ] Recibir del usuario el PDF del RNE y los libros (necesarios para 2.1 y 2.7).
-- [ ] Fase 1: bloques 1.1 a 1.8 (ninguno iniciado).
-- [ ] Fase 2: bloques 2.0 a 2.10.
-- [ ] Fase 3: bloques 3.1 a 3.7.
+- [ ] 1.8 Rendimiento y red de seguridad.
+- [ ] Fase 2: 2.0 a 2.10; empezar por matriz de relaciones.
+- [ ] Fase 3: 3.1 a 3.7.
+- [ ] Recibir PDF del RNE y libros para contrastar 2.1 y 2.7. No marcar valores como verificados sin fuentes.
 
-### Instrucción para continuar (otra sesión u otra IA)
+### Continuidad
 
-1. Trabaja en la rama `claude/wonderful-noether-6eoymr` del repo `crixb-be/trazzo`. Ejecuta `npm ci`.
-2. Comprueba el punto de partida: `npm run typecheck && npm run lint && npm test` deben pasar (156 pruebas al cierre de la auditoría).
-3. Siguiente paso: ejecutar el **bloque 1.6** de la sección 6 (base móvil: controles de 44 px, letra mínima, foco visible, barra inferior de 5 destinos, diálogo y avisos propios, lenguaje sin jerga).
-4. Si el usuario no ha aprobado, no modifiques código: pide la aprobación y las respuestas de la sección 7.
-5. Tras cada bloque: verifica, haz commit y push, y actualiza esta sección con el hash del commit y, si algo queda a medias, el archivo y la línea exactos.
+Hacer un commit por bloque con actualización de esta sección. No crear PR. La comprobación integral de sincronización y pagos requiere servicios reales; no afirmar que se ejecutó.

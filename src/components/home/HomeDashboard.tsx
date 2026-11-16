@@ -21,6 +21,7 @@ const calculators = [
   { title: "Rampas", detail: "Pendientes A.120", href: "/calculadoras?tab=rampas" },
   { title: "Agua", detail: "IS.010", href: "/calculadoras?tab=agua" },
   { title: "Pozos de luz", detail: "H/3 · H/4", href: "/calculadoras?tab=pozos" },
+  { title: "Evacuación", detail: "Aforo y salidas", href: "/calculadoras?tab=evacuacion" },
   { title: "Honorarios", detail: "Cotiza y exporta PDF", href: "/honorarios" },
 ];
 
@@ -51,26 +52,10 @@ export function HomeDashboard() {
     <div className="home-dashboard">
       <section className="home-hero">
         <div className="eyebrow">TRAZZO / ESPACIO DE TRABAJO</div>
-        <h1 className="page-title">
-          Criterio técnico,
-          <br />
-          <span className="text-accent">en cada cota.</span>
-        </h1>
-        <p className="lead">
-          Normativa RNE, calculadoras y metrados para anteproyecto, obra y revisión desde cualquier
-          dispositivo, incluso sin conexión.
-        </p>
+        <h1 className="page-title">Herramientas de obra</h1>
         <div className="hero-search">
           <GlobalSearch variant="inline" />
           <p className="search-hint mono">Prueba: garganta · alféizar · cochera · A.120</p>
-        </div>
-        <div className="hero-actions">
-          <Link className="btn btn-primary" href="/calculadoras">
-            <Calculator size={16} aria-hidden="true" /> Abrir calculadoras
-          </Link>
-          <Link className="btn" href="/normativa">
-            Explorar fichas <ArrowUpRight size={16} aria-hidden="true" />
-          </Link>
         </div>
       </section>
 
