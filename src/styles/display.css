@@ -122,3 +122,131 @@ html.obra .calculator-result-bar {
     background-position: 0 50%;
   }
 }
+
+/* Bienvenida e instalación. */
+.onboarding-backdrop {
+  z-index: 60;
+}
+.onboarding {
+  width: 100%;
+  max-width: 480px;
+  padding: 20px;
+  max-height: calc(100dvh - 24px);
+  overflow: auto;
+  display: grid;
+  gap: var(--space-3);
+}
+.onboarding h2 {
+  margin: 0;
+  outline: 0;
+}
+.onboarding p {
+  margin: 0;
+}
+.onboarding-progress {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 6px;
+}
+.onboarding-progress span {
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--border);
+}
+.onboarding-progress span.active {
+  background: var(--accent);
+}
+.onboarding-note {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+  font-size: var(--text-md);
+  line-height: 1.45;
+}
+.onboarding-note svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--accent);
+}
+.onboarding-roles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+.onboarding-roles button {
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+  text-align: left;
+  padding: 14px;
+  min-height: 112px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  color: var(--text);
+}
+.onboarding-roles button:hover {
+  border-color: var(--accent);
+}
+.onboarding-roles svg {
+  color: var(--accent);
+}
+.onboarding-roles small {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+}
+.onboarding-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.onboarding-tools button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--touch-min);
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--text);
+  font-size: var(--text-sm);
+}
+.onboarding-tools button.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+.onboarding-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: 4px;
+}
+.install-guide {
+  display: grid;
+  gap: var(--space-3);
+}
+.install-title {
+  font-size: var(--text-md);
+}
+.install-steps {
+  list-style: decimal;
+  margin: 0;
+  padding-left: 22px;
+  display: grid;
+  gap: 6px;
+  font-size: var(--text-md);
+  line-height: 1.45;
+}
+.install-done {
+  margin: 0;
+  color: var(--ok);
+}

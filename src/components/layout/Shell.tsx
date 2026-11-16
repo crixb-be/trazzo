@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { Onboarding } from "@/components/onboarding/Onboarding";
 import { FeedbackHost } from "@/components/ui/Feedback";
 import { AppBootstrap } from "./AppBootstrap";
 import { BottomNav } from "./BottomNav";
@@ -18,6 +19,7 @@ export function Shell({ children }: { children: ReactNode }) {
       </div>
       <BottomNav />
       <FeedbackHost />
+      <Onboarding />
     </div>
   );
 }
