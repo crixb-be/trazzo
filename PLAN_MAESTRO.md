@@ -258,11 +258,11 @@ Orden propuesto por valor para el usuario frente a esfuerzo.
 - [x] 1.4 Errores puntuales — `02ddf68`.
 - [x] 1.5 Pagos y cupos — `1511f00`. Requiere migraciones 004 y 005 en Supabase; no verificadas contra servicio real.
 - [x] 1.6 Base móvil — `9475f67`.
-- [x] 1.7 Llegar al dato rápido — commit de este bloque: barra fija compartida por las cinco calculadoras, selector completo móvil, inicio compacto con accesos a los cinco módulos, contenido de ficha antes de lámina en móvil y sugerencias que envían la consulta. Typecheck, lint y 170 pruebas pasan.
+- [x] 1.7 Llegar al dato rápido — `dbe15e8`: barra fija compartida por las cinco calculadoras, selector completo móvil, inicio compacto con accesos a los cinco módulos, contenido de ficha antes de lámina en móvil y sugerencias que envían la consulta. Typecheck, lint y 170 pruebas pasan.
+
+- [x] 1.8 Rendimiento y red de seguridad — commit de este bloque. PDF diferido en Metrados/Honorarios; búsqueda con retardo de 300 ms; ESLint 9 y reglas Next activas en build; GitHub Actions con typecheck/lint/pruebas/build/Playwright; humo móvil ejecutado con Chromium del sistema (descarga Playwright bloqueada por HTTP 403). 170 pruebas, lint sin errores (5 avisos existentes de imágenes), build y humo pasan. JS inicial: Metrados 233 kB, Honorarios 240 kB.
 
 ### Pendiente
-
-- [ ] 1.8 Rendimiento y red de seguridad.
 - [ ] Fase 2: 2.0 a 2.10; empezar por matriz de relaciones.
 - [ ] Fase 3: 3.1 a 3.7.
 - [ ] Recibir PDF del RNE y libros para contrastar 2.1 y 2.7. No marcar valores como verificados sin fuentes.

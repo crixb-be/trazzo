@@ -16,7 +16,7 @@ import {
   validatePaymentPlan,
   type FeeQuoteResult,
 } from "@/lib/calculators/fees";
-import { buildProposalPdf, exportProposalPdf } from "@/lib/pdf/export-proposal";
+
 import { defaultSigner } from "@/lib/pdf/signatures";
 import { canExportCleanProposal } from "@/lib/plans/plans";
 import { useCurrentPlan } from "@/lib/plans/use-current-plan";
@@ -211,14 +211,16 @@ export function FeeQuoteWorkspace() {
     newQuote();
     setNotice("Cotización eliminada.");
   };
-  const download = (): void => {
+  const download = async (): Promise<void> => {
     if (canExportCleanProposal(currentPlan.plan)) {
+      const { exportProposalPdf } = await import("@/lib/pdf/export-proposal");
       exportProposalPdf(quoteForPdf(), result, { studio, watermark: false });
       return;
     }
     setPaywall(true);
   };
-  const downloadWatermarked = (): void => {
+  const downloadWatermarked = async (): Promise<void> => {
+    const { exportProposalPdf } = await import("@/lib/pdf/export-proposal");
     exportProposalPdf(quoteForPdf(), result, { studio, watermark: true });
     setPaywall(false);
   };

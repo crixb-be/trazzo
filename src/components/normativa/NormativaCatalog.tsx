@@ -1,9 +1,9 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { Lock, Search, SlidersHorizontal } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge, Card, Chip, EmptyState, Input, PaywallModal } from "@/components/ui";
 import type { RneCategory } from "@/data/seed-rne";
 import { useCards } from "@/lib/offline/hooks";
@@ -47,6 +47,14 @@ export function NormativaCatalog() {
       });
   }, []);
 
+  const urlTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (urlTimer.current) clearTimeout(urlTimer.current);
+    },
+    [],
+  );
+
   function syncUrl(next: { q?: string; cat?: string; norm?: string; free?: boolean }): void {
     const params = new URLSearchParams();
     if (next.q) params.set("q", next.q);
@@ -54,7 +62,10 @@ export function NormativaCatalog() {
     if (next.norm && next.norm !== "Todos") params.set("norm", next.norm);
     if (next.free) params.set("free", "1");
     const value = params.toString();
-    router.replace(value ? pathname + "?" + value : pathname, { scroll: false });
+    if (urlTimer.current) clearTimeout(urlTimer.current);
+    urlTimer.current = setTimeout(() => {
+      router.replace(value ? pathname + "?" + value : pathname, { scroll: false });
+    }, 300);
   }
 
   const filteredCards = useMemo(() => {
@@ -164,6 +175,7 @@ export function NormativaCatalog() {
                 setCategory("Todas");
                 setNormCode("Todos");
                 setOnlyFree(false);
+                if (urlTimer.current) clearTimeout(urlTimer.current);
                 router.replace(pathname, { scroll: false });
               }}
             >

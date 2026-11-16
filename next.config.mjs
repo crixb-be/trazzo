@@ -35,5 +35,5 @@ const withSerwist = withSerwistInit({
 });
 
 /** @type {import('next').NextConfig} */
-const nextConfig = { reactStrictMode: true, eslint: { ignoreDuringBuilds: true } };
+const nextConfig = { reactStrictMode: true };
 export default withSerwist(nextConfig);

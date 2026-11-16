@@ -1,8 +1,8 @@
 "use client";
 
 import { Download, FileText, RefreshCw } from "lucide-react";
-import { jsPDF } from "jspdf";
-import { autoTable } from "jspdf-autotable";
+import type { jsPDF } from "jspdf";
+
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Button, Card, confirmDialog, EmptyState, PaywallModal, toast } from "@/components/ui";
@@ -236,6 +236,10 @@ export function MetradosWorkspace() {
     if (!activeProject) return;
 
     const watermark = !canExportPdf(plan);
+    const [{ jsPDF }, { autoTable }] = await Promise.all([
+      import("jspdf"),
+      import("jspdf-autotable"),
+    ]);
     const pdf = new jsPDF();
     pdf.setFontSize(18);
     pdf.text("TRAZZO", 14, 18);

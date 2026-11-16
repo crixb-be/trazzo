@@ -48,9 +48,10 @@ export function CalculatorWorkspace() {
         </div>
         <span className="mono small muted">5 módulos</span>
       </div>
-      <label className="calculator-selector">
+      <label className="calculator-selector" htmlFor="calculator-select">
         Calculadora
         <select
+          id="calculator-select"
           className="input"
           value={activeTab}
           onChange={(event) => selectTab(event.target.value as CalculatorTab)}
