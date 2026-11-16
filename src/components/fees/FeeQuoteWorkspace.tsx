@@ -16,7 +16,7 @@ import {
   validatePaymentPlan,
   type FeeQuoteResult,
 } from "@/lib/calculators/fees";
-import { buildProposalPdf, exportProposalPdf } from "@/lib/pdf/export-proposal";
+
 import { defaultSigner } from "@/lib/pdf/signatures";
 import { canExportCleanProposal } from "@/lib/plans/plans";
 import { useCurrentPlan } from "@/lib/plans/use-current-plan";
@@ -30,6 +30,7 @@ import { useFeeQuotes, useStudioProfile } from "@/lib/offline/hooks";
 import { loadCustomFeeRates, saveCustomFeeRates } from "@/lib/offline/fee-rates";
 import type { FeeQuote } from "@/lib/offline/db";
 import { ProposalPreview } from "./ProposalPreview";
+import { ShareProposal } from "./ShareProposal";
 import { QuoteForm } from "./QuoteForm";
 import { QuoteSummary } from "./QuoteSummary";
 
@@ -211,14 +212,16 @@ export function FeeQuoteWorkspace() {
     newQuote();
     setNotice("Cotización eliminada.");
   };
-  const download = (): void => {
+  const download = async (): Promise<void> => {
     if (canExportCleanProposal(currentPlan.plan)) {
+      const { exportProposalPdf } = await import("@/lib/pdf/export-proposal");
       exportProposalPdf(quoteForPdf(), result, { studio, watermark: false });
       return;
     }
     setPaywall(true);
   };
-  const downloadWatermarked = (): void => {
+  const downloadWatermarked = async (): Promise<void> => {
+    const { exportProposalPdf } = await import("@/lib/pdf/export-proposal");
     exportProposalPdf(quoteForPdf(), result, { studio, watermark: true });
     setPaywall(false);
   };
@@ -311,6 +314,12 @@ export function FeeQuoteWorkspace() {
           notice={notice}
         />
       </div>
+      <ShareProposal
+        quote={quoteForPdf()}
+        result={result}
+        studio={studio}
+        watermark={!canExportCleanProposal(currentPlan.plan)}
+      />
       {studio.fullName === "" && (
         <p className="profile-hint">
           Agrega tu nombre y N° CAP en <a href="/cuenta">Cuenta</a> para personalizar la propuesta.

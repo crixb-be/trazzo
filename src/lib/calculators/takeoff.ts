@@ -135,3 +135,20 @@ export function calculateTakeoff(input: TakeoffInput): TakeoffResult {
 }
 
 export type { CalcResult } from "./types";
+
+/** Cantidades para comprar; conserva unidades del catálogo y precios propios de cada línea. */
+export function shoppingList(
+  lines: { materialCode: string; total: number; subtotalPen: number }[],
+) {
+  const result = new Map<string, { code: string; quantity: number; cost: number }>();
+  for (const line of lines) {
+    const row = result.get(line.materialCode) ?? { code: line.materialCode, quantity: 0, cost: 0 };
+    row.quantity += line.total;
+    row.cost += line.subtotalPen;
+    result.set(row.code, row);
+  }
+  return [...result.values()];
+}
+export function chapterFor(name: string) {
+  return name.match(/^\[([^\]]+)\]/)?.[1] ?? "Sin capítulo";
+}

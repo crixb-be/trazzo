@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
@@ -42,20 +42,30 @@ export function CalculatorResult({
   copyText: string;
 }) {
   return (
-    <Card className="calculator-result">
-      <div className="result-header">
-        <div className="eyebrow">{eyebrow}</div>
-        <CopyResultButton text={copyText} />
+    <>
+      <div className="calculator-result-bar" role="status" aria-live="polite">
+        <div>
+          <span className="eyebrow">{eyebrow}</span>
+          <strong>{main}</strong>
+          <small>{details}</small>
+        </div>
+        <span>{warnings.length ? "Revisar condiciones" : "Ver comprobaciones abajo"}</span>
       </div>
-      <strong className="result-main mono">{main}</strong>
-      <p className="result-details">{details}</p>
-      <CheckList checks={checks} />
-      {warnings.map((warning) => (
-        <p className="warning" key={warning}>
-          {warning}
-        </p>
-      ))}
-    </Card>
+      <Card className="calculator-result">
+        <div className="result-header">
+          <div className="eyebrow">{eyebrow}</div>
+          <CopyResultButton text={copyText} />
+        </div>
+        <strong className="result-main mono">{main}</strong>
+        <p className="result-details">{details}</p>
+        <CheckList checks={checks} />
+        {warnings.map((warning) => (
+          <p className="warning" key={warning}>
+            {warning}
+          </p>
+        ))}
+      </Card>
+    </>
   );
 }
 

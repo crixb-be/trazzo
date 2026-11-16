@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ChevronDown, Lock, MessageSquare, SlidersHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge, Button, Card, Chip, NumberField, PaywallModal } from "@/components/ui";
 import { RneDiagram, type DiagramOverrides } from "@/components/svg-diagrams";
 import { RNE_CARDS, type RneCard } from "@/data/seed-rne";
@@ -11,6 +11,8 @@ import { useCard, useCards } from "@/lib/offline/hooks";
 import { canUseProCards } from "@/lib/plans/plans";
 import { paramMeta } from "@/lib/ui/param-labels";
 import { useCurrentPlan } from "@/lib/plans/use-current-plan";
+
+import { useLibraryActivity, recordVisit, toggleFavorite } from "@/lib/offline/library";
 
 const legalDisclaimer =
   "Valores referenciales según la edición indicada del RNE. Verifica la versión vigente publicada por el MVCS antes de usar en expedientes.";
@@ -26,6 +28,10 @@ export function NormativeDetail({ slug }: { slug: string }) {
   const router = useRouter();
   const [paywall, setPaywall] = useState(false);
 
+  const activity = useLibraryActivity();
+  useEffect(() => {
+    void recordVisit(slug).catch(() => {});
+  }, [slug]);
   if (!card) return <DetailState message="No encontramos esta ficha normativa." />;
 
   const hasAccess = canUseProCards(plan);
@@ -96,6 +102,15 @@ export function NormativeDetail({ slug }: { slug: string }) {
             <span>{card.edition}</span>
           </div>
           <h1 className="page-title">{card.title}</h1>
+          <Button onClick={() => void toggleFavorite(slug)}>
+            {" "}
+            {activity.find((a) => a.slug === slug)?.favorite
+              ? "Quitar favorito"
+              : "Guardar favorito"}
+          </Button>
+          <p className="small muted">
+            Resolución: {card.source_resolution ?? "Pendiente de contraste con fuente oficial"}
+          </p>
           <div className="card-badges">
             {card.is_pro && (
               <Badge variant="pro">

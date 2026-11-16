@@ -1,10 +1,11 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import { Lock, Search, SlidersHorizontal } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge, Card, Chip, EmptyState, Input, PaywallModal } from "@/components/ui";
+import { useLibraryActivity } from "@/lib/offline/library";
 import type { RneCategory } from "@/data/seed-rne";
 import { useCards } from "@/lib/offline/hooks";
 import { ensureSeeded } from "@/lib/offline/db";
@@ -20,10 +21,23 @@ const categories: Array<"Todas" | RneCategory> = [
   "Sanitarias",
   "Estacionamientos",
 ];
-const normCodes = ["Todos", "A.010", "A.120", "A.130", "IS.010"];
+const normCodes = [
+  "Todos",
+  "A.010",
+  "A.020",
+  "A.070",
+  "A.080",
+  "A.120",
+  "A.130",
+  "IS.010",
+  "E.020",
+  "E.060",
+];
 
 export function NormativaCatalog() {
   const cards = useCards();
+  const activity = useLibraryActivity();
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -47,6 +61,14 @@ export function NormativaCatalog() {
       });
   }, []);
 
+  const urlTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (urlTimer.current) clearTimeout(urlTimer.current);
+    },
+    [],
+  );
+
   function syncUrl(next: { q?: string; cat?: string; norm?: string; free?: boolean }): void {
     const params = new URLSearchParams();
     if (next.q) params.set("q", next.q);
@@ -54,18 +76,22 @@ export function NormativaCatalog() {
     if (next.norm && next.norm !== "Todos") params.set("norm", next.norm);
     if (next.free) params.set("free", "1");
     const value = params.toString();
-    router.replace(value ? pathname + "?" + value : pathname, { scroll: false });
+    if (urlTimer.current) clearTimeout(urlTimer.current);
+    urlTimer.current = setTimeout(() => {
+      router.replace(value ? pathname + "?" + value : pathname, { scroll: false });
+    }, 300);
   }
 
   const filteredCards = useMemo(() => {
     const filtered = cards.filter((card) => {
+      if (favoritesOnly && !activity.some((a) => a.slug === card.slug && a.favorite)) return false;
       if (category !== "Todas" && card.category !== category) return false;
       if (normCode !== "Todos" && card.norm_code !== normCode) return false;
       if (onlyFree && card.is_pro) return false;
       return true;
     });
     return searchCards(filtered, query);
-  }, [cards, category, normCode, onlyFree, query]);
+  }, [cards, category, normCode, onlyFree, query, favoritesOnly, activity]);
 
   const hasProAccess = canUseProCards(plan);
 
@@ -91,6 +117,14 @@ export function NormativaCatalog() {
         <div className="catalog-count mono">{filteredCards.length} resultados</div>
       </div>
 
+      <label>
+        <input
+          type="checkbox"
+          checked={favoritesOnly}
+          onChange={(e) => setFavoritesOnly(e.target.checked)}
+        />{" "}
+        Solo favoritos
+      </label>
       <div className="catalog-toolbar">
         <div className="search-box catalog-search">
           <Search size={17} aria-hidden="true" />
@@ -164,6 +198,7 @@ export function NormativaCatalog() {
                 setCategory("Todas");
                 setNormCode("Todos");
                 setOnlyFree(false);
+                if (urlTimer.current) clearTimeout(urlTimer.current);
                 router.replace(pathname, { scroll: false });
               }}
             >

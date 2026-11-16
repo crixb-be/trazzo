@@ -8,3 +8,6 @@ coverage
 public/sw.js
 .npm-cache
 *.tsbuildinfo
+
+playwright-report
+test-results

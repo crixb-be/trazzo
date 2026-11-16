@@ -248,36 +248,63 @@ Orden propuesto por valor para el usuario frente a esfuerzo.
 
 ## 9. ESTADO DE AVANCE Y HANDOFF
 
-**Última actualización:** 2026-11-15 — plan aprobado; empieza la Fase 1.
+**Última actualización:** 2026-11-16. Historial contrastado con Git; rama de trabajo `claude/wonderful-noether-6eoymr` (incluye el merge `95e85d6`).
 
 ### Completado
 
-- [x] Auditoría técnica, de diseño y de contenido (secciones 2 a 4).
-- [x] Benchmark y brechas (sección 5).
-- [x] Hoja de ruta por fases y bloques (sección 6).
-- [x] Trabajo previo a este plan: foto de perfil en Cuenta — commit `35f7176`.
-- [x] Plan aprobado y decisiones registradas (sección 7).
-- [x] Bloque 1.1: plan único con caché sin conexión, vencimiento y reglas coherentes — commit `93b411e`.
-- [x] Bloque 1.2: sincronización real (envío con columnas correctas, cola que conserva fallos, descarga de proyectos, partidas y cotizaciones, mensajes honestos) — commit `bdebc49`.
-- [x] Bloque 1.3: toda la app abre sin conexión (precarga de rutas, respaldo /~offline, un solo registro del service worker) — commit `c87d5eb`.
-- [x] Bloque 1.4: errores puntuales (PDF de metrados, lámina de agua, unidades de parámetros, precio del acero, cancelar edición, textos dañados). T-08 pasa al bloque 1.5 — commit `02ddf68`.
-- [x] Bloque 1.5: pagos fiables, cupo diario del asistente (migración 005), verificación real de estudiante. **Requiere aplicar las migraciones 004 y 005 en Supabase** — commit `1511f00`.
+- [x] 1.1 Planes y caché — `93b411e`.
+- [x] 1.2 Sincronización — `bdebc49`.
+- [x] 1.3 Rutas sin conexión — `c87d5eb`.
+- [x] 1.4 Errores puntuales — `02ddf68`.
+- [x] 1.5 Pagos y cupos — `1511f00`. Requiere migraciones 004 y 005 en Supabase; no verificadas contra servicio real.
+- [x] 1.6 Base móvil — `9475f67`.
+- [x] 1.7 Llegar al dato rápido — `dbe15e8`: barra fija compartida por las cinco calculadoras, selector completo móvil, inicio compacto con accesos a los cinco módulos, contenido de ficha antes de lámina en móvil y sugerencias que envían la consulta. Typecheck, lint y 170 pruebas pasan.
 
-### En curso o a medias
+- [x] 1.8 Rendimiento y red de seguridad — `8f7597c`. PDF diferido en Metrados/Honorarios; búsqueda con retardo de 300 ms; ESLint 9 y reglas Next activas en build; GitHub Actions con typecheck/lint/pruebas/build/Playwright; humo móvil ejecutado con Chromium del sistema (descarga Playwright bloqueada por HTTP 403). 170 pruebas, lint sin errores (5 avisos existentes de imágenes), build y humo pasan. JS inicial: Metrados 233 kB, Honorarios 240 kB.
 
-- [ ] Nada a medias. No se ha tocado código de la app para este plan.
+- [x] 2.0 Matriz de relaciones — `93ec91d`. Ruta `/matriz`, acceso en Inicio y menú, hasta 20 ambientes editables, matriz triangular, pesos configurables, ranking y diagrama con leyenda. Guardado en IndexedDB (`meta`, clave `relation-matrix`), exportación SVG y PDF con diagrama, ranking y tabla de pares; PDF cargado solo al exportar. Ruta precargada para uso sin conexión. Typecheck, lint, 174 pruebas unitarias y build pasan. Dos pruebas de navegador verifican resultado fijo a 390 px, persistencia, eliminación, descargas SVG/PDF, ausencia de desbordamiento y recarga sin conexión. Revisión visual móvil realizada.
 
-### Pendiente
+### Ejecución 2.1–2.5 (2026-11-16)
 
-- [ ] Recibir del usuario el PDF del RNE y los libros (necesarios para 2.1 y 2.7).
-- [ ] Fase 1: bloques 1.1 a 1.8 (ninguno iniciado).
-- [ ] Fase 2: bloques 2.0 a 2.10.
-- [ ] Fase 3: bloques 3.1 a 3.7.
+Se ejecutaron en orden, con typecheck, lint, pruebas unitarias y build satisfactorios **antes de pasar al bloque siguiente**. Lint conserva los cinco avisos existentes sobre imágenes; build conserva avisos del SDK de IA y detección del plugin Next, sin errores.
 
-### Instrucción para continuar (otra sesión u otra IA)
+| Bloque | Commit    | Entregado                                                                                                                                                                                                                                                                                                                                                      | Pruebas unitarias |
+| ------ | --------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| 2.1    | `d2871b5` | `/medidas`: 11 fichas con dibujos SVG propios, búsqueda tolerante a tildes, categorías, antropometría, mobiliario, baño, cocina, dormitorio, clóset, comedor, escritorio, circulación y alturas. Accesos en Inicio/menú y precarga sin conexión.                                                                                                               | 174               |
+| 2.2    | `0aea9f9` | Concreto por resistencia, ladrillo en soga/cabeza/canto, tarrajeo, contrapiso, cerámico, porcelanato, pintura, acero kg↔varillas y losa aligerada. Rendimientos, dimensiones, merma y precios editables; fecha visible. Envío atómico al proyecto de metrado con cantidades finales (sin duplicar merma), control de errores y bloqueo de reenvío sin cambios. | 180               |
+| 2.3    | `bcbdb60` | Conversión de longitud/área/volumen/masa y pulgadas fraccionarias; pendientes %↔grados↔1:n; área por coordenadas con detección de cruces; escala cm de plano↔m reales.                                                                                                                                                                                         | 185               |
+| 2.4    | `b6dc175` | Cabida con lote rectangular, coeficiente, área libre, alturas y cuatro retiros; huella, área techada máxima, pisos por altura, plantas completas/parcial y proporción vendible editable.                                                                                                                                                                       | 189               |
+| 2.5    | `74114eb` | Aforo por uso con factor editable, aparatos sanitarios por uso y población separada, iluminación/ventilación con porcentajes editables y áreas disponibles, reserva de estacionamientos accesibles. Integradas al selector completo de calculadoras.                                                                                                           | 193               |
 
-1. Trabaja en la rama `claude/wonderful-noether-6eoymr` del repo `crixb-be/trazzo`. Ejecuta `npm ci`.
-2. Comprueba el punto de partida: `npm run typecheck && npm run lint && npm test` deben pasar (156 pruebas al cierre de la auditoría).
-3. Siguiente paso: ejecutar el **bloque 1.6** de la sección 6 (base móvil: controles de 44 px, letra mínima, foco visible, barra inferior de 5 destinos, diálogo y avisos propios, lenguaje sin jerga).
-4. Si el usuario no ha aprobado, no modifiques código: pide la aprobación y las respuestas de la sección 7.
-5. Tras cada bloque: verifica, haz commit y push, y actualiza esta sección con el hash del commit y, si algo queda a medias, el archivo y la línea exactos.
+**Límites de contenido:** las fichas 2.1 son referencias de diseño **Por verificar**, no mínimos legales; falta contrastarlas con los libros/PDF del usuario. Los rendimientos de 2.2 son estimaciones editables, no un diseño de mezcla o estructural; losa excluye acero y encofrado. Los perfiles/tablas de 2.5 también están **Por verificar**, con supuestos y referencias visibles: no certifican cumplimiento del RNE vigente. Sanitarios estima grupos de hombres/mujeres para oficinas/comercio/restaurante; dotación independiente de personal y aparatos accesibles requiere revisión específica. La validación documental sigue pendiente y no se afirma haberla realizado.
+
+**Verificación adicional:** pruebas de navegador para medidas, cabida, aforo, utilidades y envío de materiales a un proyecto, además de las pruebas existentes de matriz sin conexión y barra fija móvil.
+
+**Continuación autorizada:** el usuario pidió ejecutar 2.6–2.10 en esta rama. Ver el cierre siguiente.
+
+### Ejecución 2.6–2.10 y cierre de implementación
+
+Rama `claude/wonderful-noether-6eoymr`. Se ejecutó `git fetch origin`: `origin/main` (`95e85d6`) era ancestro de HEAD, con 0 commits pendientes de integrar; no fue necesario merge. Cada bloque tiene commit y push en esta rama. No se abrió PR ni se inició Fase 3.
+
+| Bloque               | Commit    | Resultado                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| -------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2.6                  | `8ad2b6a` | Recetas de muro, tarrajeo, contrapiso y losa que generan materiales; capítulos (prefijo en nombre, compatible con sincronización existente), lista de compras con cantidades/costos, precios propios por partida, duplicación atómica respetando límite del plan, formulario según unidad, tarjetas móviles y ratio por m². Migración local IndexedDB v4 para área de proyecto (`project_options`); esa área se conserva en este dispositivo, no se sincroniza. |
+| 2.7                  | `63fd36b` | Biblioteca con 7 guías nuevas (24 fichas en total), favoritos, filtro y visitas recientes reales. Migración local IndexedDB v5 para actividad de biblioteca. Artículo/resolución/estado de contraste explícitos y registro `src/data/rne/verification.ts`. **Bloque parcialmente completado: falta la verificación documental y la cobertura exhaustiva de A.130.** Las guías nuevas muestran artículo y resolución pendientes; no se inventaron referencias.   |
+| 2.8                  | `31c5d64` | Respuesta extractiva sin conexión desde las fichas accesibles del dispositivo, sin API ni descuento de cupo; historial local de las últimas 100 intervenciones, borrado y enlaces a fichas/calculadoras relacionadas.                                                                                                                                                                                                                                           |
+| 2.9                  | `b6bd23d` | Buscador compartido para fichas locales (incluidas las descargadas), medidas, calculadoras, matriz, proyectos y cotizaciones; tolerancia a tildes y enlaces al registro concreto.                                                                                                                                                                                                                                                                               |
+| 2.10                 | `9c17779` | Honorarios en siete pasos con datos conservados, navegación anterior/siguiente y total fijo. Preparación de PDF y compartir archivo desde el menú del teléfono con acción explícita; descarga alternativa si Web Share no está disponible. Marca de agua según plan.                                                                                                                                                                                            |
+| Corrección de cierre | `f6946da` | Editar precios de partidas importadas en m² conserva cantidades; capítulo aplicable incluso después de escribir el nombre. Prueba de regresión en navegador.                                                                                                                                                                                                                                                                                                    |
+
+**Verificación:** typecheck, lint, pruebas y build ejecutados por bloque. Pruebas unitarias al cierre: **198 en 33 archivos**, todas pasan. **9 pruebas de navegador** pasan con Chromium del sistema: receta/compras, favoritos, asistente e historial sin red, búsqueda, pasos y preparación de PDF, conservación de cantidades al editar, herramientas previas y matriz sin conexión. La comprobación de Web Share nativo requiere un teléfono compatible; el entorno comprobó preparación del archivo, no un envío real. Persisten cinco avisos previos de imágenes en lint y avisos de SDK de IA/detección de Next en build, sin errores.
+
+### Pendiente documental y estado de Fase 2
+
+- [x] Implementación de 2.0–2.6 y 2.8–2.10.
+- [x] Funciones de biblioteca de 2.7 (ampliación orientativa, favoritos y recientes).
+- [ ] **2.7: verificar las 17 fichas originales, completar A.130 y contrastar las ampliaciones con artículos y resoluciones oficiales.** No se marca Fase 2 como totalmente verificada. Los PDFs/libros del usuario no están en el proyecto. Se intentó consultar el portal oficial del RNE en `https://www.gob.pe/institucion/vivienda/informes-publicaciones/2309793-reglamento-nacional-de-edificaciones-rne`; el entorno rechazó la conexión con HTTP 403. Las fichas conservan «Por verificar».
+- [ ] Contrastar también medidas 2.1 y perfiles/tablas de calculadoras 2.5 antes de marcarlos verificados.
+- [ ] Fase 3: bloques 3.1–3.7, no iniciada.
+
+### Continuidad
+
+Hacer un commit por bloque con actualización de esta sección. No crear PR. La comprobación integral de sincronización y pagos requiere servicios reales; no afirmar que se ejecutó.

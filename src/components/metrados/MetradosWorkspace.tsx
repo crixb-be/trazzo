@@ -1,8 +1,8 @@
 "use client";
 
 import { Download, FileText, RefreshCw } from "lucide-react";
-import { jsPDF } from "jspdf";
-import { autoTable } from "jspdf-autotable";
+import type { jsPDF } from "jspdf";
+
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Button, Card, confirmDialog, EmptyState, PaywallModal, toast } from "@/components/ui";
@@ -15,6 +15,7 @@ import { deleteProject, deleteTakeoff, saveProject, saveTakeoff } from "@/lib/of
 import { describeSyncResult, syncNow as runSync } from "@/lib/offline/sync";
 import { canCreateProject, canExportPdf } from "@/lib/plans/plans";
 import { useCurrentPlan } from "@/lib/plans/use-current-plan";
+import { TakeoffExtras } from "./TakeoffExtras";
 import { ProjectList } from "./ProjectList";
 import { TakeoffTable, type TakeoffDraft } from "./TakeoffTable";
 
@@ -166,9 +167,13 @@ export function MetradosWorkspace() {
       id: takeoff.id,
       partName: takeoff.partName,
       materialCode: takeoff.materialCode,
-      length: takeoff.length,
-      width: takeoff.width,
-      height: takeoff.height,
+      length:
+        ["m2", "m3"].includes(catalog.find((m) => m.code === takeoff.materialCode)?.unit ?? "") &&
+        takeoff.length === 0
+          ? takeoff.quantity
+          : takeoff.length,
+      width: takeoff.width || 1,
+      height: takeoff.height || 1,
       quantity: takeoff.quantity,
       wastePct: takeoff.wastePct,
       unitPricePen:
@@ -236,6 +241,10 @@ export function MetradosWorkspace() {
     if (!activeProject) return;
 
     const watermark = !canExportPdf(plan);
+    const [{ jsPDF }, { autoTable }] = await Promise.all([
+      import("jspdf"),
+      import("jspdf-autotable"),
+    ]);
     const pdf = new jsPDF();
     pdf.setFontSize(18);
     pdf.text("TRAZZO", 14, 18);
@@ -348,6 +357,13 @@ export function MetradosWorkspace() {
                   </div>
                 </div>
               </div>
+              <TakeoffExtras
+                key={activeProject.id}
+                project={activeProject}
+                lines={takeoffs}
+                canDuplicate={canCreateProject(plan, projects.length)}
+                onDuplicate={(p) => setSelectedId(p.id)}
+              />
               <TakeoffTable
                 takeoffs={takeoffs}
                 materials={catalog}

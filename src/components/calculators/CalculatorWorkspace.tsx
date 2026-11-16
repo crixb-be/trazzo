@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState } from "react";
 
@@ -9,9 +9,33 @@ import { RampCalculator } from "./RampCalculator";
 import { StairCalculator } from "./StairCalculator";
 import { WaterCalculator } from "./WaterCalculator";
 
-type CalculatorTab = "escaleras" | "rampas" | "agua" | "pozos" | "evacuacion";
+import { MaterialsCalculator } from "./materials/MaterialsCalculator";
+
+import { FieldTools } from "./tools/FieldTools";
+
+import { CabidaCalculator } from "./CabidaCalculator";
+
+import { RneExtraCalculators, type RneTool } from "./RneExtraCalculators";
+
+type CalculatorTab =
+  | RneTool
+  | "cabida"
+  | "utilidades"
+  | "materiales"
+  | "escaleras"
+  | "rampas"
+  | "agua"
+  | "pozos"
+  | "evacuacion";
 
 const tabs: Array<{ id: CalculatorTab; label: string }> = [
+  { id: "aforo", label: "Aforo" },
+  { id: "sanitarios", label: "Aparatos sanitarios" },
+  { id: "luz", label: "Luz y ventilación" },
+  { id: "parking", label: "Plazas accesibles" },
+  { id: "cabida", label: "Cabida de terreno" },
+  { id: "utilidades", label: "Utilidades de campo" },
+  { id: "materiales", label: "Materiales" },
   { id: "escaleras", label: "Escaleras" },
   { id: "rampas", label: "Rampas" },
   { id: "agua", label: "Dotación de agua" },
@@ -46,8 +70,23 @@ export function CalculatorWorkspace() {
             Resultados referenciales para anteproyecto, revisión y coordinación de obra.
           </p>
         </div>
-        <span className="mono small muted">5 módulos</span>
+        <span className="mono small muted">{tabs.length} módulos</span>
       </div>
+      <label className="calculator-selector" htmlFor="calculator-select">
+        Calculadora
+        <select
+          id="calculator-select"
+          className="input"
+          value={activeTab}
+          onChange={(event) => selectTab(event.target.value as CalculatorTab)}
+        >
+          {tabs.map((tab) => (
+            <option key={tab.id} value={tab.id}>
+              {tab.label}
+            </option>
+          ))}
+        </select>
+      </label>
       <div className="calculator-tabs" role="tablist" aria-label="Calculadoras">
         {tabs.map((tab) => (
           <button
@@ -66,6 +105,12 @@ export function CalculatorWorkspace() {
         Valores referenciales según la edición indicada del RNE. Verifica la versión vigente
         publicada por el MVCS antes de usar en expedientes.
       </div>
+      {(["aforo", "sanitarios", "luz", "parking"] as string[]).includes(activeTab) && (
+        <RneExtraCalculators key={activeTab} tool={activeTab as RneTool} />
+      )}
+      {activeTab === "cabida" && <CabidaCalculator />}
+      {activeTab === "utilidades" && <FieldTools />}
+      {activeTab === "materiales" && <MaterialsCalculator />}
       {activeTab === "escaleras" && <StairCalculator />}
       {activeTab === "rampas" && <RampCalculator />}
       {activeTab === "agua" && <WaterCalculator />}

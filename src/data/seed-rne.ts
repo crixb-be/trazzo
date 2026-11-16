@@ -1,7 +1,9 @@
+import { ADDITIONAL_CARDS } from "./rne/additional";
 export type RneCategory =
   "Accesibilidad" | "Circulación" | "Seguridad" | "Sanitarias" | "Estacionamientos";
 
 export type SvgType =
+  | "reference"
   | "stair-step"
   | "ramp-slope"
   | "wheelchair-turn"
@@ -27,6 +29,7 @@ export interface RneCard {
   params: Record<string, number | string>;
   is_pro: boolean;
   verified_at: string | null;
+  source_resolution?: string | null;
   updated_at?: string;
 }
 
@@ -41,7 +44,7 @@ export interface Material {
   notes: string;
 }
 
-export const SEED_VERSION = 5;
+export const SEED_VERSION = 6;
 
 const LEGAL_NOTE =
   "Valores referenciales según la edición indicada del RNE. Verifica la versión vigente publicada por el MVCS antes de usar en expedientes.";
@@ -468,6 +471,7 @@ export const RNE_CARDS: RneCard[] = [
     is_pro: false,
     verified_at: null,
   },
+  ...ADDITIONAL_CARDS,
 ];
 
 export const MATERIALS: Material[] = [

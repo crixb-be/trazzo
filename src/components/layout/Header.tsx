@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Search, UserRound, X } from "lucide-react";
 import Link from "next/link";
@@ -8,8 +8,10 @@ import { GlobalSearch, OfflineBadge, ThemeToggle } from "@/components/ui";
 import { useStudioProfile } from "@/lib/offline/hooks";
 
 const titles: Record<string, string> = {
+  "/medidas": "Medidas de bolsillo",
   "/": "Espacio de trabajo",
   "/normativa": "Biblioteca RNE",
+  "/matriz": "Matriz de relaciones",
   "/calculadoras": "Calculadoras técnicas",
   "/metrados": "Proyectos y metrados",
   "/honorarios": "Honorarios y propuestas",

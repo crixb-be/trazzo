@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Edit3, Plus, Save, Trash2, X } from "lucide-react";
 import { Button, Card, Input, NumberField } from "@/components/ui";
 import type { Material } from "@/data/seed-rne";
@@ -59,6 +60,11 @@ export function TakeoffTable({
   onEdit,
   onDelete,
 }: TakeoffTableProps) {
+  const [chapter, setChapter] = useState("");
+  useEffect(() => {
+    setChapter(draft.partName.match(/^\[([^\]]+)\]/)?.[1] ?? "");
+  }, [draft.id]);
+  const unit = materials.find((m) => m.code === draft.materialCode)?.unit;
   const preview = materials.length ? derivedLine(draft, materials) : null;
   const categories = [...new Set(materials.map((material) => material.category))];
 
@@ -79,13 +85,38 @@ export function TakeoffTable({
         <p className="muted">Cargando catálogo de materiales…</p>
       ) : (
         <>
+          <label>
+            Capítulo
+            <input
+              className="input"
+              value={chapter}
+              onChange={(e) => {
+                const next = e.target.value.replace(/[\[\]]/g, "");
+                setChapter(next);
+                setDraft({
+                  ...draft,
+                  partName:
+                    (next.trim() ? `[${next.trim()}] ` : "") +
+                    draft.partName.replace(/^\[[^\]]+\]\s*/, ""),
+                });
+              }}
+              placeholder="Ej. Estructuras"
+            />
+          </label>
           <div className="takeoff-form">
             <div className="field">
               <label htmlFor="part-name">Partida</label>
               <Input
                 id="part-name"
-                value={draft.partName}
-                onChange={(event) => setDraft({ ...draft, partName: event.target.value })}
+                value={draft.partName.replace(/^\[[^\]]+\]\s*/, "")}
+                onChange={(event) =>
+                  setDraft({
+                    ...draft,
+                    partName:
+                      (chapter.trim() ? `[${chapter.replace(/[\[\]]/g, "").trim()}] ` : "") +
+                      event.target.value.replace(/^\[[^\]]+\]\s*/, ""),
+                  })
+                }
                 placeholder="Muro de soga"
               />
             </div>
@@ -119,26 +150,34 @@ export function TakeoffTable({
                 ))}
               </select>
             </div>
-            <NumberInput
-              label="Largo"
-              value={draft.length}
-              onChange={(value) => setDraft({ ...draft, length: value })}
-            />
-            <NumberInput
-              label="Ancho"
-              value={draft.width}
-              onChange={(value) => setDraft({ ...draft, width: value })}
-            />
-            <NumberInput
-              label="Alto"
-              value={draft.height}
-              onChange={(value) => setDraft({ ...draft, height: value })}
-            />
-            <NumberInput
-              label="Cantidad"
-              value={draft.quantity}
-              onChange={(value) => setDraft({ ...draft, quantity: value })}
-            />
+            {["m2", "m3"].includes(unit ?? "") && (
+              <>
+                <NumberInput
+                  label="Largo"
+                  value={draft.length}
+                  onChange={(value) => setDraft({ ...draft, length: value })}
+                />
+                <NumberInput
+                  label="Ancho"
+                  value={draft.width}
+                  onChange={(value) => setDraft({ ...draft, width: value })}
+                />
+              </>
+            )}
+            {unit === "m3" && (
+              <NumberInput
+                label="Alto"
+                value={draft.height}
+                onChange={(value) => setDraft({ ...draft, height: value })}
+              />
+            )}
+            {!["m2", "m3"].includes(unit ?? "") && (
+              <NumberInput
+                label="Cantidad"
+                value={draft.quantity}
+                onChange={(value) => setDraft({ ...draft, quantity: value })}
+              />
+            )}
             <NumberField
               label="% desperdicio"
               value={draft.wastePct}

@@ -5,6 +5,7 @@ import { BookOpen, ExternalLink, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
 import type { UIMessage } from "ai";
 import { parseMarkdown, type InlineNode, type MarkdownBlock } from "@/lib/chat/markdown";
+import { calculatorForCard } from "@/lib/rag/device";
 import { parseCitations } from "@/lib/rag/citations";
 
 function messageText(message: UIMessage): string {
@@ -23,7 +24,22 @@ export function ChatMessage({ message }: { message: UIMessage }) {
       <div className="chat-avatar">{isUser ? <UserRound size={15} /> : <span>T</span>}</div>
       <div className="chat-bubble">
         <div className="chat-content">{parseMarkdown(text).map(renderBlock)}</div>
-        {!isUser && <ChatSources text={text} />}
+        {!isUser && (
+          <>
+            <ChatSources text={text} />
+            {[
+              ...new Set(
+                parseCitations(text)
+                  .map((c) => (c.slug ? calculatorForCard(c.slug) : null))
+                  .filter((v): v is string => !!v),
+              ),
+            ].map((tab) => (
+              <Link className="btn" key={tab} href={"/calculadoras?tab=" + tab}>
+                Abrir calculadora: {tab}
+              </Link>
+            ))}
+          </>
+        )}
       </div>
     </article>
   );
