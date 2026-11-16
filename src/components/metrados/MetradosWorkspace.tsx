@@ -5,14 +5,16 @@ import { jsPDF } from "jspdf";
 import { autoTable } from "jspdf-autotable";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { Button, Card, EmptyState, PaywallModal } from "@/components/ui";
+import { Button, Card, confirmDialog, EmptyState, PaywallModal, toast } from "@/components/ui";
+import { ProjectsSwitch } from "@/components/layout/ProjectsSwitch";
 import { MATERIALS } from "@/data/seed-rne";
 import { computeProjectTotals, computeTakeoffLine } from "@/lib/calculators/takeoff";
 import { type Project, type Takeoff } from "@/lib/offline/db";
 import { useMaterials, useProjects, useTakeoffs, useSyncStatus } from "@/lib/offline/hooks";
 import { deleteProject, deleteTakeoff, saveProject, saveTakeoff } from "@/lib/offline/repositories";
-import { flushOutbox, pullRemote } from "@/lib/offline/sync";
-import { createClient } from "@/lib/supabase/client";
+import { describeSyncResult, syncNow as runSync } from "@/lib/offline/sync";
+import { canCreateProject, canExportPdf } from "@/lib/plans/plans";
+import { useCurrentPlan } from "@/lib/plans/use-current-plan";
 import { ProjectList } from "./ProjectList";
 import { TakeoffTable, type TakeoffDraft } from "./TakeoffTable";
 
@@ -36,7 +38,7 @@ export function MetradosWorkspace() {
   const [draft, setDraft] = useState<TakeoffDraft>({ ...emptyDraft });
   const [paywall, setPaywall] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const [pdfEnabled, setPdfEnabled] = useState(false);
+  const { plan } = useCurrentPlan();
 
   const activeProject =
     projects.find((project) => project.id === selectedId) ?? projects[0] ?? null;
@@ -54,24 +56,6 @@ export function MetradosWorkspace() {
       window.history.replaceState(null, "", "/metrados?project=" + selectedId);
     }
   }, [selectedId]);
-
-  useEffect(() => {
-    const supabase = createClient();
-    if (!supabase) return;
-
-    void (async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData.user) return;
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("plan")
-        .eq("id", userData.user.id)
-        .maybeSingle();
-
-      setPdfEnabled(profile?.plan === "pro" || profile?.plan === "student");
-    })();
-  }, []);
 
   const totalLines = useMemo(
     () =>
@@ -97,7 +81,7 @@ export function MetradosWorkspace() {
     typology: string;
     status: Project["status"];
   }): Promise<void> {
-    if (projects.length >= 1) {
+    if (!canCreateProject(plan, projects.length)) {
       setPaywall(true);
       return;
     }
@@ -117,7 +101,13 @@ export function MetradosWorkspace() {
   }
 
   async function removeProject(project: Project): Promise<void> {
-    if (!window.confirm("¿Eliminar " + project.name + " y todas sus partidas?")) return;
+    const confirmed = await confirmDialog({
+      title: "¿Eliminar " + project.name + "?",
+      message: "Se borrarán el proyecto y todas sus partidas. No se puede deshacer.",
+      confirmLabel: "Eliminar",
+      danger: true,
+    });
+    if (!confirmed) return;
 
     await deleteProject(project.id);
     setSelectedId(null);
@@ -189,7 +179,12 @@ export function MetradosWorkspace() {
   }
 
   async function removeTakeoff(takeoff: Takeoff): Promise<void> {
-    if (!window.confirm("¿Eliminar la partida " + takeoff.partName + "?")) return;
+    const confirmed = await confirmDialog({
+      title: "¿Eliminar la partida " + takeoff.partName + "?",
+      confirmLabel: "Eliminar",
+      danger: true,
+    });
+    if (!confirmed) return;
 
     await deleteTakeoff(takeoff.id);
   }
@@ -240,11 +235,7 @@ export function MetradosWorkspace() {
   async function exportPdf(): Promise<void> {
     if (!activeProject) return;
 
-    if (!pdfEnabled) {
-      setPaywall(true);
-      return;
-    }
-
+    const watermark = !canExportPdf(plan);
     const pdf = new jsPDF();
     pdf.setFontSize(18);
     pdf.text("TRAZZO", 14, 18);
@@ -256,7 +247,9 @@ export function MetradosWorkspace() {
 
     autoTable(pdf, {
       startY: 48,
-      head: [["Partida", "Material", "Und.", "Cantidad", "Desperd.", "Total", "Subtotal S/"]],
+      head: [
+        ["Partida", "Material", "Und.", "Cantidad", "Desperd.", "P. unit.", "Total", "Subtotal S/"],
+      ],
       body: takeoffs.map((takeoff) => {
         const material = catalog.find((item) => item.code === takeoff.materialCode);
 
@@ -271,7 +264,7 @@ export function MetradosWorkspace() {
           takeoff.subtotalPen.toFixed(2),
         ];
       }),
-      foot: [["", "", "", "", "", "TOTAL", "S/ " + totals.grandTotal.toFixed(2)]],
+      foot: [["", "", "", "", "", "", "TOTAL", "S/ " + totals.grandTotal.toFixed(2)]],
       styles: { fontSize: 8 },
       headStyles: { fillColor: [212, 163, 89] },
     });
@@ -284,21 +277,26 @@ export function MetradosWorkspace() {
       14,
       finalY + 14,
     );
+    if (watermark) {
+      const pages = pdf.getNumberOfPages();
+      for (let page = 1; page <= pages; page += 1) {
+        pdf.setPage(page);
+        pdf.setTextColor(200, 200, 200);
+        pdf.setFontSize(46);
+        pdf.text("TRAZZO GRATIS", 105, 160, { align: "center", angle: 35 });
+      }
+      pdf.setTextColor(0, 0, 0);
+    }
     pdf.save(activeProject.name.replaceAll(" ", "-").toLowerCase() + "-metrados.pdf");
   }
 
   async function syncNow(): Promise<void> {
-    try {
-      await flushOutbox();
-      await pullRemote();
-      setNotice("Sincronización completada.");
-    } catch {
-      setNotice("No se pudo sincronizar. Tus cambios locales permanecen guardados.");
-    }
+    toast(describeSyncResult(await runSync()));
   }
 
   return (
     <div className="metrados-page">
+      <ProjectsSwitch />
       <div className="eyebrow">PROYECTOS / METRADOS</div>
       <div className="page-heading-row">
         <div>
@@ -345,7 +343,7 @@ export function MetradosWorkspace() {
                       <Download size={14} /> CSV
                     </Button>
                     <Button size="sm" onClick={() => void exportPdf()}>
-                      <FileText size={14} /> PDF Pro
+                      <FileText size={14} /> PDF
                     </Button>
                   </div>
                 </div>
@@ -355,6 +353,7 @@ export function MetradosWorkspace() {
                 materials={catalog}
                 draft={draft}
                 setDraft={setDraft}
+                onCancelEdit={() => setDraft({ ...emptyDraft })}
                 onSave={() => void saveDraft()}
                 onEdit={editTakeoff}
                 onDelete={(takeoff) => void removeTakeoff(takeoff)}
@@ -391,8 +390,8 @@ export function MetradosWorkspace() {
       {paywall && (
         <PaywallModal onClose={() => setPaywall(false)} title="Función de plan superior">
           <p>
-            El plan Gratis permite un proyecto. Exportar PDF y proyectos adicionales están
-            disponibles en Estudiante y Pro.
+            El plan Gratis incluye un proyecto y PDF con marca de agua. Estudiante y Pro tienen
+            proyectos ilimitados y PDF limpio.
           </p>
         </PaywallModal>
       )}

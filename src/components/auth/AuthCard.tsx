@@ -20,7 +20,9 @@ export function AuthCard({ mode }: { mode: "login" | "register" }) {
     event.preventDefault();
     const client = createClient();
     if (!client) {
-      setNotice("Configura Supabase para activar cuentas. El modo local no requiere sesión.");
+      setNotice(
+        "Las cuentas aún no están activas en esta instalación. Puedes usar TRAZZO sin cuenta.",
+      );
       return;
     }
     setBusy(true);
@@ -46,7 +48,7 @@ export function AuthCard({ mode }: { mode: "login" | "register" }) {
   async function magicLink(): Promise<void> {
     const client = createClient();
     if (!client) {
-      setNotice("Configura Supabase para activar el acceso por enlace.");
+      setNotice("El acceso por enlace aún no está activo en esta instalación.");
       return;
     }
     if (!email) {
@@ -81,7 +83,7 @@ export function AuthCard({ mode }: { mode: "login" | "register" }) {
       </p>
       {!configured && (
         <div className="notice-banner">
-          <Mail size={16} /> Configura Supabase para activar cuentas.
+          <Mail size={16} /> Las cuentas aún no están activas. Puedes usar TRAZZO sin cuenta.
         </div>
       )}
       <form className="auth-form" onSubmit={(event) => void submit(event)}>

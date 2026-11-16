@@ -76,7 +76,7 @@ Proveedor: se usa `AI_PROVIDER` si su clave está configurada; si no, el primero
 ## Supabase
 
 1. Crea un proyecto Supabase y configura las variables anteriores.
-2. Ejecuta supabase/migrations/001_init.sql desde el SQL Editor o con la CLI.
+2. Ejecuta en orden todas las migraciones de supabase/migrations (001 a 005) desde el SQL Editor o con la CLI. La 004 crea el espacio de fotos de perfil y la 005 el cupo diario del asistente.
 3. Carga el seed:
 
    npm run seed:supabase

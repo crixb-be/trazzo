@@ -1,7 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RNE_CARDS } from "@/data/seed-rne";
 import { ensureSeeded } from "@/lib/offline/db";
@@ -29,6 +29,7 @@ export function GlobalSearch({
   const [activeIndex, setActiveIndex] = useState(0);
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
+  const listId = useId();
   const results = searchCards(RNE_CARDS, query).slice(0, 8);
 
   useEffect(() => {
@@ -99,12 +100,12 @@ export function GlobalSearch({
           onKeyDown={handleKeyDown}
           aria-label="Buscar normativa"
           aria-expanded={open}
-          aria-controls="global-search-results"
+          aria-controls={listId}
         />
         <kbd>{variant === "inline" ? "Enter" : "Ctrl K"}</kbd>
       </div>
       {open && query && (
-        <div className="search-results" id="global-search-results" role="listbox">
+        <div className="search-results" id={listId} role="listbox">
           {results.length > 0 ? (
             results.map((card, index) => (
               <button

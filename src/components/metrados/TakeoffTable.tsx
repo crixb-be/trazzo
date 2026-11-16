@@ -23,6 +23,8 @@ export interface TakeoffTableProps {
   materials: Material[];
   draft: TakeoffDraft;
   setDraft: (draft: TakeoffDraft) => void;
+  /** Leaves edit mode and clears the form, so saving cannot create a duplicate. */
+  onCancelEdit: () => void;
   onSave: () => void;
   onEdit: (takeoff: Takeoff) => void;
   onDelete: (takeoff: Takeoff) => void;
@@ -52,6 +54,7 @@ export function TakeoffTable({
   materials,
   draft,
   setDraft,
+  onCancelEdit,
   onSave,
   onEdit,
   onDelete,
@@ -67,7 +70,7 @@ export function TakeoffTable({
           <h2>{draft.id ? "Editar partida" : "Agregar partida"}</h2>
         </div>
         {draft.id && (
-          <Button size="sm" variant="ghost" onClick={() => setDraft({ ...draft, id: undefined })}>
+          <Button size="sm" variant="ghost" onClick={onCancelEdit}>
             <X size={14} /> Cancelar edición
           </Button>
         )}

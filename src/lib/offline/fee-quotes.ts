@@ -7,6 +7,7 @@ import {
   type PaymentPreset,
 } from "@/lib/calculators/fees";
 import { createLocalUuid, db, type FeeQuote } from "./db";
+import { scheduleSync } from "./sync";
 
 export interface FeeQuoteDraft {
   documentType: "propuesta" | "cotizacion";
@@ -57,6 +58,7 @@ export async function saveFeeQuote(
     await localDb.fee_quotes.put(quote);
     await localDb.outbox.add({ table: "fee_quotes", op: "upsert", payload: quote, createdAt: now });
   });
+  scheduleSync();
   return quote;
 }
 
@@ -90,4 +92,5 @@ export async function deleteFeeQuote(id: string): Promise<void> {
       createdAt: new Date().toISOString(),
     });
   });
+  scheduleSync();
 }

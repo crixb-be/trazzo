@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { ChevronDown, Lock, MessageSquare, SlidersHorizontal } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Badge, Button, Card, Chip, NumberField, PaywallModal } from "@/components/ui";
 import { RneDiagram, type DiagramOverrides } from "@/components/svg-diagrams";
 import { RNE_CARDS, type RneCard } from "@/data/seed-rne";
 import { useCard, useCards } from "@/lib/offline/hooks";
-import { createClient } from "@/lib/supabase/client";
-import { canUseProCards, type Plan } from "@/lib/plans/plans";
+import { canUseProCards } from "@/lib/plans/plans";
+import { paramMeta } from "@/lib/ui/param-labels";
+import { useCurrentPlan } from "@/lib/plans/use-current-plan";
 
 const legalDisclaimer =
   "Valores referenciales según la edición indicada del RNE. Verifica la versión vigente publicada por el MVCS antes de usar en expedientes.";
@@ -20,27 +22,13 @@ export function NormativeDetail({ slug }: { slug: string }) {
   const [overrides, setOverrides] = useState<DiagramOverrides>({});
   const [showParameters, setShowParameters] = useState(false);
   const [showLegal, setShowLegal] = useState(false);
-  const [plan, setPlan] = useState<Plan>("free");
+  const { plan } = useCurrentPlan();
+  const router = useRouter();
   const [paywall, setPaywall] = useState(false);
-
-  useEffect(() => {
-    const client = createClient();
-    if (!client) return;
-    void client.auth.getUser().then(async ({ data }) => {
-      if (!data.user) return;
-      const profile = await client
-        .from("profiles")
-        .select("plan,student_verified")
-        .eq("id", data.user.id)
-        .maybeSingle();
-      if (profile.data?.plan === "student" && profile.data.student_verified) setPlan("student");
-      if (profile.data?.plan === "pro") setPlan("pro");
-    });
-  }, []);
 
   if (!card) return <DetailState message="No encontramos esta ficha normativa." />;
 
-  const hasAccess = canUseProCards(plan, plan === "student");
+  const hasAccess = canUseProCards(plan);
   const locked = card.is_pro && !hasAccess;
   const related = (allCards.length ? allCards : RNE_CARDS)
     .filter((candidate) => candidate.category === card.category && candidate.slug !== card.slug)
@@ -81,16 +69,19 @@ export function NormativeDetail({ slug }: { slug: string }) {
                 {numericParams.length === 0 ? (
                   <p className="muted small">Esta lámina no tiene parámetros editables.</p>
                 ) : (
-                  numericParams.map(([name, value]) => (
-                    <NumberField
-                      key={name}
-                      label={name.replaceAll("_", " ")}
-                      unit="m"
-                      value={Number(overrides[name] ?? value)}
-                      step={0.01}
-                      onValueChange={(next) => updateParameter(name, next ?? 0)}
-                    />
-                  ))
+                  numericParams.map(([name, value]) => {
+                    const meta = paramMeta(name);
+                    return (
+                      <NumberField
+                        key={name}
+                        label={meta.label}
+                        unit={meta.unit || undefined}
+                        value={Number(overrides[name] ?? value)}
+                        step={0.01}
+                        onValueChange={(next) => updateParameter(name, next ?? 0)}
+                      />
+                    );
+                  })
                 )}
               </div>
             )}
@@ -117,29 +108,37 @@ export function NormativeDetail({ slug }: { slug: string }) {
           <Card className="highlight-value">
             <span className="eyebrow">VALOR MÍNIMO REFERENCIAL</span>
             <strong className="mono">
-              {card.min_value ?? "—"} <small>{card.unit}</small>
+              {locked ? "—" : (card.min_value ?? "—")} <small>{locked ? "" : card.unit}</small>
             </strong>
           </Card>
 
-          <p className="detail-summary">{card.summary}</p>
-          <div className="detail-body">
-            <p>{card.body}</p>
-          </div>
-
-          <div className="legal-disclosure">
-            <button type="button" onClick={() => setShowLegal((visible) => !visible)}>
-              <span>
-                <ChevronDown size={16} className={showLegal ? "rotate" : ""} /> Letra chica
-              </span>
-              <span className="mono small">RNE / revisión</span>
-            </button>
-            {showLegal && (
-              <div>
-                <p>{card.legal_note}</p>
-                <p className="legal">{legalDisclaimer}</p>
+          {locked ? (
+            <p className="muted">
+              El criterio completo de esta ficha está disponible en los planes Estudiante y Pro.
+            </p>
+          ) : (
+            <>
+              <p className="detail-summary">{card.summary}</p>
+              <div className="detail-body">
+                <p>{card.body}</p>
               </div>
-            )}
-          </div>
+
+              <div className="legal-disclosure">
+                <button type="button" onClick={() => setShowLegal((visible) => !visible)}>
+                  <span>
+                    <ChevronDown size={16} className={showLegal ? "rotate" : ""} /> Letra chica
+                  </span>
+                  <span className="mono small">RNE / revisión</span>
+                </button>
+                {showLegal && (
+                  <div>
+                    <p>{card.legal_note}</p>
+                    <p className="legal">{legalDisclaimer}</p>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
 
           <div className="keyword-list">
             {card.keywords.map((keyword) => (
@@ -153,7 +152,7 @@ export function NormativeDetail({ slug }: { slug: string }) {
             <Button
               variant="primary"
               onClick={() =>
-                window.location.assign(
+                router.push(
                   "/asistente?q=" +
                     encodeURIComponent("Explícame " + card.title + " según " + card.norm_code),
                 )

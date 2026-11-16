@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
   createUIMessageStream,
   createUIMessageStreamResponse,
@@ -7,13 +8,21 @@ import {
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { openai } from "@ai-sdk/openai";
 import { z } from "zod";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { streamClaudeAnswer, type ChatTurn } from "@/lib/ai/anthropic";
 import { GEMINI_MODEL, providerKey, selectProvider } from "@/lib/ai/provider";
 import { retrieve } from "@/lib/rag/retrieve";
 import { expandColloquialQuery } from "@/lib/search/colloquial";
 import { buildLocalAnswer, buildSystemPrompt, NO_RESULT_ANSWER } from "@/lib/rag/prompt";
-import { canUseAiQueries, isPlan, type Plan } from "@/lib/plans/plans";
+import {
+  ANONYMOUS_AI_QUERIES_PER_DAY,
+  canUseAiQueries,
+  queriesUsedToday,
+  resolveEffectivePlan,
+  usageDay,
+  type Plan,
+} from "@/lib/plans/plans";
 
 export const runtime = "nodejs";
 
@@ -46,14 +55,8 @@ type ChatDataTypes = {
 
 type ServerChatMessage = UIMessage<unknown, ChatDataTypes>;
 
-type AnonymousQuota = {
-  count: number;
-  resetAt: number;
-};
-
-const anonymousQuotas = new Map<string, AnonymousQuota>();
-const ANONYMOUS_LIMIT = 5;
-const QUOTA_WINDOW = 30 * 24 * 60 * 60 * 1000;
+// Fallback when the database counter is unavailable: per server instance only.
+const anonymousUsage = new Map<string, { day: string; count: number }>();
 
 function getMessageText(message: z.infer<typeof messageSchema>): string {
   if (message.content) {
@@ -70,20 +73,25 @@ function getClientKey(request: Request): string {
   return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
 }
 
-function consumeAnonymousQuota(request: Request): boolean {
-  const key = getClientKey(request);
-  const now = Date.now();
-  const current = anonymousQuotas.get(key);
+/** Counts one model query for a visitor without an account; false when today's limit is used up. */
+async function consumeAnonymousQuota(request: Request): Promise<boolean> {
+  const key = createHash("sha256").update(getClientKey(request)).digest("hex");
+  const admin = createAdminClient();
+  if (admin) {
+    const { data, error } = await admin.rpc("consume_anonymous_ai_query", {
+      p_key: key,
+      p_limit: ANONYMOUS_AI_QUERIES_PER_DAY,
+    });
+    if (!error) return data === true;
+  }
 
-  if (!current || current.resetAt <= now) {
-    anonymousQuotas.set(key, { count: 1, resetAt: now + QUOTA_WINDOW });
+  const day = usageDay();
+  const current = anonymousUsage.get(key);
+  if (!current || current.day !== day) {
+    anonymousUsage.set(key, { day, count: 1 });
     return true;
   }
-
-  if (current.count >= ANONYMOUS_LIMIT) {
-    return false;
-  }
-
+  if (current.count >= ANONYMOUS_AI_QUERIES_PER_DAY) return false;
   current.count += 1;
   return true;
 }
@@ -150,7 +158,10 @@ export async function POST(request: Request): Promise<Response> {
 
   const supabase = await createClient();
   let plan: Plan = "free";
-  let increment: (() => Promise<void>) | null = null;
+  // Counts one model query; resolves to false when today's limit is used up.
+  let consume: () => Promise<boolean> = () => consumeAnonymousQuota(request);
+  let limitMessage =
+    "Alcanzaste el límite diario de consultas sin cuenta. Crea una cuenta gratis para tener más.";
 
   if (supabase) {
     const {
@@ -158,52 +169,40 @@ export async function POST(request: Request): Promise<Response> {
     } = await supabase.auth.getUser();
 
     if (user) {
-      const { data: profile } = await supabase
+      const columns = "plan, student_verified, subscription_expires_at, ai_queries_used";
+      let { data: profile, error } = await supabase
         .from("profiles")
-        .select("plan, student_verified, ai_queries_used")
+        .select(columns + ", ai_queries_day")
         .eq("id", user.id)
         .maybeSingle();
-      const profilePlan = profile?.plan;
-      plan =
-        profilePlan === "student" && profile?.student_verified
-          ? "student"
-          : isPlan(profilePlan ?? "")
-            ? profilePlan
-            : "free";
-      const usedQueries =
-        typeof profile?.ai_queries_used === "number" && Number.isFinite(profile.ai_queries_used)
-          ? profile.ai_queries_used
-          : 0;
+      if (error) {
+        // Database without the daily-quota migration: keep the plan, skip the count.
+        ({ data: profile, error } = await supabase
+          .from("profiles")
+          .select(columns)
+          .eq("id", user.id)
+          .maybeSingle());
+      }
+      const row = profile as Record<string, unknown> | null;
+      plan = resolveEffectivePlan(row);
 
-      if (!canUseAiQueries(plan, usedQueries)) {
+      if (!canUseAiQueries(plan, queriesUsedToday(row))) {
         return Response.json(
-          { error: "Alcanzaste el límite mensual de consultas de tu plan." },
+          { error: "Alcanzaste el límite diario de consultas de tu plan. Se renueva mañana." },
           { status: 429 },
         );
       }
 
-      increment = async () => {
-        const { error } = await supabase.rpc("increment_ai_queries");
-        if (error) throw new Error("No se pudo registrar el uso del asistente.");
+      limitMessage = "Alcanzaste el límite diario de consultas de tu plan. Se renueva mañana.";
+      consume = async () => {
+        const { error: usageError } = await supabase.rpc("increment_ai_queries");
+        if (usageError) throw new Error("No se pudo registrar el uso del asistente.");
+        return true;
       };
-    } else if (!consumeAnonymousQuota(request)) {
-      return Response.json(
-        { error: "Límite mensual de consultas anónimas alcanzado." },
-        { status: 429 },
-      );
     }
-  } else if (!consumeAnonymousQuota(request)) {
-    return Response.json(
-      { error: "Límite mensual de consultas anónimas alcanzado." },
-      { status: 429 },
-    );
   }
 
   try {
-    if (increment) {
-      await increment();
-    }
-
     const provider = selectProvider();
     // With a model we hand it up to 6 related cards to synthesise; without one,
     // the local answer keeps to the few clearly relevant cards.
@@ -216,6 +215,11 @@ export async function POST(request: Request): Promise<Response> {
 
     if (provider === "local") {
       return streamPlainText(buildLocalAnswer(query, chunks), sources);
+    }
+
+    // Only answers written by a model count against the daily quota.
+    if (!(await consume())) {
+      return Response.json({ error: limitMessage }, { status: 429 });
     }
 
     const system = buildSystemPrompt(chunks, expandColloquialQuery(query).technicalTerms);

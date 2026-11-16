@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import { useEffect, useState } from "react";
-import { Badge, Card } from "@/components/ui";
 
 import { useSearchParams } from "next/navigation";
 import { EvacuationCalculator } from "./EvacuationCalculator";
@@ -12,12 +11,12 @@ import { WaterCalculator } from "./WaterCalculator";
 
 type CalculatorTab = "escaleras" | "rampas" | "agua" | "pozos" | "evacuacion";
 
-const tabs: Array<{ id: CalculatorTab; label: string; pro?: boolean }> = [
+const tabs: Array<{ id: CalculatorTab; label: string }> = [
   { id: "escaleras", label: "Escaleras" },
   { id: "rampas", label: "Rampas" },
   { id: "agua", label: "Dotación de agua" },
   { id: "pozos", label: "Pozos de luz" },
-  { id: "evacuacion", label: "Evacuación", pro: true },
+  { id: "evacuacion", label: "Evacuación" },
 ];
 
 function normalizeTab(value: string | null): CalculatorTab {
@@ -59,7 +58,7 @@ export function CalculatorWorkspace() {
             onClick={() => selectTab(tab.id)}
             key={tab.id}
           >
-            {tab.label} {tab.pro && <Badge variant="pro">PRO</Badge>}
+            {tab.label}
           </button>
         ))}
       </div>

@@ -14,12 +14,12 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import { Badge, BillingToggle, Button, Card, Input } from "@/components/ui";
+import { Badge, BillingToggle, Button, Card, confirmDialog, Input, toast } from "@/components/ui";
 import { SEED_VERSION } from "@/data/seed-rne";
 import { db } from "@/lib/offline/db";
 import { getStudioProfile, saveStudioProfile } from "@/lib/offline/profile";
 import { useStudioProfile, useSyncStatus } from "@/lib/offline/hooks";
-import { flushOutbox, pullRemote } from "@/lib/offline/sync";
+import { describeSyncResult, syncNow as runSync } from "@/lib/offline/sync";
 import {
   formatPlanPrice,
   isEduPeEmail,
@@ -28,6 +28,8 @@ import {
   type BillingCycle,
   type Plan,
 } from "@/lib/plans/plans";
+import { invalidatePlanSnapshot } from "@/lib/plans/plan-store";
+import { useCurrentPlan } from "@/lib/plans/use-current-plan";
 import { createClient } from "@/lib/supabase/client";
 import { prepareAvatar } from "@/lib/ui/avatar";
 import { prepareLogo } from "@/lib/ui/logo";
@@ -39,9 +41,20 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const features: Record<Plan, string[]> = {
-  free: ["Fichas básicas", "1 proyecto local", "10 consultas IA / mes"],
-  student: ["Fichas Pro", "Proyectos ilimitados", "200 consultas IA / mes", "Exportación PDF"],
-  pro: ["Fichas Pro", "Proyectos ilimitados", "IA ilimitada", "Exportación PDF"],
+  free: [
+    "Todas las calculadoras",
+    "Fichas básicas",
+    "1 proyecto",
+    "10 consultas al asistente por día",
+    "PDF con marca de agua",
+  ],
+  student: [
+    "Fichas Pro",
+    "Proyectos ilimitados",
+    "50 consultas al asistente por día",
+    "PDF limpio",
+  ],
+  pro: ["Fichas Pro", "Proyectos ilimitados", "Asistente ilimitado", "PDF limpio"],
 };
 
 function initials(source: string): string {
@@ -58,9 +71,7 @@ export function AccountWorkspace() {
   const studio = useStudioProfile();
   const [configured, setConfigured] = useState(Boolean(createClient()));
   const [email, setEmail] = useState("");
-  const [currentPlan, setCurrentPlan] = useState<Plan>("free");
-  const [studentVerified, setStudentVerified] = useState(false);
-  const [studentEmail, setStudentEmail] = useState("");
+  const { plan: currentPlan, studentVerified } = useCurrentPlan();
   const [name, setName] = useState("");
   const [capNumber, setCapNumber] = useState("");
   const [studioName, setStudioName] = useState("");
@@ -77,7 +88,8 @@ export function AccountWorkspace() {
   const filesInputRef = useRef<HTMLInputElement>(null);
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
   const [document, setDocument] = useState<File | null>(null);
-  const [notice, setNotice] = useState("");
+  // Notices float above the page: this screen is long and a message at the end went unseen.
+  const setNotice = (message: string): void => toast(message);
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
@@ -115,16 +127,11 @@ export function AccountWorkspace() {
       void client.auth.getUser().then(async ({ data }) => {
         if (!data.user) return;
         setEmail(data.user.email ?? "");
-        setStudentEmail(data.user.email ?? "");
         const profile = await client
           .from("profiles")
-          .select("plan,student_verified,full_name,cap_number")
+          .select("full_name,cap_number")
           .eq("id", data.user.id)
           .maybeSingle();
-        if (profile.data?.plan === "student" || profile.data?.plan === "pro") {
-          setCurrentPlan(profile.data.plan);
-        }
-        setStudentVerified(Boolean(profile.data?.student_verified));
         if (typeof profile.data?.full_name === "string") setName(profile.data.full_name);
         if (typeof profile.data?.cap_number === "string") setCapNumber(profile.data.cap_number);
       });
@@ -189,7 +196,7 @@ export function AccountWorkspace() {
     }
     setNotice(
       remoteFailed
-        ? "Perfil guardado localmente. No se pudo sincronizar la marca con Supabase."
+        ? "Perfil guardado en este dispositivo. No se pudo respaldar en tu cuenta."
         : "Perfil guardado.",
     );
   }
@@ -283,7 +290,7 @@ export function AccountWorkspace() {
   async function choosePlan(plan: Plan): Promise<void> {
     if (plan === "free") return;
     if (!configured) {
-      setNotice("Configura Supabase para activar pagos y sincronización.");
+      setNotice("Los pagos aún no están activos en esta instalación.");
       return;
     }
     const response = await fetch("/api/payments/checkout", {
@@ -301,42 +308,61 @@ export function AccountWorkspace() {
 
   async function verifyStudent(): Promise<void> {
     if (!configured) {
-      setNotice("Configura Supabase para activar la verificación.");
-      return;
-    }
-    if (isEduPeEmail(studentEmail)) {
-      setNotice("Solicitud enviada. Revisa tu correo institucional para continuar.");
+      setNotice("La verificación de estudiante necesita una cuenta; aún no está disponible aquí.");
       return;
     }
     const client = createClient();
-    if (!client || !document) {
-      setNotice("Usa un correo .edu.pe o selecciona un documento PDF/JPG.");
+    const { data } = client ? await client.auth.getUser() : { data: { user: null } };
+    if (!client || !data.user) {
+      setNotice("Inicia sesión para verificar tu cuenta de estudiante.");
       return;
     }
-    const { data } = await client.auth.getUser();
-    if (!data.user) {
-      setNotice("Inicia sesión para enviar un documento.");
+
+    // A confirmed .edu.pe account is verified on the spot.
+    if (isEduPeEmail(data.user.email ?? "")) {
+      const response = await fetch("/api/student/verify", { method: "POST" });
+      const body = (await response.json().catch(() => ({}))) as { error?: string };
+      if (response.ok) {
+        invalidatePlanSnapshot();
+        setNotice("Correo institucional verificado. Ya puedes elegir el plan Estudiante.");
+        window.setTimeout(() => window.location.reload(), 1200);
+      } else {
+        setNotice(body.error ?? "No se pudo verificar tu correo institucional.");
+      }
+      return;
+    }
+
+    if (!document) {
+      setNotice(
+        "Tu cuenta no usa un correo .edu.pe. Adjunta tu carné o constancia de estudios (PDF o imagen).",
+      );
       return;
     }
     const path = data.user.id + "/" + Date.now() + "-" + document.name;
     const upload = await client.storage.from("student-docs").upload(path, document);
-    setNotice(upload.error ? "No se pudo subir el documento." : "Documento enviado para revisión.");
+    setNotice(
+      upload.error
+        ? "No se pudo subir el documento."
+        : "Documento enviado. El equipo lo revisará y activará tu descuento.",
+    );
   }
 
   async function syncNow(): Promise<void> {
-    try {
-      await flushOutbox();
-      await pullRemote();
-      setNotice("Sincronización completada.");
-    } catch {
-      setNotice("No se pudo sincronizar; tus datos locales están intactos.");
-    }
+    setNotice(describeSyncResult(await runSync()));
   }
 
   async function resetLocal(): Promise<void> {
-    if (!window.confirm("¿Restablecer todos los proyectos y datos locales?")) return;
+    const confirmed = await confirmDialog({
+      title: "¿Restablecer los datos de este dispositivo?",
+      message:
+        "Se borrarán los proyectos, metrados y cotizaciones guardados aquí. Lo que ya esté respaldado en tu cuenta se volverá a descargar.",
+      confirmLabel: "Restablecer",
+      danger: true,
+    });
+    if (!confirmed) return;
     await db?.delete();
-    setNotice("Datos locales restablecidos. Recarga para volver a sembrar las fichas.");
+    // The connection is closed after deleting: reload so the app reopens and reseeds it.
+    window.location.reload();
   }
 
   async function installApp(): Promise<void> {
@@ -356,7 +382,7 @@ export function AccountWorkspace() {
           </p>
         </div>
         <Badge variant={configured ? "ok" : "por-verificar"}>
-          {configured ? "Supabase activo" : "Modo local"}
+          {configured ? "Cuentas activas" : "Solo en este dispositivo"}
         </Badge>
       </div>
 
@@ -364,8 +390,8 @@ export function AccountWorkspace() {
         <div className="notice-banner">
           <Cloud size={17} />
           <span>
-            Configura Supabase para activar cuentas, sincronización y pagos. Las fichas,
-            calculadoras y metrados locales siguen funcionando.
+            Las cuentas y el respaldo en la nube aún no están activos en esta instalación. Todo lo
+            que hagas se guarda en este dispositivo y sigue funcionando.
           </span>
         </div>
       )}
@@ -476,7 +502,7 @@ export function AccountWorkspace() {
           </Button>
           <p className="legal">
             Se guardan en este dispositivo y aparecen en tus propuestas de honorarios. Con una
-            sesión de Supabase también se sincronizan con tu cuenta.
+            cuenta también se respaldan en la nube.
           </p>
         </Card>
 
@@ -658,14 +684,12 @@ export function AccountWorkspace() {
           <div className="eyebrow">VERIFICACIÓN ESTUDIANTE</div>
           <h2>50% de descuento</h2>
           <p className="muted small">
-            Usa un correo .edu.pe o envía un documento. La revisión la realiza el equipo.
+            Si tu cuenta usa un correo .edu.pe confirmado, se verifica al instante. Si no, adjunta
+            tu carné o constancia y el equipo la revisa.
           </p>
-          <Input
-            type="email"
-            value={studentEmail}
-            onChange={(event) => setStudentEmail(event.target.value)}
-            placeholder="nombre@universidad.edu.pe"
-          />
+          <p className="small">
+            Cuenta: <strong>{email || "sin sesión iniciada"}</strong>
+          </p>
           <label className="file-input">
             <FileUp size={15} /> <span>{document?.name ?? "Adjuntar documento"}</span>
             <input
@@ -684,7 +708,7 @@ export function AccountWorkspace() {
           <div className="app-info">
             <span>Versión</span>
             <span className="mono">0.1.0</span>
-            <span>Seed</span>
+            <span>Catálogo</span>
             <span className="mono">v{SEED_VERSION}</span>
           </div>
           {installPrompt && (
@@ -698,7 +722,6 @@ export function AccountWorkspace() {
         </Card>
       </section>
 
-      {notice && <p className="warning account-notice">{notice}</p>}
       <p className="legal">
         Valores referenciales según la edición indicada del RNE. Verifica la versión vigente
         publicada por el MVCS antes de usar en expedientes.

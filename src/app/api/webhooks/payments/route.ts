@@ -5,7 +5,7 @@ import {
   verifyMercadoPagoSignature,
 } from "@/lib/payments/mercadopago";
 import { parseCulqiEvent, verifyCulqiSignature } from "@/lib/payments/culqi";
-import { subscriptionDays, type BillingCycle } from "@/lib/plans/plans";
+import { nextExpiry, type BillingCycle } from "@/lib/plans/plans";
 
 export const runtime = "nodejs";
 
@@ -15,34 +15,38 @@ function asRecord(value: unknown): WebhookPayload {
   return typeof value === "object" && value !== null ? (value as WebhookPayload) : {};
 }
 
-function addSubscriptionDays(cycle: BillingCycle): string {
-  return new Date(Date.now() + subscriptionDays(cycle) * 24 * 60 * 60 * 1000).toISOString();
-}
-
+/** Applies a paid plan. Throws when the database rejects the change so the provider retries. */
 async function applyPlan(
   admin: NonNullable<ReturnType<typeof createAdminClient>>,
   userId: string,
   plan: "student" | "pro",
   cycle: BillingCycle,
 ): Promise<void> {
-  const { data: profile } = await admin
+  const { data: profile, error: readError } = await admin
     .from("profiles")
-    .select("student_verified")
+    .select("student_verified, subscription_expires_at")
     .eq("id", userId)
     .maybeSingle();
+  if (readError) throw new Error(readError.message);
 
   if (plan === "student" && !profile?.student_verified) {
     return;
   }
 
-  await admin
+  const { error } = await admin
     .from("profiles")
     .update({
       plan,
-      subscription_expires_at: addSubscriptionDays(cycle),
+      subscription_expires_at: nextExpiry(
+        typeof profile?.subscription_expires_at === "string"
+          ? profile.subscription_expires_at
+          : null,
+        cycle,
+      ),
       ai_queries_used: 0,
     })
     .eq("id", userId);
+  if (error) throw new Error(error.message);
 }
 
 export async function POST(request: Request): Promise<Response> {
@@ -74,6 +78,7 @@ export async function POST(request: Request): Promise<Response> {
   let userId: string | null = null;
   let plan: "student" | "pro" | null = null;
   let approved = false;
+  let status = "";
   let cycle: BillingCycle = "monthly";
 
   if (provider === "mercadopago") {
@@ -101,6 +106,7 @@ export async function POST(request: Request): Promise<Response> {
     userId = reference?.userId ?? null;
     plan = reference?.plan ?? null;
     cycle = reference?.cycle ?? "monthly";
+    status = payment.status;
     approved = payment.status === "approved";
   } else {
     const secret = process.env.CULQI_WEBHOOK_SECRET;
@@ -116,6 +122,7 @@ export async function POST(request: Request): Promise<Response> {
     userId = event.userId;
     plan = event.plan;
     cycle = event.cycle;
+    status = event.status;
     approved = event.event === "charge.creation.succeeded" && event.status === "succeeded";
   }
 
@@ -123,26 +130,34 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "Evento sin identificador." }, { status: 400 });
   }
 
+  // One ledger row per payment and status: a payment that is first notified as
+  // "pending" must still be processed when it is later notified as "approved".
+  const ledgerId = eventId + ":" + (status || "unknown");
   const { data: previousEvent } = await admin
     .from("payment_events")
     .select("id")
-    .eq("id", eventId)
+    .eq("id", ledgerId)
     .maybeSingle();
-
   if (previousEvent) {
     return Response.json({ received: true, idempotent: true });
   }
 
+  if (approved && userId && plan) {
+    try {
+      await applyPlan(admin, userId, plan, cycle);
+    } catch (error) {
+      // Not recorded as processed: a non-200 makes the provider send it again.
+      console.error("No se pudo aplicar el plan pagado", error);
+      return Response.json({ error: "No se pudo aplicar el plan." }, { status: 500 });
+    }
+  }
+
   await admin.from("payment_events").insert({
-    id: eventId,
+    id: ledgerId,
     provider,
     payload,
     processed_at: new Date().toISOString(),
   });
-
-  if (approved && userId && plan) {
-    await applyPlan(admin, userId, plan, cycle);
-  }
 
   return Response.json({ received: true });
 }

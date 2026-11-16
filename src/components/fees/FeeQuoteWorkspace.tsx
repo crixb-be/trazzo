@@ -3,7 +3,8 @@
 import { Copy, Plus, Trash2 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, Card, PaywallModal } from "@/components/ui";
+import { Button, Card, confirmDialog, PaywallModal } from "@/components/ui";
+import { ProjectsSwitch } from "@/components/layout/ProjectsSwitch";
 import {
   calculateFeeQuote,
   createDefaultFeeInput,
@@ -136,7 +137,7 @@ export function FeeQuoteWorkspace() {
   }, [regenerationKey, touched.deliverables, touched.schedule]);
   const result = useMemo(() => calculateFeeQuote(draft.input), [draft.input]);
   const paymentValidation = validatePaymentPlan(draft.payment.installments);
-  const watermarked = currentPlan.mode === "account" && !canExportCleanProposal(currentPlan.plan);
+  const watermarked = !canExportCleanProposal(currentPlan.plan);
 
   const quoteForPdf = (): FeeQuote => ({
     id: activeQuote?.id ?? "preview",
@@ -198,13 +199,20 @@ export function FeeQuoteWorkspace() {
     setNotice("Cotización duplicada.");
   };
   const remove = async (): Promise<void> => {
-    if (!activeQuote || !window.confirm("¿Eliminar " + activeQuote.code + "—")) return;
+    if (!activeQuote) return;
+    const confirmed = await confirmDialog({
+      title: "¿Eliminar " + activeQuote.code + "?",
+      message: "La cotización se borrará de este dispositivo y de tu cuenta.",
+      confirmLabel: "Eliminar",
+      danger: true,
+    });
+    if (!confirmed) return;
     await deleteFeeQuote(activeQuote.id);
     newQuote();
     setNotice("Cotización eliminada.");
   };
   const download = (): void => {
-    if (currentPlan.mode === "local" || canExportCleanProposal(currentPlan.plan)) {
+    if (canExportCleanProposal(currentPlan.plan)) {
       exportProposalPdf(quoteForPdf(), result, { studio, watermark: false });
       return;
     }
@@ -217,6 +225,7 @@ export function FeeQuoteWorkspace() {
 
   return (
     <div className="fees-page">
+      <ProjectsSwitch />
       <div className="page-heading-row">
         <div>
           <div className="eyebrow">PROYECTOS / HONORARIOS</div>
