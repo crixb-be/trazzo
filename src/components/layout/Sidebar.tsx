@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Link from "next/link";
 import {
@@ -16,6 +16,7 @@ import { usePathname } from "next/navigation";
 const items = [
   { href: "/", label: "Inicio", icon: Home },
   { href: "/normativa", label: "Normativa", icon: BookOpen },
+  { href: "/matriz", label: "Matriz de relaciones", icon: ClipboardList },
   { href: "/calculadoras", label: "Calculadoras", icon: Calculator },
   { href: "/metrados", label: "Metrados", icon: ClipboardList },
   { href: "/honorarios", label: "Honorarios", icon: Briefcase },

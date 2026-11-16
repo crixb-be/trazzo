@@ -17,6 +17,7 @@ const categories: Array<{ name: RneCategory; label: string }> = [
 ];
 
 const calculators = [
+  { title: "Matriz de relaciones", detail: "Programa arquitectónico", href: "/matriz" },
   { title: "Escaleras", detail: "2cp + p", href: "/calculadoras?tab=escaleras" },
   { title: "Rampas", detail: "Pendientes A.120", href: "/calculadoras?tab=rampas" },
   { title: "Agua", detail: "IS.010", href: "/calculadoras?tab=agua" },

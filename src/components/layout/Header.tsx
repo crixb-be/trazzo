@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Search, UserRound, X } from "lucide-react";
 import Link from "next/link";
@@ -10,6 +10,7 @@ import { useStudioProfile } from "@/lib/offline/hooks";
 const titles: Record<string, string> = {
   "/": "Espacio de trabajo",
   "/normativa": "Biblioteca RNE",
+  "/matriz": "Matriz de relaciones",
   "/calculadoras": "Calculadoras técnicas",
   "/metrados": "Proyectos y metrados",
   "/honorarios": "Honorarios y propuestas",
