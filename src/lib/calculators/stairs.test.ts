@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { computeStair } from "./stairs";
 
 describe("computeStair", () => {

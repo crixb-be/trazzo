@@ -248,7 +248,7 @@ Orden propuesto por valor para el usuario frente a esfuerzo.
 
 ## 9. ESTADO DE AVANCE Y HANDOFF
 
-**Última actualización:** 2026-11-16. Historial contrastado con Git; rama de trabajo `claude/wonderful-noether-6eoymr` (incluye el merge `95e85d6`).
+**Última actualización:** 2026-11-16. Fases 1 y 2 fusionadas en `main` (`6b979e3`, PR #3). La Fase 3 se ejecuta en la rama `claude/gifted-planck-jpk36p`, creada desde ese `main`.
 
 ### Completado
 
@@ -303,7 +303,15 @@ Rama `claude/wonderful-noether-6eoymr`. Se ejecutó `git fetch origin`: `origin/
 - [x] Funciones de biblioteca de 2.7 (ampliación orientativa, favoritos y recientes).
 - [ ] **2.7: verificar las 17 fichas originales, completar A.130 y contrastar las ampliaciones con artículos y resoluciones oficiales.** No se marca Fase 2 como totalmente verificada. Los PDFs/libros del usuario no están en el proyecto. Se intentó consultar el portal oficial del RNE en `https://www.gob.pe/institucion/vivienda/informes-publicaciones/2309793-reglamento-nacional-de-edificaciones-rne`; el entorno rechazó la conexión con HTTP 403. Las fichas conservan «Por verificar».
 - [ ] Contrastar también medidas 2.1 y perfiles/tablas de calculadoras 2.5 antes de marcarlos verificados.
-- [ ] Fase 3: bloques 3.1–3.7, no iniciada.
+- [ ] Fase 3: en ejecución; ver «Ejecución Fase 3» más abajo.
+
+### Ejecución Fase 3
+
+Rama `claude/gifted-planck-jpk36p`. Un commit y un push por bloque. Las pruebas de navegador se ejecutan con `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/opt/pw-browsers/chromium` porque la versión de Playwright del proyecto no coincide con el navegador preinstalado del entorno.
+
+| Bloque | Commit                               | Resultado                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ------ | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 3.1    | (ver `git log`: `refactor(estilos)`) | `globals.css` (3 864 líneas) queda como índice de 13 líneas que importa, en orden, 11 módulos de `src/styles/` (tokens, base, diagrams, surfaces, components, fees, assistant, fees-detail, feedback, accessibility, tools). Se eliminaron 40 declaraciones y 11 reglas que una regla posterior con el mismo selector ya anulaba; quedan 18 selectores repartidos en dos reglas con propiedades distintas (no son duplicados). Tokens nuevos de tamaño (`--touch-min`, `--text-xs/sm/md/field`), espacio (`--space-1…5`) y radios (`--radius-sm/md/lg/pill`), aplicados en 180 declaraciones sin cambiar valores. BOM retirado de 52 archivos. Nuevo `scripts/css-dedupe.mjs` para detectar duplicados; `scripts/audit-classnames.mjs` lee `src/styles/`. **Comprobación visual:** 52 capturas (13 rutas × móvil/escritorio × claro/oscuro) antes y después; 51 idénticas byte a byte y la restante (`/calculadoras` escritorio oscuro) ya variaba entre dos capturas del mismo código. Typecheck, lint, 198 pruebas unitarias, build y 9 pruebas de navegador pasan. |
 
 ### Continuidad
 

@@ -1,4 +1,4 @@
-﻿import { Suspense } from "react";
+import { Suspense } from "react";
 import { NormativaCatalog } from "@/components/normativa/NormativaCatalog";
 
 export default function NormativaPage() {

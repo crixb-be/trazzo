@@ -1,4 +1,4 @@
-﻿import { Suspense } from "react";
+import { Suspense } from "react";
 import { AccountWorkspace } from "@/components/account/AccountWorkspace";
 
 export default function AccountPage() {

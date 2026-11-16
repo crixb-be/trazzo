@@ -1,0 +1,43 @@
+/* Markdown del asistente. */
+/* Assistant Markdown: bold values, lists and short paragraphs instead of raw asterisks */
+.chat-md-paragraph,
+.chat-md-heading {
+  margin: 0 0 8px;
+}
+.chat-md-heading {
+  font-weight: 650;
+  color: var(--text);
+}
+.chat-md-list {
+  margin: 0 0 10px;
+  padding-left: 20px;
+  list-style: disc;
+  display: grid;
+  gap: var(--space-1);
+}
+ol.chat-md-list {
+  list-style: decimal;
+}
+.chat-md-list li::marker {
+  color: var(--accent);
+}
+.chat-content > :last-child {
+  margin-bottom: 0;
+}
+.chat-content strong {
+  font-weight: 650;
+  color: var(--text);
+}
+.chat-content em {
+  color: var(--muted);
+}
+.chat-md-code {
+  font-family: var(--font-mono), "JetBrains Mono", monospace;
+  font-size: var(--text-xs);
+  background: var(--surface-2);
+  border-radius: 4px;
+  padding: 1px 4px;
+}
+.chat-content .citation-link {
+  margin: 0 2px;
+}

@@ -2,7 +2,12 @@ import fs from "node:fs";
 import path from "node:path";
 
 const sourceRoot = path.join(process.cwd(), "src");
-const stylesheet = fs.readFileSync(path.join(sourceRoot, "app", "globals.css"), "utf8");
+const stylesDirectory = path.join(sourceRoot, "styles");
+const stylesheet = fs
+  .readdirSync(stylesDirectory)
+  .filter((file) => file.endsWith(".css"))
+  .map((file) => fs.readFileSync(path.join(stylesDirectory, file), "utf8"))
+  .join("\n");
 const classesInCss = new Set(
   [...stylesheet.matchAll(/\.([a-zA-Z_][a-zA-Z0-9_-]*)/g)].map((match) => match[1]),
 );
@@ -57,7 +62,7 @@ const missing = [...classesInTsx.entries()]
   .sort(([left], [right]) => left.localeCompare(right));
 
 if (missing.length > 0) {
-  console.error("Clases sin selector en globals.css:");
+  console.error("Clases sin selector en src/styles:");
   for (const [className, locations] of missing) {
     console.error("- " + className + " (" + [...new Set(locations)].join(", ") + ")");
   }

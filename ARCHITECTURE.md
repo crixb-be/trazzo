@@ -42,7 +42,7 @@ La app **debe compilar y ser usable sin variables de entorno**. Modo "local":
 
 ## 3. Diseño visual
 
-Tokens (en `globals.css`, expuestos a Tailwind):
+Tokens (en `src/styles/tokens.css`; `globals.css` solo importa los módulos de `src/styles/` en orden):
 
 | Token               | Dark                  | Light                 |
 | ------------------- | --------------------- | --------------------- |
@@ -72,6 +72,7 @@ Tokens (en `globals.css`, expuestos a Tailwind):
 /src
   /app
     layout.tsx  manifest.ts  sw.ts  globals.css  ~offline/page.tsx
+  /styles                             # CSS por módulos: tokens, base, surfaces, components, fees, accessibility…
     /(auth)/login/page.tsx  /(auth)/register/page.tsx  /(auth)/layout.tsx
     /(dashboard)/layout.tsx           # shell: sidebar + bottom nav + header
     /(dashboard)/page.tsx             # Inicio

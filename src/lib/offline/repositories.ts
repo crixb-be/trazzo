@@ -1,4 +1,4 @@
-﻿import { db, createLocalUuid, type Project, type Takeoff } from "./db";
+import { db, createLocalUuid, type Project, type Takeoff } from "./db";
 import { scheduleSync } from "./sync";
 
 async function enqueue(

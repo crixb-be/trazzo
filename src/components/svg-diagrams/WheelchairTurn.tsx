@@ -1,4 +1,4 @@
-﻿import { createDiagramScale, DiagramFrame, finiteOr } from "./DiagramFrame";
+import { createDiagramScale, DiagramFrame, finiteOr } from "./DiagramFrame";
 import { Dimension } from "./Dimension";
 
 export interface WheelchairTurnProps {

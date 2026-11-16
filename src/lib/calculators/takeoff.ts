@@ -1,4 +1,4 @@
-﻿import { invalidResult, isFiniteNonNegative, type CalcResult } from "./types";
+import { invalidResult, isFiniteNonNegative, type CalcResult } from "./types";
 
 export type TakeoffUnit = "m2" | "m3" | "und" | "bls" | "varilla" | string;
 

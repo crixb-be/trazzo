@@ -1,0 +1,45 @@
+/* Tokens: color, tamaño, espacio y radios. */
+:root {
+  --bg: #121316;
+  --surface: #1c1e24;
+  --surface-2: #24272f;
+  --border: #2e313a;
+  --text: #e9e7e2;
+  --muted: #9a9ca5;
+  --accent: #d4a359;
+  --danger: #e26d5a;
+  --ok: #6fbf8e;
+  --highlight: #22d3ee;
+
+  /* Tamaño: el mínimo táctil y la escala de letra. */
+  --touch-min: 44px;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 14px;
+  --text-field: 16px;
+
+  /* Espacio entre elementos. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+
+  /* Radios. */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+}
+html:not(.dark) {
+  --bg: #f6f5f2;
+  --surface: #fff;
+  --surface-2: #efede8;
+  --border: #e2dfd8;
+  --text: #1a1b1f;
+  --muted: #6b6d75;
+  --accent: #b5822f;
+  --danger: #c2410c;
+  --ok: #15803d;
+  --highlight: #0891b2;
+}

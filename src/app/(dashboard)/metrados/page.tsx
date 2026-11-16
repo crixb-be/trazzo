@@ -1,4 +1,4 @@
-﻿import { Suspense } from "react";
+import { Suspense } from "react";
 import { MetradosWorkspace } from "@/components/metrados/MetradosWorkspace";
 
 export default function MetradosPage() {

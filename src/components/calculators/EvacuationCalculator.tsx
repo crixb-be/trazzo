@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { Lock } from "lucide-react";
 import { Button, Card, PaywallModal } from "@/components/ui";

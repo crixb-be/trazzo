@@ -1,4 +1,4 @@
-﻿/** A single normative validation shown alongside a calculator result. */
+/** A single normative validation shown alongside a calculator result. */
 export interface CalcCheck {
   label: string;
   pass: boolean;

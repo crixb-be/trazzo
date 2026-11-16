@@ -1,4 +1,4 @@
-﻿import {
+import {
   invalidResult,
   isFiniteNonNegative,
   type CalcCheck,

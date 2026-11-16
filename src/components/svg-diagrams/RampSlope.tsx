@@ -1,4 +1,4 @@
-﻿import { createDiagramScale, DiagramFrame, finiteOr, type DiagramScale } from "./DiagramFrame";
+import { createDiagramScale, DiagramFrame, finiteOr, type DiagramScale } from "./DiagramFrame";
 import { Dimension } from "./Dimension";
 
 export interface RampSlopeProps {

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { BookOpen, Calculator, FolderOpen, Home, MessageSquare } from "lucide-react";
 import Link from "next/link";

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import type { ReactNode } from "react";
 import { FeedbackHost } from "@/components/ui/Feedback";

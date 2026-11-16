@@ -1,0 +1,837 @@
+/* Superficies y composiciones de producto. */
+/* Fase 2: superficies y composiciones de producto */
+.sidebar nav a.active {
+  background: var(--surface-2);
+  color: var(--text);
+  border-left: 2px solid var(--accent);
+  padding-left: 10px;
+}
+.header-title {
+  font-size: var(--text-md);
+  font-weight: 650;
+}
+.account-avatar {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  color: var(--accent);
+  font: 12px "JetBrains Mono";
+  overflow: hidden;
+}
+.account-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.main-shell main {
+  min-width: 0;
+}
+.home-page,
+.catalog-page,
+.detail-page,
+.calculators-page,
+.metrados-page,
+.assistant-page,
+.account-page {
+  animation: fade-in 180ms ease-out;
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.page-heading-row,
+.section-heading,
+.detail-heading-row,
+.project-header-card,
+.account-header,
+.plan-header,
+.sync-strip,
+.header-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+.dashboard-section {
+  margin-top: 42px;
+}
+.dashboard-section h2,
+.section-heading h2 {
+  margin: 5px 0 0;
+  font-size: 21px;
+  letter-spacing: -0.025em;
+}
+.home-hero {
+  padding: 56px clamp(22px, 6vw, 82px);
+  border: 1px solid var(--border);
+  background:
+    linear-gradient(rgba(212, 163, 89, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212, 163, 89, 0.05) 1px, transparent 1px), var(--surface);
+  background-size: 24px 24px;
+  text-align: center;
+}
+.home-hero h1 {
+  max-width: 820px;
+  margin: 12px auto 14px;
+  font-size: clamp(34px, 6vw, 68px);
+  letter-spacing: -0.07em;
+  line-height: 0.98;
+}
+.home-hero p {
+  max-width: 600px;
+  margin: 0 auto 26px;
+}
+.hero-search {
+  max-width: 680px;
+  margin: auto;
+  text-align: left;
+}
+.hero-search .global-search {
+  max-width: none;
+}
+.search-hint {
+  margin-top: 10px;
+  color: var(--muted);
+  font: 12px "JetBrains Mono";
+}
+.calculator-tiles,
+.category-grid,
+.dashboard-columns,
+.norm-grid,
+.detail-layout,
+.calculator-layout,
+.metrados-layout,
+.assistant-layout,
+.account-grid,
+.plan-grid {
+  display: grid;
+  gap: 14px;
+}
+.category-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.dashboard-columns {
+  grid-template-columns: 1fr 1fr;
+}
+.quick-tile,
+.category-tile,
+.featured-row,
+.project-row,
+.normative-card {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  text-decoration: none;
+  color: var(--text);
+  transition:
+    border-color 150ms ease,
+    transform 150ms ease;
+}
+.quick-tile,
+.category-tile {
+  min-height: 128px;
+  padding: 18px;
+}
+.quick-tile:hover,
+.category-tile:hover,
+.normative-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+.quick-tile strong,
+.category-tile strong,
+.featured-row strong,
+.project-row strong {
+  display: block;
+}
+.quick-tile small,
+.category-tile small,
+.featured-row small,
+.project-row small {
+  display: block;
+  color: var(--muted);
+  margin-top: 7px;
+}
+.tile-icon {
+  color: var(--accent);
+  margin-bottom: 20px;
+}
+.category-tile {
+  min-height: 102px;
+}
+.category-tile .mono {
+  display: block;
+  color: var(--accent);
+  font-size: 22px;
+  margin-top: 8px;
+}
+.project-list,
+.featured-list {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: 14px;
+}
+.project-row,
+.featured-row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 14px;
+}
+.project-row > span:nth-child(2),
+.featured-row > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+.featured-row .norm-code {
+  width: 56px;
+}
+.sync-strip {
+  margin-top: 26px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+.sync-strip button,
+.sync-strip a {
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: var(--text-xs);
+  text-decoration: none;
+}
+.catalog-toolbar,
+.chip-row,
+.filter-row,
+.tab-list {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.catalog-toolbar {
+  margin: 26px 0 18px;
+}
+.catalog-toolbar .input {
+  flex: 1 1 280px;
+}
+.result-count {
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+.norm-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.normative-card {
+  position: relative;
+  min-height: 224px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+}
+.normative-card .card-top,
+.normative-card .card-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.normative-card h3 {
+  margin: 22px 0 10px;
+  font-size: 17px;
+}
+.normative-card p {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
+.normative-value {
+  margin-top: auto;
+  padding-top: 16px;
+  color: var(--accent);
+}
+.normative-value strong {
+  font: 24px "JetBrains Mono";
+}
+.normative-value span {
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+.card-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.detail-layout {
+  align-items: start;
+  margin-top: 22px;
+}
+.diagram-plate {
+  min-height: 560px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  background:
+    linear-gradient(rgba(212, 163, 89, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212, 163, 89, 0.045) 1px, transparent 1px), var(--surface);
+  background-size: 20px 20px;
+}
+.diagram-plate svg {
+  width: 100%;
+  height: auto;
+}
+.parameter-panel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.parameter-panel .number-field {
+  flex: 1 1 150px;
+}
+.detail-sidebar > * + * {
+  margin-top: 14px;
+}
+.detail-sidebar h1 {
+  margin: 10px 0 14px;
+  font-size: clamp(27px, 4vw, 44px);
+  letter-spacing: -0.05em;
+}
+.highlight-value {
+  border-left: 3px solid var(--accent);
+  padding: 12px 16px;
+  background: var(--surface);
+}
+.highlight-value strong {
+  display: block;
+  font: 30px "JetBrains Mono";
+  color: var(--accent);
+}
+.detail-body {
+  color: var(--muted);
+  line-height: 1.75;
+  white-space: pre-line;
+}
+.detail-locked {
+  position: relative;
+}
+.detail-locked .detail-body-content {
+  filter: blur(5px);
+  user-select: none;
+}
+.detail-lock-overlay {
+  position: absolute;
+  inset: 18% 8% auto;
+  padding: 24px;
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  text-align: center;
+  z-index: 2;
+}
+.legal {
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: 1.55;
+}
+.disclosure {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+}
+.disclosure summary {
+  color: var(--text);
+  cursor: pointer;
+}
+.calculator-tabs {
+  margin: 22px 0;
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  padding: 12px 14px;
+  white-space: nowrap;
+}
+.tab.active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+.calculator-layout {
+  grid-template-columns: minmax(260px, 0.7fr) minmax(0, 1.3fr);
+  align-items: start;
+}
+.calculator-inputs,
+.calculator-output {
+  padding: 20px;
+}
+.calculator-inputs h2,
+.calculator-output h2 {
+  margin: 0 0 18px;
+  font-size: 17px;
+}
+.input-stack {
+  display: grid;
+  gap: 14px;
+}
+.calculator-result {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+}
+.result-value {
+  border: 1px solid var(--border);
+  padding: 14px;
+}
+.result-value span {
+  color: var(--muted);
+  display: block;
+  font-size: var(--text-xs);
+  margin-bottom: 8px;
+}
+.result-value strong {
+  font: 22px "JetBrains Mono";
+  color: var(--accent);
+}
+.check-list {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: 16px;
+}
+.check-item {
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  gap: var(--space-2);
+  align-items: start;
+  border-bottom: 1px solid var(--border);
+  padding: 9px 0;
+  font-size: var(--text-xs);
+}
+.check-pass {
+  color: var(--ok);
+}
+.check-fail {
+  color: var(--danger);
+}
+.check-ref {
+  color: var(--accent);
+  text-decoration: none;
+  font: 12px "JetBrains Mono";
+}
+.diagram-result {
+  margin-top: 18px;
+  padding: 12px;
+  border: 1px solid var(--border);
+}
+.water-rows {
+  display: grid;
+  gap: var(--space-2);
+}
+.water-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: var(--space-2);
+  align-items: end;
+}
+.metrados-layout {
+  grid-template-columns: 280px minmax(0, 1fr);
+  align-items: start;
+}
+.project-sidebar,
+.takeoff-main,
+.project-header-card {
+  min-width: 0;
+}
+.project-sidebar {
+  padding: 14px;
+}
+.project-sidebar h2 {
+  font-size: var(--text-field);
+  margin: 6px 0 14px;
+}
+.project-list-item {
+  width: 100%;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  text-align: left;
+  padding: 12px;
+  display: flex;
+  gap: 9px;
+  align-items: center;
+}
+.project-list-item.active,
+.project-list-item:hover {
+  color: var(--text);
+  background: var(--surface-2);
+  border-color: var(--border);
+}
+.takeoff-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  margin-top: 14px;
+}
+.takeoff-table {
+  width: 100%;
+  min-width: 800px;
+  border-collapse: collapse;
+  font-size: var(--text-xs);
+}
+.takeoff-table th,
+.takeoff-table td {
+  padding: 11px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  white-space: nowrap;
+}
+.takeoff-table th {
+  color: var(--muted);
+  font: 12px "JetBrains Mono";
+  text-transform: uppercase;
+}
+.takeoff-table td:last-child,
+.takeoff-table th:last-child {
+  text-align: right;
+}
+.takeoff-form {
+  display: grid;
+  grid-template-columns: 1.3fr 1.4fr repeat(5, minmax(65px, 0.55fr)) auto;
+  gap: 7px;
+  align-items: end;
+  margin-top: 16px;
+}
+.material-totals {
+  margin-top: 14px;
+}
+.totals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+  gap: var(--space-2);
+  margin-top: 12px;
+}
+.totals-grid > div {
+  border: 1px solid var(--border);
+  padding: 12px;
+}
+.totals-grid strong {
+  display: block;
+  margin-top: 8px;
+}
+.chat-card {
+  min-height: 620px;
+  display: flex;
+  flex-direction: column;
+}
+.assistant-layout {
+  grid-template-columns: minmax(0, 1fr) 280px;
+  align-items: start;
+}
+.chat-empty {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  text-align: center;
+  padding: 60px 20px;
+}
+.assistant-mark {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 800;
+  border-radius: var(--radius-lg);
+}
+.chat-list {
+  flex: 1;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 8px;
+}
+.message {
+  max-width: 88%;
+  padding: 13px 15px;
+  border: 1px solid var(--border);
+  line-height: 1.65;
+  font-size: var(--text-sm);
+}
+.message.user {
+  margin-left: auto;
+  background: var(--surface-2);
+}
+.message.assistant {
+  background: var(--surface);
+}
+.chat-form {
+  display: flex;
+  gap: var(--space-2);
+  padding-top: 16px;
+}
+.chat-form .input {
+  min-width: 0;
+  flex: 1;
+}
+.chat-disclaimer {
+  margin-top: 12px;
+}
+.source-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+.source-link {
+  color: var(--accent);
+  font: 12px "JetBrains Mono";
+  text-decoration: none;
+}
+.assistant-sidebar {
+  display: grid;
+  gap: 14px;
+}
+.account-grid {
+  grid-template-columns: minmax(0, 1fr) 1.2fr;
+  align-items: start;
+}
+.account-stack,
+.plan-grid {
+  display: grid;
+  gap: 14px;
+}
+.plan-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.plan-card {
+  min-height: 235px;
+  padding: 18px;
+  border: 1px solid var(--border);
+}
+.plan-card.current {
+  border-color: var(--accent);
+}
+.plan-card h3 {
+  margin: 8px 0 4px;
+}
+.plan-price {
+  font: 24px "JetBrains Mono";
+  color: var(--accent);
+  margin: 18px 0;
+}
+.plan-card ul {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: 1.8;
+}
+.auth-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  position: relative;
+  padding: 24px;
+  background:
+    linear-gradient(rgba(212, 163, 89, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(212, 163, 89, 0.04) 1px, transparent 1px), var(--bg);
+  background-size: 24px 24px;
+}
+.auth-card {
+  width: min(100%, 440px);
+  padding: 28px;
+  position: relative;
+  z-index: 1;
+}
+.auth-card .brand {
+  padding: 0 0 24px;
+}
+.auth-form {
+  display: grid;
+  gap: 14px;
+}
+.auth-footer {
+  position: absolute;
+  bottom: 18px;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+.state-panel {
+  border: 1px solid var(--border);
+  padding: 28px;
+  text-align: center;
+  color: var(--muted);
+}
+.warning {
+  color: var(--danger);
+  font-size: var(--text-xs);
+}
+@media (max-width: 1100px) {
+  .calculator-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .category-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .norm-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1023px) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
+  .sidebar {
+    display: none;
+  }
+  .main-shell {
+    width: 100%;
+    margin-left: 0;
+    padding-bottom: 72px;
+  }
+  .header {
+    padding: 0 18px;
+  }
+  .header-title {
+    min-width: auto;
+  }
+  .header .global-search {
+    max-width: 300px;
+  }
+  .bottom-nav {
+    position: fixed;
+    inset: auto 0 0;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 2px;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+    min-height: 62px;
+    background: color-mix(in srgb, var(--surface) 96%, transparent);
+    border-top: 1px solid var(--border);
+    z-index: 20;
+  }
+  .bottom-nav a {
+    display: grid;
+    place-items: center;
+    gap: 3px;
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 11px;
+  }
+  .bottom-nav a.active {
+    color: var(--accent);
+  }
+  .page-content {
+    padding: 28px 20px 38px;
+  }
+  .detail-layout,
+  .calculator-layout,
+  .metrados-layout,
+  .assistant-layout,
+  .account-grid {
+    grid-template-columns: 1fr;
+  }
+  .diagram-plate {
+    min-height: 0;
+  }
+  .assistant-sidebar {
+    grid-template-columns: 1fr 1fr;
+  }
+  .project-sidebar {
+    order: 2;
+  }
+  .takeoff-main {
+    order: 1;
+  }
+}
+@media (max-width: 640px) {
+  .color-fields label {
+    grid-template-columns: 1fr 42px minmax(0, 1fr);
+  }
+  .header {
+    height: 60px;
+  }
+  .header .global-search {
+    max-width: none;
+  }
+  .status {
+    display: none;
+  }
+  .page-content {
+    padding: 22px 14px 32px;
+  }
+  .home-hero {
+    padding: 36px 16px;
+  }
+  .calculator-tiles,
+  .category-grid,
+  .dashboard-columns,
+  .norm-grid,
+  .plan-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .page-heading-row {
+    align-items: flex-start;
+  }
+  .page-heading-row > .mono {
+    display: none;
+  }
+  .assistant-sidebar {
+    grid-template-columns: 1fr;
+  }
+  .calculator-result {
+    grid-template-columns: 1fr 1fr;
+  }
+  .takeoff-form {
+    grid-template-columns: 1fr 1fr;
+  }
+  .takeoff-form > :first-child,
+  .takeoff-form > :nth-child(2),
+  .takeoff-form > :last-child {
+    grid-column: 1 / -1;
+  }
+  .project-header-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+@media (max-width: 375px) {
+  .page-content {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .calculator-tiles,
+  .category-grid,
+  .dashboard-columns,
+  .norm-grid,
+  .plan-grid {
+    grid-template-columns: 1fr;
+  }
+  .home-hero h1 {
+    font-size: 34px;
+  }
+  .header .global-search {
+    flex: 1;
+  }
+  .detail-heading-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .water-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .water-row button {
+    grid-column: 2;
+  }
+}
