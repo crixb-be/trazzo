@@ -30,6 +30,7 @@ import { useFeeQuotes, useStudioProfile } from "@/lib/offline/hooks";
 import { loadCustomFeeRates, saveCustomFeeRates } from "@/lib/offline/fee-rates";
 import type { FeeQuote } from "@/lib/offline/db";
 import { ProposalPreview } from "./ProposalPreview";
+import { ShareProposal } from "./ShareProposal";
 import { QuoteForm } from "./QuoteForm";
 import { QuoteSummary } from "./QuoteSummary";
 
@@ -313,6 +314,12 @@ export function FeeQuoteWorkspace() {
           notice={notice}
         />
       </div>
+      <ShareProposal
+        quote={quoteForPdf()}
+        result={result}
+        studio={studio}
+        watermark={!canExportCleanProposal(currentPlan.plan)}
+      />
       {studio.fullName === "" && (
         <p className="profile-hint">
           Agrega tu nombre y N° CAP en <a href="/cuenta">Cuenta</a> para personalizar la propuesta.

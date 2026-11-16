@@ -3826,3 +3826,39 @@ ol.chat-md-list {
     display: none;
   }
 }
+.quote-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.quote-steps [aria-current="step"] {
+  border: 2px solid var(--accent);
+}
+.quote-form {
+  padding-bottom: 160px;
+}
+.quote-total-fixed {
+  position: fixed;
+  left: 260px;
+  right: 24px;
+  bottom: 16px;
+  z-index: 35;
+  background: var(--surface);
+  border: 2px solid var(--accent);
+  padding: 10px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+@media (max-width: 900px) {
+  .quote-total-fixed {
+    left: 12px;
+    right: 12px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+  .quote-form {
+    padding-bottom: 210px;
+  }
+}
