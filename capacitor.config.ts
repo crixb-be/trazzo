@@ -1,11 +1,4 @@
-import type { CapacitorConfig } from "@capacitor/cli";
+import { buildCapacitorConfig } from "./src/lib/native/capacitor-config";
 
-const config: CapacitorConfig = {
-  appId: "pe.trazzo.app",
-  appName: "TRAZZO",
-  webDir: ".next",
-  ...(process.env.CAPACITOR_SERVER_URL
-    ? { server: { url: process.env.CAPACITOR_SERVER_URL, cleartext: true } }
-    : {}),
-};
-export default config;
+// CAPACITOR_SERVER_URL is the deployed site the native shell loads. See README.
+export default buildCapacitorConfig(process.env.CAPACITOR_SERVER_URL);

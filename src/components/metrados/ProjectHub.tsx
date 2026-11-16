@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui";
 import { formatPen } from "@/lib/calculators/fees";
 import type { Project } from "@/lib/offline/db";
+import { ProjectPhotos } from "./ProjectPhotos";
 import { deleteProjectNote, useProjectNotes, useProjectQuotes } from "@/lib/offline/project-hub";
 
 /** What else belongs to the project besides its takeoffs: saved results and quotes. */
@@ -79,6 +80,8 @@ export function ProjectHub({ project }: { project: Project }) {
           ))}
         </ul>
       )}
+
+      <ProjectPhotos project={project} />
     </Card>
   );
 }

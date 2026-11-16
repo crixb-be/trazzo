@@ -329,3 +329,44 @@ html.obra .calculator-result-bar {
   font-size: var(--text-xs);
   color: var(--muted);
 }
+
+/* Fotos de obra del proyecto. */
+.project-photos-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: 14px;
+}
+.project-photos-heading h3 {
+  margin: 0;
+}
+.project-photos {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--space-3);
+}
+.project-photos li {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+.project-photos img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+.project-photo-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  color: var(--muted);
+  font-size: var(--text-xs);
+}

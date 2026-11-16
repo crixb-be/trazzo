@@ -1,6 +1,6 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import type { ResultSheet } from "@/lib/share/result-sheet";
-import { createLocalUuid, db, type FeeQuote, type ProjectNote } from "./db";
+import { createLocalUuid, db, type FeeQuote, type ProjectNote, type ProjectPhoto } from "./db";
 
 /**
  * The project as the hub of the work: calculator results and fee quotes can be
@@ -68,6 +68,54 @@ export function useProjectQuotes(projectId: string): FeeQuote[] {
         const links = await db.project_links.where("projectId").equals(projectId).toArray();
         const quotes = await db.fee_quotes.bulkGet(links.map((link) => link.quoteId));
         return quotes.filter((quote): quote is FeeQuote => Boolean(quote));
+      },
+      [projectId],
+      [],
+    ) ?? []
+  );
+}
+
+/** Photos per project are capped so the device storage does not fill up unnoticed. */
+export const MAX_PROJECT_PHOTOS = 30;
+
+export async function addProjectPhoto(
+  projectId: string,
+  dataUrl: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!db) return { ok: false, error: "La base local no está disponible." };
+  const count = await db.project_photos.where("projectId").equals(projectId).count();
+  if (count >= MAX_PROJECT_PHOTOS) {
+    return {
+      ok: false,
+      error:
+        "Este proyecto ya tiene " + MAX_PROJECT_PHOTOS + " fotos. Quita alguna para añadir más.",
+    };
+  }
+  await db.project_photos.put({
+    id: createLocalUuid(),
+    projectId,
+    dataUrl,
+    caption: "",
+    createdAt: new Date().toISOString(),
+  });
+  return { ok: true };
+}
+
+export async function updateProjectPhotoCaption(id: string, caption: string): Promise<void> {
+  await db?.project_photos.update(id, { caption });
+}
+
+export async function deleteProjectPhoto(id: string): Promise<void> {
+  await db?.project_photos.delete(id);
+}
+
+export function useProjectPhotos(projectId: string): ProjectPhoto[] {
+  return (
+    useLiveQuery(
+      async () => {
+        if (!db || !projectId) return [];
+        const photos = await db.project_photos.where("projectId").equals(projectId).toArray();
+        return photos.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
       },
       [projectId],
       [],

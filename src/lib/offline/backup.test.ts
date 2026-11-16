@@ -36,6 +36,16 @@ const contents: BackupContents = {
     },
   ],
   projectLinks: [],
+  projectPhotos: [
+    {
+      id: "f1",
+      projectId: "p1",
+      dataUrl: "data:image/jpeg;base64,AAAA",
+      caption: "",
+      createdAt: "",
+    },
+    { id: "f2", projectId: "p1", dataUrl: "javascript:alert(1)", caption: "", createdAt: "" },
+  ],
   libraryActivity: [],
   studioProfile: null,
   meta: [
@@ -52,6 +62,12 @@ describe("backup file", () => {
     if (!parsed.ok) return;
     expect(parsed.backup.projects[0].name).toBe("Casa Lima");
     expect(parsed.backup.projectNotes).toHaveLength(1);
+    // Only real images survive, and copies without photos still load.
+    expect(parsed.backup.projectPhotos.map((photo) => photo.id)).toEqual(["f1"]);
+    const { projectPhotos: _dropped, ...older } = file;
+    void _dropped;
+    const legacy = parseBackup(JSON.stringify(older));
+    expect(legacy.ok && legacy.backup.projectPhotos).toEqual([]);
     expect(parsed.backup.meta.map((row) => row.key)).toEqual(["relation-matrix"]);
     expect(describeBackup(parsed.backup)).toContain("1 proyecto(s)");
     expect(backupFileName(new Date("2026-11-16T12:00:00Z"))).toBe("trazzo-copia-2026-11-16.json");

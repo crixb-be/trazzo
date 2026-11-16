@@ -22,6 +22,7 @@
     "@ai-sdk/openai": "^2.0.20",
     "@ai-sdk/react": "^2.0.20",
     "@anthropic-ai/sdk": "^1.8.0",
+    "@capacitor/camera": "^7.0.5",
     "@capacitor/cli": "^7.4.3",
     "@capacitor/core": "^7.4.3",
     "@serwist/next": "^9.0.14",

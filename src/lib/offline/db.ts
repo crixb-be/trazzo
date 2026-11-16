@@ -109,6 +109,15 @@ export interface ProjectNote {
   createdAt: string;
 }
 
+export interface ProjectPhoto {
+  id: string;
+  projectId: string;
+  /** JPEG data URL, longest side 1280 px. */
+  dataUrl: string;
+  caption: string;
+  createdAt: string;
+}
+
 export interface ProjectLink {
   quoteId: string;
   projectId: string;
@@ -131,6 +140,8 @@ export class TrazzoDB extends Dexie {
   project_notes!: Table<ProjectNote, string>;
   /** Which project a fee quote belongs to. Kept on this device. */
   project_links!: Table<ProjectLink, string>;
+  /** Site photos taken for a project. Kept on this device. */
+  project_photos!: Table<ProjectPhoto, string>;
   constructor() {
     super("TrazzoDB");
     this.version(1).stores({
@@ -150,6 +161,7 @@ export class TrazzoDB extends Dexie {
       outbox: "++id,table,createdAt",
       fee_quotes: "id,code,updatedAt,syncState",
     });
+    this.version(7).stores({ project_photos: "id,projectId,createdAt" });
     this.version(6).stores({
       project_notes: "id,projectId,createdAt",
       project_links: "quoteId,projectId",

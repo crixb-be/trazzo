@@ -6,6 +6,7 @@ import {
   type Project,
   type ProjectLink,
   type ProjectNote,
+  type ProjectPhoto,
   type StudioProfile,
   type Takeoff,
 } from "./db";
@@ -31,6 +32,7 @@ export interface BackupFile {
   projectOptions: Array<{ projectId: string; area: number }>;
   projectNotes: ProjectNote[];
   projectLinks: ProjectLink[];
+  projectPhotos: ProjectPhoto[];
   libraryActivity: Array<{ slug: string; favorite: boolean; visitedAt: string }>;
   studioProfile: StudioProfile | null;
   meta: Meta[];
@@ -90,6 +92,8 @@ export function parseBackup(text: string): ParsedBackup {
   const projectOptions = rowsWith(data.projectOptions, ["projectId"]);
   const projectNotes = rowsWith(data.projectNotes, ["id", "projectId", "title"]);
   const projectLinks = rowsWith(data.projectLinks, ["quoteId", "projectId"]);
+  // Absent in copies made before photos existed.
+  const projectPhotos = rowsWith(data.projectPhotos, ["id", "projectId", "dataUrl"]);
   const libraryActivity = rowsWith(data.libraryActivity, ["slug"]);
   const meta = rowsWith(data.meta, ["key"]);
   if (
@@ -99,6 +103,7 @@ export function parseBackup(text: string): ParsedBackup {
     !projectOptions ||
     !projectNotes ||
     !projectLinks ||
+    !projectPhotos ||
     !libraryActivity ||
     !meta
   ) {
@@ -117,6 +122,9 @@ export function parseBackup(text: string): ParsedBackup {
       projectOptions: projectOptions as unknown as BackupFile["projectOptions"],
       projectNotes: projectNotes as unknown as ProjectNote[],
       projectLinks: projectLinks as unknown as ProjectLink[],
+      projectPhotos: (projectPhotos as unknown as ProjectPhoto[]).filter((photo) =>
+        photo.dataUrl.startsWith("data:image/"),
+      ),
       libraryActivity: libraryActivity as unknown as BackupFile["libraryActivity"],
       studioProfile: studio ? ({ ...studio, id: "default" } as StudioProfile) : null,
       meta: (meta as unknown as Meta[]).filter((row) => META_KEYS.includes(row.key)),
@@ -130,6 +138,7 @@ export function describeBackup(backup: BackupFile): string {
     backup.takeoffs.length + " partida(s)",
     backup.feeQuotes.length + " cotización(es)",
     backup.projectNotes.length + " cálculo(s) guardado(s)",
+    backup.projectPhotos.length + " foto(s)",
   ];
   return parts.join(", ");
 }
@@ -166,6 +175,7 @@ export async function exportBackup(): Promise<BackupFile> {
     projectOptions,
     projectNotes,
     projectLinks,
+    projectPhotos,
     libraryActivity,
     studioProfile,
     meta,
@@ -176,6 +186,7 @@ export async function exportBackup(): Promise<BackupFile> {
     db.project_options.toArray(),
     db.project_notes.toArray(),
     db.project_links.toArray(),
+    db.project_photos.toArray(),
     db.library_activity.toArray(),
     db.studio_profile.get("default"),
     db.meta.where("key").anyOf(META_KEYS).toArray(),
@@ -187,6 +198,7 @@ export async function exportBackup(): Promise<BackupFile> {
     projectOptions,
     projectNotes,
     projectLinks,
+    projectPhotos,
     libraryActivity,
     studioProfile: studioProfile ?? null,
     meta,
@@ -217,6 +229,7 @@ export async function importBackup(
       localDb.project_options,
       localDb.project_notes,
       localDb.project_links,
+      localDb.project_photos,
       localDb.library_activity,
       localDb.studio_profile,
       localDb.meta,
@@ -229,6 +242,7 @@ export async function importBackup(
       await localDb.project_options.bulkPut(backup.projectOptions);
       await localDb.project_notes.bulkPut(backup.projectNotes);
       await localDb.project_links.bulkPut(backup.projectLinks);
+      await localDb.project_photos.bulkPut(backup.projectPhotos);
       await localDb.library_activity.bulkPut(backup.libraryActivity);
       if (backup.studioProfile) await localDb.studio_profile.put(backup.studioProfile);
       await localDb.meta.bulkPut(backup.meta);
