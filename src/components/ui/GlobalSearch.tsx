@@ -5,7 +5,8 @@ import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RNE_CARDS } from "@/data/seed-rne";
 import { ensureSeeded } from "@/lib/offline/db";
-import { searchCards } from "@/lib/search/search";
+import { searchCatalog } from "@/lib/search/catalog";
+import { useCards, useProjects, useFeeQuotes } from "@/lib/offline/hooks";
 
 export interface GlobalSearchProps {
   variant?: "header" | "inline";
@@ -30,7 +31,10 @@ export function GlobalSearch({
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const listId = useId();
-  const results = searchCards(RNE_CARDS, query).slice(0, 8);
+  const cards = useCards(),
+    projects = useProjects(),
+    quotes = useFeeQuotes();
+  const results = searchCatalog(query, cards.length ? cards : RNE_CARDS, projects, quotes);
 
   useEffect(() => {
     void ensureSeeded();
@@ -60,7 +64,7 @@ export function GlobalSearch({
   function selectResult(index: number): void {
     const card = results[index];
     if (!card) return;
-    router.push("/normativa/" + card.slug);
+    router.push(card.href);
     setOpen(false);
     onDismiss?.();
   }
@@ -92,13 +96,17 @@ export function GlobalSearch({
           ref={inputRef}
           autoFocus={autoFocus}
           placeholder={
-            variant === "inline" ? "Busca una norma, cota o término de obra…" : "Buscar en el RNE…"
+            variant === "inline"
+              ? "Busca fichas, medidas, herramientas o proyectos…"
+              : "Buscar en TRAZZO…"
           }
           value={query}
           onFocus={() => setOpen(true)}
           onChange={(event) => updateQuery(event.target.value)}
           onKeyDown={handleKeyDown}
-          aria-label="Buscar normativa"
+          aria-label="Buscar en TRAZZO"
+          role="combobox"
+          aria-autocomplete="list"
           aria-expanded={open}
           aria-controls={listId}
         />
@@ -109,7 +117,7 @@ export function GlobalSearch({
           {results.length > 0 ? (
             results.map((card, index) => (
               <button
-                key={card.slug}
+                key={card.id}
                 type="button"
                 role="option"
                 aria-selected={index === activeIndex}
@@ -117,7 +125,7 @@ export function GlobalSearch({
                 onMouseEnter={() => setActiveIndex(index)}
                 onClick={() => selectResult(index)}
               >
-                <span className="mono">{card.norm_code}</span>
+                <span className="mono">{card.kind}</span>
                 <span>{card.title}</span>
               </button>
             ))

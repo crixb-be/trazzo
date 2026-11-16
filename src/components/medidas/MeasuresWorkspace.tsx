@@ -1,9 +1,12 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MEASURES } from "@/data/medidas";
 import { PocketDiagram } from "@/components/svg-diagrams/PocketDiagram";
 export function MeasuresWorkspace() {
   const [query, setQuery] = useState("");
+  useEffect(() => {
+    setQuery(new URLSearchParams(window.location.search).get("q") ?? "");
+  }, []);
   const [category, setCategory] = useState("Todas");
   const normalize = (value: string) =>
     value
