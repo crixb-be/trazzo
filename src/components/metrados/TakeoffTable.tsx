@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Edit3, Plus, Save, Trash2, X } from "lucide-react";
 import { Button, Card, Input, NumberField } from "@/components/ui";
 import type { Material } from "@/data/seed-rne";
@@ -61,6 +61,9 @@ export function TakeoffTable({
   onDelete,
 }: TakeoffTableProps) {
   const [chapter, setChapter] = useState("");
+  useEffect(() => {
+    setChapter(draft.partName.match(/^\[([^\]]+)\]/)?.[1] ?? "");
+  }, [draft.id]);
   const unit = materials.find((m) => m.code === draft.materialCode)?.unit;
   const preview = materials.length ? derivedLine(draft, materials) : null;
   const categories = [...new Set(materials.map((material) => material.category))];
@@ -87,7 +90,16 @@ export function TakeoffTable({
             <input
               className="input"
               value={chapter}
-              onChange={(e) => setChapter(e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value.replace(/[\[\]]/g, "");
+                setChapter(next);
+                setDraft({
+                  ...draft,
+                  partName:
+                    (next.trim() ? `[${next.trim()}] ` : "") +
+                    draft.partName.replace(/^\[[^\]]+\]\s*/, ""),
+                });
+              }}
               placeholder="Ej. Estructuras"
             />
           </label>
@@ -96,7 +108,7 @@ export function TakeoffTable({
               <label htmlFor="part-name">Partida</label>
               <Input
                 id="part-name"
-                value={draft.partName}
+                value={draft.partName.replace(/^\[[^\]]+\]\s*/, "")}
                 onChange={(event) =>
                   setDraft({
                     ...draft,

@@ -45,3 +45,24 @@ test("buscador abre medidas y honorarios conserva datos entre pasos", async ({ p
   await page.getByRole("button", { name: "Preparar PDF para compartir" }).click();
   await expect(page.getByRole("button", { name: "Compartir PDF", exact: true })).toBeVisible();
 });
+
+test("editar precio de material importado en m² conserva cantidad", async ({ page }) => {
+  await page.goto("/metrados");
+  await page.getByRole("button", { name: "Nuevo proyecto" }).click();
+  await page.getByPlaceholder("Casa Miraflores").fill("Pisos");
+  await page.getByRole("button", { name: "Crear proyecto", exact: true }).click();
+  await page.goto("/calculadoras?tab=materiales");
+  await page.getByRole("combobox", { name: "Trabajo", exact: true }).selectOption("ceramico");
+  await page
+    .getByRole("combobox", { name: "Proyecto de destino", exact: true })
+    .selectOption({ label: "Pisos" });
+  await page.getByRole("button", { name: "Enviar a metrado" }).click();
+  await expect(page.getByRole("main").getByRole("status")).toContainText("Cantidades enviadas");
+  await page.goto("/metrados");
+  const row = page.locator(".takeoff-table tbody tr").first();
+  const before = await row.locator("td").nth(8).innerText();
+  await row.getByRole("button", { name: "Editar partida" }).click();
+  await page.getByRole("textbox", { name: "Precio unitario (S/)", exact: true }).fill("100");
+  await page.getByRole("button", { name: "Guardar cambios", exact: true }).click();
+  await expect(row.locator("td").nth(8)).toHaveText(before);
+});

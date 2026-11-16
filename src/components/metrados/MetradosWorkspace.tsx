@@ -167,9 +167,13 @@ export function MetradosWorkspace() {
       id: takeoff.id,
       partName: takeoff.partName,
       materialCode: takeoff.materialCode,
-      length: takeoff.length,
-      width: takeoff.width,
-      height: takeoff.height,
+      length:
+        ["m2", "m3"].includes(catalog.find((m) => m.code === takeoff.materialCode)?.unit ?? "") &&
+        takeoff.length === 0
+          ? takeoff.quantity
+          : takeoff.length,
+      width: takeoff.width || 1,
+      height: takeoff.height || 1,
       quantity: takeoff.quantity,
       wastePct: takeoff.wastePct,
       unitPricePen:
