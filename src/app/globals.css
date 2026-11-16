@@ -55,6 +55,7 @@ button {
 }
 .app-shell {
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
 }
 .sidebar {
@@ -91,7 +92,7 @@ button {
 .brand small {
   display: block;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 12px;
   letter-spacing: 0.14em;
   margin-top: 3px;
 }
@@ -172,7 +173,7 @@ button {
   font-size: 13px;
 }
 .search-box kbd {
-  font: 11px "JetBrains Mono";
+  font: 12px "JetBrains Mono";
   border: 1px solid var(--border);
   padding: 3px 6px;
   border-radius: 4px;
@@ -204,14 +205,14 @@ button {
 }
 .search-results .mono {
   color: var(--accent);
-  font-size: 11px;
+  font-size: 12px;
 }
 .status {
   display: flex;
   align-items: center;
   gap: 6px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   white-space: nowrap;
 }
 .status.offline {
@@ -248,7 +249,7 @@ button {
 }
 .eyebrow {
   color: var(--accent);
-  font: 11px "JetBrains Mono";
+  font: 12px "JetBrains Mono";
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
@@ -341,7 +342,7 @@ button {
   display: inline-flex;
   border-radius: 99px;
   padding: 4px 8px;
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: 0.04em;
   border: 1px solid var(--border);
 }
@@ -399,7 +400,7 @@ button {
 }
 .data-table th {
   color: var(--muted);
-  font: 10px "JetBrains Mono";
+  font: 12px "JetBrains Mono";
   text-transform: uppercase;
 }
 .diagram-frame {
@@ -522,7 +523,7 @@ button {
 .source-link {
   color: var(--accent);
   text-decoration: none;
-  font: 11px "JetBrains Mono";
+  font: 12px "JetBrains Mono";
 }
 .chat {
   min-height: 420px;
@@ -563,11 +564,12 @@ button {
 }
 .legal {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.6;
 }
 .auth-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
   padding: 24px;
@@ -608,7 +610,7 @@ button {
   }
   .bottom-nav a {
     color: var(--muted);
-    font-size: 10px;
+    font-size: 11px;
     text-decoration: none;
     display: grid;
     place-items: center;
@@ -743,7 +745,7 @@ button {
   border: 1px solid var(--border);
   border-radius: 50%;
   color: var(--accent);
-  font: 11px "JetBrains Mono";
+  font: 12px "JetBrains Mono";
   overflow: hidden;
 }
 .account-avatar img {
@@ -826,7 +828,7 @@ button {
 .search-hint {
   margin-top: 10px;
   color: var(--muted);
-  font: 11px "JetBrains Mono";
+  font: 12px "JetBrains Mono";
 }
 .calculator-tiles,
 .category-grid,
@@ -1067,7 +1069,7 @@ button {
 }
 .legal {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.55;
 }
 .disclosure {
@@ -1125,7 +1127,7 @@ button {
 .result-value span {
   color: var(--muted);
   display: block;
-  font-size: 11px;
+  font-size: 12px;
   margin-bottom: 8px;
 }
 .result-value strong {
@@ -1155,7 +1157,7 @@ button {
 .check-ref {
   color: var(--accent);
   text-decoration: none;
-  font: 10px "JetBrains Mono";
+  font: 12px "JetBrains Mono";
 }
 .diagram-result {
   margin-top: 18px;
@@ -1225,7 +1227,7 @@ button {
 }
 .takeoff-table th {
   color: var(--muted);
-  font: 10px "JetBrains Mono";
+  font: 12px "JetBrains Mono";
   text-transform: uppercase;
 }
 .takeoff-table td:last-child,
@@ -1324,7 +1326,7 @@ button {
 }
 .source-link {
   color: var(--accent);
-  font: 10px "JetBrains Mono";
+  font: 12px "JetBrains Mono";
   text-decoration: none;
 }
 .assistant-sidebar {
@@ -1368,6 +1370,7 @@ button {
 }
 .auth-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
   position: relative;
@@ -1394,7 +1397,7 @@ button {
   position: absolute;
   bottom: 18px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 12px;
 }
 .state-panel {
   border: 1px solid var(--border);
@@ -1443,7 +1446,7 @@ button {
     position: fixed;
     inset: auto 0 0;
     display: grid;
-    grid-template-columns: repeat(6, minmax(0, 1fr));
+    grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 2px;
     padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
     min-height: 62px;
@@ -1457,7 +1460,7 @@ button {
     gap: 3px;
     color: var(--muted);
     text-decoration: none;
-    font-size: 9px;
+    font-size: 11px;
   }
   .bottom-nav a.active {
     color: var(--accent);
@@ -1630,7 +1633,7 @@ button {
   background: transparent;
   color: var(--muted);
   cursor: pointer;
-  font: 11px "JetBrains Mono";
+  font: 12px "JetBrains Mono";
   padding: 7px 10px;
 }
 .norm-code-chip:hover,
@@ -1657,7 +1660,7 @@ button {
 }
 .norm-value small {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 .normative-card.is-locked {
   border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
@@ -1699,7 +1702,7 @@ button {
 .calculator-disclaimer {
   border-left: 2px solid var(--accent);
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.5;
   margin: 18px 0;
   padding: 8px 12px;
@@ -1715,7 +1718,7 @@ button {
   align-items: center;
   gap: 8px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.45;
   margin-top: 18px;
 }
@@ -1825,7 +1828,7 @@ button {
   align-items: center;
   gap: 7px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 .detail-reference span {
   border: 1px solid var(--border);
@@ -1842,7 +1845,7 @@ button {
   border: 0;
   background: transparent;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 12px;
   padding: 2px 0 0;
 }
 .detail-summary {
@@ -2097,7 +2100,7 @@ button {
   border-radius: 999px;
   background: color-mix(in srgb, var(--accent) 10%, transparent);
   color: var(--accent);
-  font-size: 10px;
+  font-size: 12px;
   padding: 3px 7px;
   text-decoration: none;
   vertical-align: baseline;
@@ -2278,7 +2281,7 @@ button {
   align-items: center;
   gap: 10px;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   margin: 4px 0;
 }
 .auth-divider::before,
@@ -2306,6 +2309,7 @@ button {
 }
 .offline-page {
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   place-items: center;
   background: var(--bg);
@@ -2437,13 +2441,13 @@ button {
 }
 .billing-savings {
   color: var(--accent);
-  font-size: 10px;
+  font-size: 12px;
   margin-left: 4px;
 }
 .plan-equivalent {
   display: block;
   margin-top: 4px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .fees-page {
   display: grid;
@@ -2487,7 +2491,7 @@ button {
 }
 .saved-quote strong {
   color: var(--accent);
-  font: 10px "JetBrains Mono";
+  font: 12px "JetBrains Mono";
 }
 .saved-quote span {
   font-weight: 600;
@@ -2554,7 +2558,7 @@ button {
 .scope-option small,
 .collapse-trigger small {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 .scope-sub-fields {
   grid-column: 1 / -1;
@@ -2672,7 +2676,7 @@ button {
 }
 .summary-line small {
   color: var(--muted);
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.35;
 }
 .summary-line > .mono {
@@ -2690,7 +2694,7 @@ button {
 }
 .tax-toggle button {
   flex: 1;
-  font-size: 11px;
+  font-size: 12px;
 }
 .summary-tax-row {
   color: var(--muted);
@@ -2725,7 +2729,7 @@ button {
   gap: 5px;
   margin-top: 14px;
   color: var(--danger);
-  font-size: 11px;
+  font-size: 12px;
 }
 .quote-warnings p,
 .notice-inline {
@@ -2752,6 +2756,7 @@ button {
   /* .modal caps dialogs at 420px; the A4 preview needs the full sheet width. */
   max-width: 900px;
   max-height: calc(100vh - 28px);
+  max-height: calc(100dvh - 28px);
   overflow: auto;
   background: transparent;
   box-shadow: none;
@@ -3333,7 +3338,6 @@ ol.chat-md-list {
  * queries above; they must come last to win the cascade.
  */
 @media (max-width: 1023px) {
-  /* Six destinations: tighter side padding keeps "Honorarios" readable at 360px. */
   .bottom-nav a {
     padding-left: 2px;
     padding-right: 2px;
@@ -3450,5 +3454,237 @@ ol.chat-md-list {
   .category-grid,
   .plan-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ------------------------------------------------------------------ */
+/* Feedback: floating notices and confirmation dialog                  */
+/* ------------------------------------------------------------------ */
+.toast-region {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  z-index: 40;
+  display: grid;
+  gap: 8px;
+  width: min(92vw, 460px);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.4;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.28);
+  pointer-events: auto;
+  animation: toast-in 180ms ease-out;
+}
+.toast > span {
+  flex: 1;
+  min-width: 0;
+}
+.toast > svg {
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+.toast-ok {
+  border-left-color: var(--ok);
+}
+.toast-ok > svg {
+  color: var(--ok);
+}
+.toast-error {
+  border-left-color: var(--danger);
+}
+.toast-error > svg {
+  color: var(--danger);
+}
+.toast-action {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--accent);
+  font-weight: 600;
+}
+.toast-close {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+}
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+.confirm-modal {
+  width: min(100%, 420px);
+}
+.confirm-modal h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+.modal-backdrop {
+  z-index: 50;
+}
+
+/* Metrados / Honorarios share the "Proyectos" tab. */
+.projects-switch {
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  margin-bottom: 18px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.projects-switch a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 16px;
+  border-radius: 7px;
+  color: var(--muted);
+  font-size: 14px;
+  text-decoration: none;
+}
+.projects-switch a.active {
+  background: var(--surface-2);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------------ */
+/* Accessibility and touch base                                        */
+/* ------------------------------------------------------------------ */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.input:focus-visible,
+.select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  /* Notices sit above the bottom navigation. */
+  .toast-region {
+    bottom: calc(78px + env(safe-area-inset-bottom));
+  }
+  .projects-switch {
+    display: grid;
+  }
+}
+
+/* Phones and tablets: every control is at least 44 px so it can be hit with
+   one hand, and fields use 16 px text so iOS does not zoom on focus. */
+@media (pointer: coarse) {
+  .btn,
+  .input,
+  .select,
+  .chip,
+  .file-input,
+  .calculator-tabs button,
+  .tabs button,
+  .saved-quote,
+  .parameter-toggle,
+  .legal-disclosure > button {
+    min-height: 44px;
+  }
+  .btn-sm {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+  .icon-btn,
+  .account-avatar {
+    width: 44px;
+    height: 44px;
+  }
+  .row-actions button {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .input,
+  .select,
+  textarea,
+  .search-box input {
+    font-size: 16px;
+  }
+  .search-box input {
+    min-height: 44px;
+  }
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: 22px;
+    height: 22px;
+  }
+  .back-link,
+  .source-link,
+  .link-button,
+  .sync-strip a,
+  .sync-strip button {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .bottom-nav a {
+    min-height: 50px;
+  }
+  .norm-code-chip,
+  .billing-toggle button,
+  .tax-toggle button,
+  .category-grid a,
+  .check-ref {
+    min-height: 44px;
+  }
+  .header-brand {
+    min-width: 44px;
+    min-height: 44px;
+    place-items: center;
+  }
+  .auth-switch a,
+  .auth-card > a,
+  .offline-card a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
   }
 }

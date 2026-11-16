@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import { Badge, BillingToggle, Button, Card, Input } from "@/components/ui";
+import { Badge, BillingToggle, Button, Card, confirmDialog, Input, toast } from "@/components/ui";
 import { SEED_VERSION } from "@/data/seed-rne";
 import { db } from "@/lib/offline/db";
 import { getStudioProfile, saveStudioProfile } from "@/lib/offline/profile";
@@ -88,7 +88,8 @@ export function AccountWorkspace() {
   const filesInputRef = useRef<HTMLInputElement>(null);
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
   const [document, setDocument] = useState<File | null>(null);
-  const [notice, setNotice] = useState("");
+  // Notices float above the page: this screen is long and a message at the end went unseen.
+  const setNotice = (message: string): void => toast(message);
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
@@ -195,7 +196,7 @@ export function AccountWorkspace() {
     }
     setNotice(
       remoteFailed
-        ? "Perfil guardado localmente. No se pudo sincronizar la marca con Supabase."
+        ? "Perfil guardado en este dispositivo. No se pudo respaldar en tu cuenta."
         : "Perfil guardado.",
     );
   }
@@ -289,7 +290,7 @@ export function AccountWorkspace() {
   async function choosePlan(plan: Plan): Promise<void> {
     if (plan === "free") return;
     if (!configured) {
-      setNotice("Configura Supabase para activar pagos y sincronización.");
+      setNotice("Los pagos aún no están activos en esta instalación.");
       return;
     }
     const response = await fetch("/api/payments/checkout", {
@@ -351,7 +352,14 @@ export function AccountWorkspace() {
   }
 
   async function resetLocal(): Promise<void> {
-    if (!window.confirm("¿Restablecer todos los proyectos y datos locales?")) return;
+    const confirmed = await confirmDialog({
+      title: "¿Restablecer los datos de este dispositivo?",
+      message:
+        "Se borrarán los proyectos, metrados y cotizaciones guardados aquí. Lo que ya esté respaldado en tu cuenta se volverá a descargar.",
+      confirmLabel: "Restablecer",
+      danger: true,
+    });
+    if (!confirmed) return;
     await db?.delete();
     // The connection is closed after deleting: reload so the app reopens and reseeds it.
     window.location.reload();
@@ -374,7 +382,7 @@ export function AccountWorkspace() {
           </p>
         </div>
         <Badge variant={configured ? "ok" : "por-verificar"}>
-          {configured ? "Supabase activo" : "Modo local"}
+          {configured ? "Cuentas activas" : "Solo en este dispositivo"}
         </Badge>
       </div>
 
@@ -382,8 +390,8 @@ export function AccountWorkspace() {
         <div className="notice-banner">
           <Cloud size={17} />
           <span>
-            Configura Supabase para activar cuentas, sincronización y pagos. Las fichas,
-            calculadoras y metrados locales siguen funcionando.
+            Las cuentas y el respaldo en la nube aún no están activos en esta instalación. Todo lo
+            que hagas se guarda en este dispositivo y sigue funcionando.
           </span>
         </div>
       )}
@@ -494,7 +502,7 @@ export function AccountWorkspace() {
           </Button>
           <p className="legal">
             Se guardan en este dispositivo y aparecen en tus propuestas de honorarios. Con una
-            sesión de Supabase también se sincronizan con tu cuenta.
+            cuenta también se respaldan en la nube.
           </p>
         </Card>
 
@@ -700,7 +708,7 @@ export function AccountWorkspace() {
           <div className="app-info">
             <span>Versión</span>
             <span className="mono">0.1.0</span>
-            <span>Seed</span>
+            <span>Catálogo</span>
             <span className="mono">v{SEED_VERSION}</span>
           </div>
           {installPrompt && (
@@ -714,7 +722,6 @@ export function AccountWorkspace() {
         </Card>
       </section>
 
-      {notice && <p className="warning account-notice">{notice}</p>}
       <p className="legal">
         Valores referenciales según la edición indicada del RNE. Verifica la versión vigente
         publicada por el MVCS antes de usar en expedientes.

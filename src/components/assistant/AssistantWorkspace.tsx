@@ -50,7 +50,7 @@ export function AssistantWorkspace() {
 
   return (
     <div className="assistant-page">
-      <div className="eyebrow">ASISTENTE / RAG ESTRICTO</div>
+      <div className="eyebrow">ASISTENTE RNE</div>
       <div className="page-heading-row">
         <div>
           <h1 className="page-title">Consulta el RNE</h1>
@@ -58,7 +58,7 @@ export function AssistantWorkspace() {
             Respuestas ancladas a fichas recuperadas. Cada cita abre su fuente.
           </p>
         </div>
-        <div className="assistant-status mono">{online ? "ONLINE / LOCAL" : "OFFLINE"}</div>
+        <div className="assistant-status mono">{online ? "EN LÍNEA" : "SIN CONEXIÓN"}</div>
       </div>
       <div className="assistant-layout">
         <Card className="chat-card">
@@ -115,17 +115,18 @@ export function AssistantWorkspace() {
             </button>
           )}
           <p className="legal chat-disclaimer">
-            Respuesta extractiva o generativa limitada al contexto recuperado. Verifica siempre la
+            Las respuestas se limitan a las fichas del RNE cargadas en TRAZZO. Verifica siempre la
             versión vigente del MVCS.
           </p>
         </Card>
         <aside className="assistant-sidebar">
           <AssistantQuota />
           <Card>
-            <div className="eyebrow">MODO LOCAL</div>
-            <h3>Siempre hay una salida</h3>
+            <div className="eyebrow">CÓMO RESPONDE</div>
+            <h3>Solo con el RNE</h3>
             <p className="muted small">
-              Sin API keys, TRAZZO recupera el seed y arma una respuesta extractiva con citas.
+              Cada respuesta se arma con las fichas del RNE cargadas en TRAZZO y cita su fuente. Si
+              el dato no está, lo dice.
             </p>
           </Card>
           <SuggestedPrompts onSelect={choosePrompt} />

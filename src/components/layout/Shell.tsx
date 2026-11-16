@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import type { ReactNode } from "react";
+import { FeedbackHost } from "@/components/ui/Feedback";
 import { AppBootstrap } from "./AppBootstrap";
 import { BottomNav } from "./BottomNav";
 import { Header } from "./Header";
@@ -16,6 +17,7 @@ export function Shell({ children }: { children: ReactNode }) {
         <main className="page-content">{children}</main>
       </div>
       <BottomNav />
+      <FeedbackHost />
     </div>
   );
 }

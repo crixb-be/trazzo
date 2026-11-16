@@ -261,6 +261,7 @@ Orden propuesto por valor para el usuario frente a esfuerzo.
 - [x] Bloque 1.2: sincronización real (envío con columnas correctas, cola que conserva fallos, descarga de proyectos, partidas y cotizaciones, mensajes honestos) — commit `bdebc49`.
 - [x] Bloque 1.3: toda la app abre sin conexión (precarga de rutas, respaldo /~offline, un solo registro del service worker) — commit `c87d5eb`.
 - [x] Bloque 1.4: errores puntuales (PDF de metrados, lámina de agua, unidades de parámetros, precio del acero, cancelar edición, textos dañados). T-08 pasa al bloque 1.5 — commit `02ddf68`.
+- [x] Bloque 1.5: pagos fiables, cupo diario del asistente (migración 005), verificación real de estudiante. **Requiere aplicar las migraciones 004 y 005 en Supabase** — commit `1511f00`.
 
 ### En curso o a medias
 
@@ -277,6 +278,6 @@ Orden propuesto por valor para el usuario frente a esfuerzo.
 
 1. Trabaja en la rama `claude/wonderful-noether-6eoymr` del repo `crixb-be/trazzo`. Ejecuta `npm ci`.
 2. Comprueba el punto de partida: `npm run typecheck && npm run lint && npm test` deben pasar (156 pruebas al cierre de la auditoría).
-3. Siguiente paso: ejecutar el **bloque 1.5** de la sección 6 (pagos, cupo diario del asistente y verificación real de estudiante).
+3. Siguiente paso: ejecutar el **bloque 1.6** de la sección 6 (base móvil: controles de 44 px, letra mínima, foco visible, barra inferior de 5 destinos, diálogo y avisos propios, lenguaje sin jerga).
 4. Si el usuario no ha aprobado, no modifiques código: pide la aprobación y las respuestas de la sección 7.
 5. Tras cada bloque: verifica, haz commit y push, y actualiza esta sección con el hash del commit y, si algo queda a medias, el archivo y la línea exactos.

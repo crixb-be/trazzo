@@ -3,7 +3,8 @@
 import { Copy, Plus, Trash2 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Button, Card, PaywallModal } from "@/components/ui";
+import { Button, Card, confirmDialog, PaywallModal } from "@/components/ui";
+import { ProjectsSwitch } from "@/components/layout/ProjectsSwitch";
 import {
   calculateFeeQuote,
   createDefaultFeeInput,
@@ -198,7 +199,14 @@ export function FeeQuoteWorkspace() {
     setNotice("Cotización duplicada.");
   };
   const remove = async (): Promise<void> => {
-    if (!activeQuote || !window.confirm("¿Eliminar " + activeQuote.code + "?")) return;
+    if (!activeQuote) return;
+    const confirmed = await confirmDialog({
+      title: "¿Eliminar " + activeQuote.code + "?",
+      message: "La cotización se borrará de este dispositivo y de tu cuenta.",
+      confirmLabel: "Eliminar",
+      danger: true,
+    });
+    if (!confirmed) return;
     await deleteFeeQuote(activeQuote.id);
     newQuote();
     setNotice("Cotización eliminada.");
@@ -217,6 +225,7 @@ export function FeeQuoteWorkspace() {
 
   return (
     <div className="fees-page">
+      <ProjectsSwitch />
       <div className="page-heading-row">
         <div>
           <div className="eyebrow">PROYECTOS / HONORARIOS</div>

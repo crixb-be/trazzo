@@ -199,7 +199,7 @@ export function HomeDashboard() {
         <span className="mono muted">
           {sync.lastSync
             ? "Última sync " + new Date(sync.lastSync).toLocaleString("es-PE")
-            : "Seed local listo"}
+            : "Catálogo guardado en el dispositivo"}
         </span>
         <Link href="/cuenta">Ver estado</Link>
       </div>

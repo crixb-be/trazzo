@@ -5,7 +5,8 @@ import { jsPDF } from "jspdf";
 import { autoTable } from "jspdf-autotable";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { Button, Card, EmptyState, PaywallModal } from "@/components/ui";
+import { Button, Card, confirmDialog, EmptyState, PaywallModal, toast } from "@/components/ui";
+import { ProjectsSwitch } from "@/components/layout/ProjectsSwitch";
 import { MATERIALS } from "@/data/seed-rne";
 import { computeProjectTotals, computeTakeoffLine } from "@/lib/calculators/takeoff";
 import { type Project, type Takeoff } from "@/lib/offline/db";
@@ -100,7 +101,13 @@ export function MetradosWorkspace() {
   }
 
   async function removeProject(project: Project): Promise<void> {
-    if (!window.confirm("¿Eliminar " + project.name + " y todas sus partidas?")) return;
+    const confirmed = await confirmDialog({
+      title: "¿Eliminar " + project.name + "?",
+      message: "Se borrarán el proyecto y todas sus partidas. No se puede deshacer.",
+      confirmLabel: "Eliminar",
+      danger: true,
+    });
+    if (!confirmed) return;
 
     await deleteProject(project.id);
     setSelectedId(null);
@@ -172,7 +179,12 @@ export function MetradosWorkspace() {
   }
 
   async function removeTakeoff(takeoff: Takeoff): Promise<void> {
-    if (!window.confirm("¿Eliminar la partida " + takeoff.partName + "?")) return;
+    const confirmed = await confirmDialog({
+      title: "¿Eliminar la partida " + takeoff.partName + "?",
+      confirmLabel: "Eliminar",
+      danger: true,
+    });
+    if (!confirmed) return;
 
     await deleteTakeoff(takeoff.id);
   }
@@ -279,11 +291,12 @@ export function MetradosWorkspace() {
   }
 
   async function syncNow(): Promise<void> {
-    setNotice(describeSyncResult(await runSync()));
+    toast(describeSyncResult(await runSync()));
   }
 
   return (
     <div className="metrados-page">
+      <ProjectsSwitch />
       <div className="eyebrow">PROYECTOS / METRADOS</div>
       <div className="page-heading-row">
         <div>
