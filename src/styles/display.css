@@ -1,0 +1,124 @@
+/* Modo obra, tamaño de letra y estados de carga y vacíos. */
+html.obra body {
+  font-weight: 500;
+}
+html.obra .card,
+html.obra .input,
+html.obra .select,
+html.obra .btn,
+html.obra .chip {
+  border-width: 2px;
+}
+html.obra .muted,
+html.obra .eyebrow {
+  font-weight: 600;
+}
+html.obra .bottom-nav,
+html.obra .header,
+html.obra .calculator-result-bar {
+  border-color: var(--border);
+  box-shadow: none;
+}
+
+.display-settings {
+  display: grid;
+  gap: var(--space-4);
+}
+.display-settings fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.display-settings legend {
+  padding: 0;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+.display-settings p {
+  margin: 6px 0 0;
+}
+.display-sample {
+  font-size: var(--text-md);
+}
+.segmented {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+.segmented button {
+  min-height: var(--touch-min);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  padding: 6px 8px;
+}
+.segmented button.active {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 700;
+}
+
+.empty-state-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 12px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--border);
+  border-radius: 50%;
+  color: var(--accent);
+}
+.empty-state h2 {
+  margin: 0 0 6px;
+}
+.empty-state p {
+  margin: 0 auto;
+  max-width: 34ch;
+}
+.empty-state-action {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+.loading-state {
+  display: grid;
+  gap: var(--space-3);
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+.loading-state p {
+  margin: 0;
+}
+.skeleton {
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--border) 37%, var(--surface-2) 63%);
+  background-size: 400% 100%;
+  animation: skeleton-sweep 1.4s ease infinite;
+}
+.skeleton-title {
+  height: 22px;
+  width: 55%;
+}
+.skeleton-row {
+  height: 44px;
+}
+@keyframes skeleton-sweep {
+  from {
+    background-position: 100% 50%;
+  }
+  to {
+    background-position: 0 50%;
+  }
+}

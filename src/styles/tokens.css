@@ -10,13 +10,17 @@
   --danger: #e26d5a;
   --ok: #6fbf8e;
   --highlight: #22d3ee;
+  --on-accent: #151515;
+
+  /* Multiplica toda la letra; lo cambia «Tamaño de letra» en Cuenta. */
+  --font-scale: 1;
 
   /* Tamaño: el mínimo táctil y la escala de letra. */
   --touch-min: 44px;
-  --text-xs: 12px;
-  --text-sm: 13px;
-  --text-md: 14px;
-  --text-field: 16px;
+  --text-xs: calc(12px * var(--font-scale));
+  --text-sm: calc(13px * var(--font-scale));
+  --text-md: calc(14px * var(--font-scale));
+  --text-field: calc(16px * var(--font-scale));
 
   /* Espacio entre elementos. */
   --space-1: 4px;
@@ -42,4 +46,26 @@ html:not(.dark) {
   --danger: #c2410c;
   --ok: #15803d;
   --highlight: #0891b2;
+}
+
+/* Modo obra: contraste máximo para leer a pleno sol. Negro sobre blanco,
+   bordes negros y un acento oscuro que supera 7:1 sobre el fondo. */
+html.obra {
+  --bg: #fff;
+  --surface: #fff;
+  --surface-2: #ededed;
+  --border: #111;
+  --text: #000;
+  --muted: #2b2b2b;
+  --accent: #7a3d00;
+  --danger: #a30000;
+  --ok: #00591f;
+  --highlight: #004f63;
+  --on-accent: #fff;
+}
+html[data-text="grande"] {
+  --font-scale: 1.15;
+}
+html[data-text="muy-grande"] {
+  --font-scale: 1.3;
 }

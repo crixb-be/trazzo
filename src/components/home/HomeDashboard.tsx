@@ -131,6 +131,7 @@ export function HomeDashboard() {
           </div>
           {activeProjects.length === 0 ? (
             <EmptyState
+              icon={<FolderOpen size={22} />}
               title="Aún no hay proyectos"
               description="Crea un proyecto de metrados. Se guarda primero en este dispositivo."
               action={

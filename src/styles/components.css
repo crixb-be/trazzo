@@ -237,7 +237,7 @@
 }
 .detail-copy > .page-title,
 .detail-copy > h1 {
-  font-size: 32px;
+  font-size: calc(32px * var(--font-scale));
   font-weight: 650;
   letter-spacing: -0.045em;
   line-height: 1.08;
@@ -270,7 +270,7 @@
   padding: 2px 0 0;
 }
 .detail-summary {
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale));
   line-height: 1.6;
   margin: 20px 0 10px;
 }
@@ -658,7 +658,7 @@
   padding: 13px 15px;
 }
 .plan-name {
-  font-size: 18px;
+  font-size: calc(18px * var(--font-scale));
   font-weight: 650;
 }
 .app-info {
@@ -790,7 +790,7 @@
   text-align: right;
 }
 .project-total strong {
-  font-size: 22px;
+  font-size: calc(22px * var(--font-scale));
   color: var(--accent);
 }
 .project-dialog {

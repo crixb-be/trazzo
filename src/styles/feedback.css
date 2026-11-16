@@ -81,7 +81,7 @@
 }
 .confirm-modal h2 {
   margin: 0 0 8px;
-  font-size: 18px;
+  font-size: calc(18px * var(--font-scale));
 }
 .confirm-actions {
   display: flex;

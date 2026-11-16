@@ -1,9 +1,10 @@
 import { Suspense } from "react";
 import { MetradosWorkspace } from "@/components/metrados/MetradosWorkspace";
+import { LoadingState } from "@/components/ui/LoadingState";
 
 export default function MetradosPage() {
   return (
-    <Suspense fallback={<div className="state-panel">Cargando metrados…</div>}>
+    <Suspense fallback={<LoadingState label="Cargando metrados…" />}>
       <MetradosWorkspace />
     </Suspense>
   );

@@ -103,6 +103,7 @@ export function ProjectList({
       </div>
       {projects.length === 0 ? (
         <EmptyState
+          icon={<FolderOpen size={22} />}
           title="Sin proyectos"
           description="Crea uno para empezar a ordenar partidas."
           action={

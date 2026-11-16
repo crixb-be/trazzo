@@ -38,7 +38,7 @@
 .proposal-signatures-intro {
   margin: 34px 0 0;
   color: #6b6d75;
-  font-size: 10px;
+  font-size: calc(10px * var(--font-scale));
 }
 .proposal-content-sheet .proposal-signatures {
   margin-top: 6px;
@@ -60,7 +60,7 @@
 }
 .proposal-signature strong {
   color: var(--proposal-primary, #13294b);
-  font-size: 8.5px;
+  font-size: calc(8.5px * var(--font-scale));
   letter-spacing: 0.12em;
 }
 .proposal-signature span {
@@ -69,7 +69,7 @@
   line-height: 1.35;
 }
 .proposal-signature small {
-  font-size: 10px;
+  font-size: calc(10px * var(--font-scale));
   line-height: 1.4;
 }
 /*
@@ -132,7 +132,7 @@
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
-    font-size: 15px;
+    font-size: calc(15px * var(--font-scale));
   }
   .header-actions {
     flex: none;
@@ -147,7 +147,7 @@
   }
   .detail-copy > .page-title,
   .detail-copy > h1 {
-    font-size: 26px;
+    font-size: calc(26px * var(--font-scale));
   }
   .fees-layout {
     grid-template-columns: minmax(0, 1fr);

@@ -14,7 +14,16 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
-import { Badge, BillingToggle, Button, Card, confirmDialog, Input, toast } from "@/components/ui";
+import {
+  Badge,
+  BillingToggle,
+  Button,
+  Card,
+  confirmDialog,
+  DisplaySettings,
+  Input,
+  toast,
+} from "@/components/ui";
 import { SEED_VERSION } from "@/data/seed-rne";
 import { db } from "@/lib/offline/db";
 import { getStudioProfile, saveStudioProfile } from "@/lib/offline/profile";
@@ -609,6 +618,11 @@ export function AccountWorkspace() {
             <span style={{ background: brandSecondary }} />
             <strong>{studioName || "TRAZZO"}</strong>
           </div>
+        </Card>
+        <Card>
+          <div className="eyebrow">PANTALLA</div>
+          <h2>Tema y tamaño de letra</h2>
+          <DisplaySettings />
         </Card>
         <Card>
           <div className="eyebrow">SINCRONIZACIÓN</div>

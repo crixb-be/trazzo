@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Edit3, Plus, Save, Trash2, X } from "lucide-react";
-import { Button, Card, Input, NumberField } from "@/components/ui";
+import { Button, Card, Input, LoadingState, NumberField } from "@/components/ui";
 import type { Material } from "@/data/seed-rne";
 import type { Takeoff } from "@/lib/offline/db";
 import { computeTakeoffLine } from "@/lib/calculators/takeoff";
@@ -82,7 +82,7 @@ export function TakeoffTable({
         )}
       </div>
       {materials.length === 0 ? (
-        <p className="muted">Cargando catálogo de materiales…</p>
+        <LoadingState label="Cargando catálogo de materiales…" rows={2} />
       ) : (
         <>
           <label>

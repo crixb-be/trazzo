@@ -329,6 +329,7 @@ export function MetradosWorkspace() {
         <main className="takeoff-main">
           {!activeProject ? (
             <EmptyState
+              icon={<FileText size={22} />}
               title="Selecciona o crea un proyecto"
               description="El plan Gratis incluye un proyecto local."
             />

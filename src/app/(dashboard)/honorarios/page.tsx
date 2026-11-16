@@ -1,9 +1,10 @@
 import { Suspense } from "react";
 import { FeeQuoteWorkspace } from "@/components/fees/FeeQuoteWorkspace";
+import { LoadingState } from "@/components/ui/LoadingState";
 
 export default function HonorariosPage() {
   return (
-    <Suspense fallback={<div className="state-panel">Cargando honorarios?</div>}>
+    <Suspense fallback={<LoadingState label="Cargando honorarios…" />}>
       <FeeQuoteWorkspace />
     </Suspense>
   );
