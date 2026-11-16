@@ -17,6 +17,7 @@ const categories: Array<{ name: RneCategory; label: string }> = [
 ];
 
 const calculators = [
+  { title: "Medidas de bolsillo", detail: "Mobiliario y ambientes", href: "/medidas" },
   { title: "Matriz de relaciones", detail: "Programa arquitectónico", href: "/matriz" },
   { title: "Escaleras", detail: "2cp + p", href: "/calculadoras?tab=escaleras" },
   { title: "Rampas", detail: "Pendientes A.120", href: "/calculadoras?tab=rampas" },

@@ -9,6 +9,7 @@ const APP_ROUTES = [
   "/normativa",
   "/calculadoras",
   "/matriz",
+  "/medidas",
   "/metrados",
   "/honorarios",
   "/asistente",

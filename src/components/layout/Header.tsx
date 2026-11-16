@@ -8,6 +8,7 @@ import { GlobalSearch, OfflineBadge, ThemeToggle } from "@/components/ui";
 import { useStudioProfile } from "@/lib/offline/hooks";
 
 const titles: Record<string, string> = {
+  "/medidas": "Medidas de bolsillo",
   "/": "Espacio de trabajo",
   "/normativa": "Biblioteca RNE",
   "/matriz": "Matriz de relaciones",
