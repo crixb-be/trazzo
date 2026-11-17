@@ -1,7 +1,9 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   fetchPayment,
+  isDuplicatePaymentEvent,
   parseExternalReference,
+  paymentLedgerId,
   verifyMercadoPagoSignature,
 } from "@/lib/payments/mercadopago";
 import { parseCulqiEvent, verifyCulqiSignature } from "@/lib/payments/culqi";
@@ -132,14 +134,22 @@ export async function POST(request: Request): Promise<Response> {
 
   // One ledger row per payment and status: a payment that is first notified as
   // "pending" must still be processed when it is later notified as "approved".
-  const ledgerId = eventId + ":" + (status || "unknown");
-  const { data: previousEvent } = await admin
-    .from("payment_events")
-    .select("id")
-    .eq("id", ledgerId)
-    .maybeSingle();
-  if (previousEvent) {
-    return Response.json({ received: true, idempotent: true });
+  const ledgerId = paymentLedgerId(eventId, status);
+
+  // Claim the event before changing the profile. The primary key makes two
+  // concurrent provider retries safe; only the winner can renew the plan.
+  const { error: claimError } = await admin.from("payment_events").insert({
+    id: ledgerId,
+    provider,
+    payload,
+    processed_at: new Date().toISOString(),
+  });
+  if (claimError) {
+    if (isDuplicatePaymentEvent(claimError)) {
+      return Response.json({ received: true, idempotent: true });
+    }
+    console.error("No se pudo registrar el evento de pago", claimError);
+    return Response.json({ error: "No se pudo registrar el evento." }, { status: 500 });
   }
 
   if (approved && userId && plan) {
@@ -147,17 +157,11 @@ export async function POST(request: Request): Promise<Response> {
       await applyPlan(admin, userId, plan, cycle);
     } catch (error) {
       // Not recorded as processed: a non-200 makes the provider send it again.
+      await admin.from("payment_events").delete().eq("id", ledgerId);
       console.error("No se pudo aplicar el plan pagado", error);
       return Response.json({ error: "No se pudo aplicar el plan." }, { status: 500 });
     }
   }
-
-  await admin.from("payment_events").insert({
-    id: ledgerId,
-    provider,
-    payload,
-    processed_at: new Date().toISOString(),
-  });
 
   return Response.json({ received: true });
 }

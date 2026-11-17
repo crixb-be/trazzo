@@ -41,6 +41,13 @@ import {
 } from "@/lib/plans/plans";
 import { invalidatePlanSnapshot } from "@/lib/plans/plan-store";
 import { useCurrentPlan } from "@/lib/plans/use-current-plan";
+import { detectNativePlatform } from "@/lib/native/platform";
+import { billingViewState } from "@/lib/payments/billing-view";
+import {
+  DEMO_PAYMENT_MESSAGE,
+  type PaymentProvider,
+  type PaymentProviderAvailability,
+} from "@/lib/payments/providers";
 import { createClient } from "@/lib/supabase/client";
 import { prepareAvatar } from "@/lib/ui/avatar";
 import { prepareLogo } from "@/lib/ui/logo";
@@ -60,7 +67,12 @@ const features: Record<Plan, string[]> = {
     "50 consultas al asistente por día",
     "PDF limpio",
   ],
-  pro: ["Fichas Pro", "Proyectos ilimitados", "Asistente ilimitado", "PDF limpio"],
+  pro: [
+    "Fichas verificadas avanzadas",
+    "Proyectos ilimitados",
+    "Consultas IA ilimitadas",
+    "Exportación completa",
+  ],
 };
 
 function initials(source: string): string {
@@ -93,6 +105,11 @@ export function AccountWorkspace() {
   const galleryInputRef = useRef<HTMLInputElement>(null);
   const filesInputRef = useRef<HTMLInputElement>(null);
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
+  const [nativePlatform, setNativePlatform] = useState<boolean | null>(null);
+  const [paymentProviders, setPaymentProviders] = useState<PaymentProviderAvailability>({
+    mercadopago: false,
+    culqi: false,
+  });
   const [document, setDocument] = useState<File | null>(null);
   // Notices float above the page: this screen is long and a message at the end went unseen.
   const setNotice = (message: string): void => toast(message);
@@ -109,6 +126,18 @@ export function AccountWorkspace() {
       setLogoDataUrl(profile.logoDataUrl);
       setAvatarDataUrl(profile.avatarDataUrl);
     });
+  }, []);
+
+  useEffect(() => {
+    setNativePlatform(detectNativePlatform());
+    void fetch("/api/payments/config")
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: { providers?: PaymentProviderAvailability } | null) => {
+        if (data?.providers) setPaymentProviders(data.providers);
+      })
+      .catch(() => {
+        // Missing backend configuration is an expected demo state.
+      });
   }, []);
 
   useEffect(() => {
@@ -285,16 +314,21 @@ export function AccountWorkspace() {
     setNotice("Logo quitado.");
   }
 
-  async function choosePlan(plan: Plan): Promise<void> {
+  async function choosePlan(plan: Plan, provider: PaymentProvider): Promise<void> {
     if (plan === "free") return;
+    if (nativePlatform) return;
+    if (!paymentProviders[provider]) {
+      setNotice(DEMO_PAYMENT_MESSAGE);
+      return;
+    }
     if (!configured) {
-      setNotice("Los pagos aún no están activos en esta instalación.");
+      setNotice("Pasarela en modo demo / sin configurar");
       return;
     }
     const response = await fetch("/api/payments/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan, cycle: billingCycle }),
+      body: JSON.stringify({ plan, cycle: billingCycle, provider }),
     });
     const data = (await response.json()) as { init_point?: string; error?: string };
     if (!response.ok || !data.init_point) {
@@ -638,6 +672,26 @@ export function AccountWorkspace() {
       <section className="account-section">
         <div className="eyebrow">PLANES</div>
         <BillingToggle value={billingCycle} onChange={setBillingCycle} />
+        {nativePlatform !== null && (
+          <div className="payment-mode-banner" role="status">
+            {nativePlatform ? (
+              <>
+                <strong>App nativa: compras desactivadas</strong>
+                <span>
+                  Tu estado de cuenta se sincroniza automáticamente al iniciar sesión. Plan actual:{" "}
+                  <strong>{billingViewState(true, currentPlan, paymentProviders).currentPlanLabel}</strong>.
+                </span>
+              </>
+            ) : (
+              <>
+                <strong>Checkout web</strong>
+                <span>
+                  {billingViewState(false, currentPlan, paymentProviders).message}
+                </span>
+              </>
+            )}
+          </div>
+        )}
         <div className="plan-grid">
           {(Object.entries(PLANS) as Array<[Plan, (typeof PLANS)[Plan]]>).map(
             ([plan, definition]) => (
@@ -663,13 +717,30 @@ export function AccountWorkspace() {
                     </li>
                   ))}
                 </ul>
-                <Button
-                  variant={plan === "pro" ? "primary" : "secondary"}
-                  onClick={() => void choosePlan(plan)}
-                  disabled={currentPlan === plan}
-                >
-                  {currentPlan === plan ? "Activo" : "Elegir " + definition.label}
-                </Button>
+                {plan === "free" ? (
+                  <Button variant="secondary" disabled>
+                    {currentPlan === plan ? "Plan actual" : "Incluido"}
+                  </Button>
+                ) : (
+                  nativePlatform === false && (
+                    <div className="plan-actions">
+                      <Button
+                        variant={plan === "pro" ? "primary" : "secondary"}
+                        onClick={() => void choosePlan(plan, "mercadopago")}
+                        disabled={currentPlan === plan}
+                      >
+                        {currentPlan === plan ? "Activo" : "Mercado Pago"}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        onClick={() => void choosePlan(plan, "culqi")}
+                        disabled={currentPlan === plan}
+                      >
+                        Culqi
+                      </Button>
+                    </div>
+                  )
+                )}
               </Card>
             ),
           )}

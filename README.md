@@ -129,7 +129,7 @@ Permisos que debes declarar después de `cap add`:
 - **Identidad:** `appId` es `pe.trazzo.app`. Confírmalo antes del primer envío: no se puede cambiar después.
 - **Íconos y pantalla de inicio:** genera los recursos nativos con `npx @capacitor/assets generate` a partir de un ícono de 1024 px y una imagen de inicio. Los de `public/icons` son para la web.
 - **Versión:** sube `versionCode` / `versionName` (Android) y `CFBundleVersion` / `CFBundleShortVersionString` (iOS) en cada envío.
-- **Pagos:** hoy los planes se cobran con Mercado Pago en la web. Apple y Google exigen su propio sistema de compras para suscripciones digitales dentro de la app. Opciones: ocultar la compra en la app nativa y vender solo en la web, o integrar las compras de cada tienda. Sin resolverlo, es probable que rechacen la app.
+- **Pagos:** en web/PWA se muestran Mercado Pago y Culqi según su configuración. Dentro de Capacitor se ocultan los checkouts externos: el plan se sincroniza automáticamente al iniciar sesión y se muestra Free/Pro. Apple y Google exigen su propio sistema de compras para suscripciones digitales dentro de la app; esta versión aplica la estrategia «Web Checkout + App Nativa sincronizada».
 - **App Store, contenido mínimo:** Apple rechaza apps que son solo un sitio web empaquetado. Ayuda destacar lo que funciona sin conexión y la cámara; aun así, el resultado de la revisión no está garantizado.
 - **Privacidad:** publica una política de privacidad con URL pública y declara los datos que se recogen (correo de la cuenta, datos de proyectos sincronizados, documento de verificación de estudiante). Ambas tiendas piden también una forma de eliminar la cuenta.
 - **Pruebas en dispositivo:** instala en un teléfono real y comprueba inicio de sesión, modo sin conexión tras la primera carga, cámara, compartir imagen/PDF y la copia de seguridad.
@@ -138,12 +138,12 @@ Estado: la configuración se validó con `npx cap add android` y `npx cap sync` 
 
 ## Pagos
 
-Configura Mercado Pago y registra:
+Configura Mercado Pago/Culqi y registra:
 
 - https://tu-dominio.example/api/webhooks/payments?provider=mercadopago
 - https://tu-dominio.example/api/webhooks/payments?provider=culqi
 
-El checkout crea una preferencia con external_reference en formato userId:plan. El webhook valida la firma, evita duplicados mediante payment_events y activa treinta días. El plan Estudiante se activa solo después de verificar la condición estudiantil.
+El checkout crea una preferencia con `external_reference` en formato `userId:plan:cycle`. Si faltan variables, la interfaz indica «Pasarela en modo demo / sin configurar» sin romper la app. El webhook valida la firma, reclama el evento de forma atómica mediante `payment_events` antes de aplicar el plan y borra la reclamación si falla la actualización, para que el proveedor reintente. El plan Estudiante se activa solo después de verificar la condición estudiantil.
 
 ## Aviso normativo
 

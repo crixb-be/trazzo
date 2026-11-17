@@ -1,7 +1,14 @@
 import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { parseExternalReference, verifyMercadoPagoSignature } from "./mercadopago";
+import {
+  isDuplicatePaymentEvent,
+  parseExternalReference,
+  paymentLedgerId,
+  verifyMercadoPagoSignature,
+} from "./mercadopago";
 import { parseCulqiEvent, verifyCulqiSignature } from "./culqi";
+import { billingViewState } from "./billing-view";
+import { paymentProviderAvailability } from "./providers";
 
 describe("payment signatures", () => {
   it("verifies the Mercado Pago manifest", () => {
@@ -57,5 +64,26 @@ describe("payment signatures", () => {
     expect(event.userId).toBe("user-1");
     expect(event.plan).toBe("student");
     expect(event.cycle).toBe("annual");
+  });
+
+  it("builds an idempotency key per event and status", () => {
+    expect(paymentLedgerId("pay_1", "approved")).toBe("pay_1:approved");
+    expect(paymentLedgerId("pay_1", "")).toBe("pay_1:unknown");
+    expect(isDuplicatePaymentEvent({ code: "23505" })).toBe(true);
+    expect(isDuplicatePaymentEvent({ code: "42501" })).toBe(false);
+  });
+
+  it("shows native account sync and web checkout states", () => {
+    const unavailable = paymentProviderAvailability({});
+    expect(billingViewState(true, "pro", unavailable)).toMatchObject({
+      mode: "native",
+      showCheckout: false,
+      currentPlanLabel: "Pro",
+    });
+    expect(billingViewState(false, "free", unavailable)).toMatchObject({
+      mode: "web",
+      showCheckout: true,
+      message: "Pasarela en modo demo / sin configurar",
+    });
   });
 });

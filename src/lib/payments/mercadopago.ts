@@ -70,3 +70,13 @@ export function parseExternalReference(value: string | null | undefined): Extern
   if (!isBillingCycle(cycle)) return null;
   return { userId, plan, cycle };
 }
+
+/** The provider event id and status form the idempotency key in payment_events. */
+export function paymentLedgerId(eventId: string, status: string): string {
+  return eventId + ":" + (status || "unknown");
+}
+
+/** PostgREST exposes a unique-key conflict as PostgreSQL error 23505. */
+export function isDuplicatePaymentEvent(error: { code?: string } | null | undefined): boolean {
+  return error?.code === "23505";
+}

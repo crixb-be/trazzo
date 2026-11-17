@@ -1,15 +1,44 @@
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { planPrice, PLANS } from "@/lib/plans/plans";
+import { isPaymentProvider, paymentProviderAvailability } from "@/lib/payments/providers";
 
 export const runtime = "nodejs";
 
 const checkoutSchema = z.object({
   plan: z.enum(["student", "pro"]),
   cycle: z.enum(["monthly", "annual"]).default("monthly"),
+  provider: z.enum(["mercadopago", "culqi"]).default("mercadopago"),
 });
 
 export async function POST(request: Request): Promise<Response> {
+  let body: z.infer<typeof checkoutSchema>;
+
+  try {
+    body = checkoutSchema.parse(await request.json());
+  } catch {
+    return Response.json({ error: "Plan de checkout inválido." }, { status: 400 });
+  }
+
+  if (!isPaymentProvider(body.provider)) {
+    return Response.json({ error: "Proveedor de pago inválido." }, { status: 400 });
+  }
+
+  const availability = paymentProviderAvailability(process.env);
+  if (!availability[body.provider]) {
+    return Response.json(
+      { error: "Pasarela en modo demo / sin configurar", code: "payment_not_configured" },
+      { status: 503 },
+    );
+  }
+
+  if (body.provider === "culqi") {
+    return Response.json(
+      { error: "Culqi requiere completar la tokenización web antes de iniciar el checkout." },
+      { status: 501 },
+    );
+  }
+
   const supabase = await createClient();
 
   if (!supabase) {
@@ -25,14 +54,6 @@ export async function POST(request: Request): Promise<Response> {
 
   if (!user) {
     return Response.json({ error: "Debes iniciar sesión para suscribirte." }, { status: 401 });
-  }
-
-  let body: z.infer<typeof checkoutSchema>;
-
-  try {
-    body = checkoutSchema.parse(await request.json());
-  } catch {
-    return Response.json({ error: "Plan de checkout inválido." }, { status: 400 });
   }
 
   const token = process.env.MP_ACCESS_TOKEN;
