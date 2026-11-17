@@ -27,6 +27,8 @@ const cardRoutes = [...seed.matchAll(/^\s+slug: "([a-z0-9-]+)",$/gm)].map(
 
 const revision = process.env.VERCEL_GIT_COMMIT_SHA ?? randomUUID();
 
+// Vercel runs `next build` with NODE_ENV=production. Keeping Serwist disabled
+// in development avoids replacing the service worker while using `next dev`.
 const withSerwist = withSerwistInit({
   swSrc: "src/app/sw.ts",
   swDest: "public/sw.js",
@@ -49,5 +51,10 @@ const withSerwist = withSerwistInit({
 });
 
 /** @type {import('next').NextConfig} */
-const nextConfig = { reactStrictMode: true };
+const nextConfig = {
+  reactStrictMode: true,
+  // TRAZZO has API routes and a remote Capacitor shell; it must remain a
+  // server-rendered Next application, not a static export.
+  output: "standalone",
+};
 export default withSerwist(nextConfig);

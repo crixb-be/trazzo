@@ -67,6 +67,43 @@ Comandos de calidad:
 
 Copia las variables a .env.local. El repositorio no incluye secretos ni un archivo .env.
 
+## Despliegue en Vercel y Compilación Nativa
+
+TRAZZO se despliega como una aplicación Next.js con rutas API y service worker de Serwist. No uses `output: export`: Supabase, pagos y el asistente necesitan el runtime del servidor.
+
+### Vercel
+
+1. Instala dependencias y valida el proyecto localmente:
+
+       npm ci
+       npm run typecheck
+       npm run lint
+       npm test
+       npm run build
+
+2. Crea el proyecto en Vercel y configura, como mínimo, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` y `SUPABASE_SERVICE_ROLE_KEY` en **Settings → Environment Variables**. Añade las variables de pagos o IA solo si vas a activar esas funciones.
+
+3. Despliega con la CLI (o conecta el repositorio desde el panel):
+
+       npx vercel login
+       npx vercel link
+       npx vercel --prod
+
+El comando de build de Vercel es `npm run build`. `@serwist/next` genera `public/sw.js` durante ese build; no lo edites ni lo subas manualmente. Comprueba después `https://tu-proyecto.vercel.app/api/payments/config` y las rutas principales de la PWA.
+
+### Compilación nativa con Capacitor
+
+`capacitor.config.ts` lee `CAPACITOR_SERVER_URL` al ejecutar los comandos de Capacitor. Para cargar la aplicación publicada en Vercel:
+
+       export CAPACITOR_SERVER_URL="https://tu-proyecto.vercel.app"
+       npx cap add android
+       npx cap add ios
+       npx cap sync
+       npx cap open android
+       npx cap open ios
+
+En PowerShell usa `$env:CAPACITOR_SERVER_URL="https://tu-proyecto.vercel.app"`. La URL remota debe ser `https`; `http` solo se admite para `localhost`, `127.0.0.1` y `10.0.2.2` durante desarrollo. Si omites la variable, Capacitor conserva el fallback local de `capacitor/www` para la preparación inicial y la pantalla offline.
+
 ## Asistente RNE
 
 El asistente traduce primero el lenguaje cotidiano a términos del RNE ("baño de servicios" → servicios higiénicos, aparato sanitario; "medida" → ancho mínimo, altura libre, vano) y recupera hasta 6 fichas relacionadas. Con una clave de IA redacta una respuesta completa con respaldo técnico y citas que enlazan a cada ficha; sin clave responde en modo local con las fichas más relevantes.
