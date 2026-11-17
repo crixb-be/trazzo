@@ -12,6 +12,9 @@ import {
   type Relation,
   type RelationMatrix,
 } from "@/lib/matrix/relations";
+import { SaveToProject } from "@/components/ui/SaveToProject";
+import { ShareResult } from "@/components/ui/ShareResult";
+import { matrixResultSheet } from "@/lib/share/workspace-sheets";
 
 const kinds: Relation[] = ["necesaria", "deseable", "innecesaria"];
 const initial: RelationMatrix = {
@@ -77,6 +80,7 @@ export function MatrixWorkspace() {
 
   const nodes = diagramNodes(matrix.rooms);
   const ranking = rankRooms(matrix);
+  const sheet = matrixResultSheet(matrix, ranking);
   function addRoom(event: React.FormEvent) {
     event.preventDefault();
     const value = name.trim();
@@ -144,7 +148,7 @@ export function MatrixWorkspace() {
     }
   }
   return (
-    <div>
+    <div className="matrix-workspace">
       <h1 className="page-title">Matriz de relaciones</h1>
       <p>
         Organiza los ambientes y define qué espacios deben estar cerca. La ponderación orienta
@@ -288,6 +292,8 @@ export function MatrixWorkspace() {
         ))}
       </ol>
       <div className="hero-actions">
+        <ShareResult sheet={sheet} diagramScope=".matrix-workspace" />
+        <SaveToProject sheet={sheet} />
         <button className="btn" disabled={!ready} onClick={() => void exportMatrix("svg")}>
           Exportar imagen SVG
         </button>

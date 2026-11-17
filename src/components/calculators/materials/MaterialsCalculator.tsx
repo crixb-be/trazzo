@@ -15,6 +15,9 @@ import { computeMaterials, steelKg } from "@/lib/calculators/materials/quantitie
 import { useProjects } from "@/lib/offline/hooks";
 import { db } from "@/lib/offline/db";
 import { saveTakeoff } from "@/lib/offline/repositories";
+import { SaveToProject } from "@/components/ui/SaveToProject";
+import { ShareResult } from "@/components/ui/ShareResult";
+import { materialsResultSheet } from "@/lib/share/workspace-sheets";
 const fields: Record<string, [string, string]> = {
   area: ["Área neta", "m²"],
   volume: ["Volumen", "m³"],
@@ -67,6 +70,25 @@ export function MaterialsCalculator() {
   } catch (e) {
     error = (e as Error).message;
   }
+  const sheet =
+    !error && rows.length
+      ? materialsResultSheet({
+          modeLabel: MATERIAL_MODES[mode],
+          lines: rows.map((row) => {
+            const material = MATERIALS.find((item) => item.code === row.code)!;
+            return {
+              name: material.name,
+              quantity: row.quantity,
+              unit: material.unit,
+              pricePen: prices[row.code] ?? material.ref_price_pen,
+            };
+          }),
+          notes: [
+            `Rendimientos referenciales con fecha ${YIELD_DATE}.`,
+            "Los precios son editables y referenciales; confirma la cotización local.",
+          ],
+        })
+      : null;
   const signature = JSON.stringify([mode, p, project, prices]);
   async function send() {
     if (!db || error || !project || sending || sent === signature) return;
@@ -231,6 +253,12 @@ export function MaterialsCalculator() {
               Peso teórico de las varillas resultantes:{" "}
               {steelKg(p.diameter, p.barLength, rows[0].quantity).toFixed(2)} kg (ρ ≈ 7850 kg/m³).
             </p>
+          )}
+          {sheet && (
+            <div className="hero-actions" aria-label="Acciones del resultado de materiales">
+              <ShareResult sheet={sheet} />
+              <SaveToProject sheet={sheet} />
+            </div>
           )}
         </>
       )}

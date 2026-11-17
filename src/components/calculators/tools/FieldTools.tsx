@@ -4,6 +4,17 @@ import { NumberField } from "@/components/ui";
 import { UNITS, convertUnits, fractionInches, scalePlan, type Unit } from "@/lib/calculators/units";
 import { computeSlope } from "@/lib/calculators/slope";
 import { polygonArea } from "@/lib/calculators/area";
+import { SaveToProject } from "@/components/ui/SaveToProject";
+import { ShareResult } from "@/components/ui/ShareResult";
+import { fieldToolResultSheet } from "@/lib/share/workspace-sheets";
+
+const TOOL_LABELS: Record<string, string> = {
+  unidades: "Conversor de unidades",
+  pendiente: "Pendientes",
+  area: "Terreno irregular",
+  escala: "Escala de planos",
+};
+
 export function FieldTools() {
   const [tool, setTool] = useState("unidades");
   const [value, setValue] = useState(1);
@@ -44,6 +55,16 @@ export function FieldTools() {
   } catch (e) {
     error = (e as Error).message;
   }
+  const sheet =
+    !error && result
+      ? fieldToolResultSheet({
+          toolLabel: TOOL_LABELS[tool] ?? "Utilidad de campo",
+          result,
+          notes: [
+            "Resultado geométrico o de conversión; revisa unidades, escala y datos de campo antes de usarlo.",
+          ],
+        })
+      : null;
   return (
     <section>
       <h2>Utilidades de campo</h2>
@@ -181,6 +202,12 @@ export function FieldTools() {
       <div className="card" role="status">
         {error || result}
       </div>
+      {sheet && (
+        <div className="hero-actions" aria-label="Acciones del resultado de campo">
+          <ShareResult sheet={sheet} />
+          <SaveToProject sheet={sheet} />
+        </div>
+      )}
     </section>
   );
 }
