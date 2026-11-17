@@ -1,158 +1,93 @@
 "use client";
-
-import { useMemo, useState } from "react";
-import { Plus, Trash2, Waves } from "lucide-react";
-import { Button, Card, NumberField, Select } from "@/components/ui";
+import { useState } from "react";
+import { NumberField, Select } from "@/components/ui";
 import {
   multiFamilyDemand,
+  residentialDemand,
   officeDemand,
-  singleFamilyDemand,
-  type ApartmentDemand,
+  type Climate,
 } from "@/lib/calculators/water";
 import { CalculatorResult } from "./CalculatorResult";
-
-type WaterMode = "unifamiliar" | "multifamiliar" | "oficinas";
-
 export function WaterCalculator() {
-  const [mode, setMode] = useState<WaterMode>("unifamiliar");
-  const [area, setArea] = useState(200);
-  const [units, setUnits] = useState<ApartmentDemand[]>([{ bedrooms: 2, count: 1 }]);
-  const [officeArea, setOfficeArea] = useState(100);
-
-  const result = useMemo(() => {
-    if (mode === "unifamiliar") return singleFamilyDemand(area);
-    if (mode === "oficinas") return officeDemand(officeArea);
-    return multiFamilyDemand(units);
-  }, [area, mode, officeArea, units]);
-
-  function addUnit(): void {
-    setUnits((current) => [...current, { bedrooms: 1, count: 1 }]);
-  }
-
-  function updateUnit(index: number, next: ApartmentDemand): void {
-    setUnits((current) => current.map((unit, unitIndex) => (unitIndex === index ? next : unit)));
-  }
-
+  const [mode, setMode] = useState("multifamiliar"),
+    [bedrooms, setBedrooms] = useState(2),
+    [count, setCount] = useState(1),
+    [people, setPeople] = useState(3),
+    [climate, setClimate] = useState<Climate>("templado");
+  const r =
+    mode === "oficina"
+      ? officeDemand(people)
+      : mode === "poblacion"
+        ? residentialDemand(people, climate)
+        : multiFamilyDemand([{ bedrooms, count }], climate);
   return (
-    <div className="calculator-layout water-layout">
-      <Card className="calculator-inputs">
-        <div className="eyebrow">ENTRADA / IS.010</div>
-        <h2>Dotación de agua</h2>
+    <section>
+      <h2>Dotación por uso</h2>
+      <p>
+        Normativa peruana obligatoria · RM 0107-2025-VIVIENDA, IS.010 2.2.a; A.020 art. 7. Se
+        retiraron las tablas derogadas por área de lote y por departamento. Selecciona clima con el
+        mapa de SENAMHI. Para oficinas se aplica la tabla aportada de A.080 art.17 (20
+        L/persona/día), no la dotación residencial por clima.
+      </p>
+      <Select
+        label="Método de población"
+        value={mode}
+        onChange={(e) => setMode(e.target.value)}
+        options={[
+          { value: "multifamiliar", label: "Viviendas por dormitorios" },
+          { value: "oficina", label: "Oficinas · A.080 art.17 (20 L/persona/día)" },
+          { value: "poblacion", label: "Población sustentada del proyecto" },
+        ]}
+      />
+      {mode !== "oficina" && (
         <Select
-          label="Tipo de proyecto"
-          value={mode}
-          onChange={(event) => setMode(event.target.value as WaterMode)}
+          label="Carácter del clima"
+          value={climate}
+          onChange={(e) => setClimate(e.target.value as Climate)}
           options={[
-            { value: "unifamiliar", label: "Vivienda unifamiliar" },
-            { value: "multifamiliar", label: "Vivienda multifamiliar" },
-            { value: "oficinas", label: "Oficinas" },
+            { value: "calido", label: "Cálido · 169 L/persona/día" },
+            { value: "templado", label: "Templado · 155 L/persona/día" },
+            { value: "frio", label: "Frío, semifrígido, frígido o glaciar · 129 L/persona/día" },
           ]}
         />
-        {mode === "unifamiliar" && (
-          <NumberField
-            label="Área de lote"
-            unit="m²"
-            value={area}
-            min={0}
-            onValueChange={(value) => setArea(value ?? 0)}
-          />
-        )}
-        {mode === "oficinas" && (
-          <NumberField
-            label="Área útil"
-            unit="m²"
-            value={officeArea}
-            min={0}
-            onValueChange={(value) => setOfficeArea(value ?? 0)}
-          />
-        )}
-        {mode === "multifamiliar" && (
-          <div className="unit-rows">
-            {units.map((unit, index) => (
-              <div className="unit-row" key={index}>
-                <NumberField
-                  label="Dormitorios"
-                  value={unit.bedrooms}
-                  min={1}
-                  max={5}
-                  step={1}
-                  onValueChange={(value) => updateUnit(index, { ...unit, bedrooms: value ?? 1 })}
-                />
-                <NumberField
-                  label="Cantidad"
-                  unit="dptos."
-                  value={unit.count}
-                  min={1}
-                  step={1}
-                  onValueChange={(value) => updateUnit(index, { ...unit, count: value ?? 1 })}
-                />
-                <button
-                  className="icon-btn"
-                  type="button"
-                  onClick={() => setUnits((current) => current.filter((_, row) => row !== index))}
-                  aria-label="Eliminar tipo de departamento"
-                >
-                  <Trash2 size={15} />
-                </button>
-              </div>
-            ))}
-            <Button variant="ghost" size="sm" onClick={addUnit}>
-              <Plus size={14} /> Agregar tipo
-            </Button>
-          </div>
-        )}
-        <div className="input-note">
-          <Waves size={15} /> Cisterna = 3/4 de la dotación. Tanque = max(1/3, 1,000 L).
-        </div>
-      </Card>
-      <div className="calculator-visual">
-        <Card className="water-summary">
-          <div className="eyebrow">CAPACIDAD DIARIA</div>
-          <strong className="result-main mono">
-            {result.values.dailyLiters.toLocaleString("es-PE")} L/d
-          </strong>
-          <div className="water-capacity-grid">
-            <div>
-              <span className="muted small">Dotación</span>
-              <strong className="mono">{result.values.dailyM3.toFixed(2)} m³</strong>
-            </div>
-            <div>
-              <span className="muted small">Cisterna</span>
-              <strong className="mono">
-                {result.values.cisternLiters.toFixed(0)} L · {result.values.cisternM3.toFixed(2)} m³
-              </strong>
-            </div>
-            <div>
-              <span className="muted small">Tanque</span>
-              <strong className="mono">
-                {result.values.tankLiters.toFixed(0)} L · {result.values.tankM3.toFixed(2)} m³
-              </strong>
-            </div>
-          </div>
-        </Card>
-        <CalculatorResult
-          eyebrow="COMPROBACIONES / IS.010"
-          main={result.values.dailyLiters.toLocaleString("es-PE") + " L/d"}
-          details={
-            "Cisterna " +
-            result.values.cisternLiters.toFixed(0) +
-            " L · tanque " +
-            result.values.tankLiters.toFixed(0) +
-            " L"
-          }
-          checks={result.checks}
-          warnings={result.warnings}
-          copyText={
-            "TRAZZO · Agua IS.010\nDotación " +
-            result.values.dailyLiters +
-            " L/d\nCisterna " +
-            result.values.cisternLiters +
-            " L\nTanque " +
-            result.values.tankLiters +
-            " L"
-          }
+      )}
+      {mode === "poblacion" || mode === "oficina" ? (
+        <NumberField
+          label={mode === "oficina" ? "Empleados de oficina" : "Habitantes sustentados"}
+          value={people}
+          onValueChange={(v) => setPeople(v ?? 0)}
         />
-      </div>
-    </div>
+      ) : (
+        <>
+          <NumberField
+            label="Dormitorios por vivienda"
+            value={bedrooms}
+            onValueChange={(v) => setBedrooms(v ?? 0)}
+          />
+          <NumberField
+            label="Número de viviendas iguales"
+            value={count}
+            onValueChange={(v) => setCount(v ?? 0)}
+          />
+          <p>
+            A.020: 1/2/3 dormitorios → 2/3/4 personas; más de 3, incremento de una persona por
+            dormitorio solo para multifamiliar. Para vivienda colectiva corresponde una persona por
+            dormitorio; usa población sustentada.
+          </p>
+        </>
+      )}
+      <CalculatorResult
+        eyebrow={mode === "oficina" ? "A.080 · art.17" : "IS.010 · 2.2.a · 2025"}
+        main={r.ok ? r.values.dailyLiters + " L/d" : "Entrada no válida"}
+        details={r.values.people + " personas · " + r.values.dailyM3.toFixed(3) + " m³/d"}
+        checks={r.checks}
+        warnings={r.warnings}
+        copyText={
+          mode === "oficina"
+            ? `Oficinas: ${r.values.dailyLiters} L/d · A.080 art.17`
+            : `Dotación residencial: ${r.values.dailyLiters} L/d · ${climate} · RM 0107-2025-VIVIENDA`
+        }
+      />
+    </section>
   );
 }

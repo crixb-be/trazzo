@@ -58,7 +58,7 @@ export function StairStep({
       heightMeters={frameHeight}
       scale={scale}
       title="ESCALERA / 2cp+p"
-      normReference="A.010 · Cap. VI"
+      normReference="A.010-2021 · art.23.2"
       ariaLabel={`Sección de escalera con ${safeRisers} contrapasos de ${safeCp.toFixed(3)} m y pasos de ${safeTread.toFixed(2)} m`}
       notes={[
         `${safeRisers} CONTRAPASOS · ANCHO ${safeWidth.toFixed(2)} m`,

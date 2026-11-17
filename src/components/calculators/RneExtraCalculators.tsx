@@ -1,48 +1,50 @@
 "use client";
 import { useState } from "react";
-import Link from "next/link";
-import { NumberField } from "@/components/ui";
+import { NumberField, Select } from "@/components/ui";
 import { OCCUPANCY_USES, computeOccupancy } from "@/lib/calculators/occupancy";
-import { computeFixtures, type FixtureUse } from "@/lib/calculators/fixtures";
-import { computeDaylight } from "@/lib/calculators/daylight";
+import { fixtureSchedule, type FixtureUse } from "@/lib/calculators/fixtures";
 import { accessibleParking } from "@/lib/calculators/accessible-parking";
 import { CalculatorResult } from "./CalculatorResult";
 export type RneTool = "aforo" | "sanitarios" | "luz" | "parking";
 export function RneExtraCalculators({ tool }: { tool: RneTool }) {
-  const [use, setUse] = useState<keyof typeof OCCUPANCY_USES>("oficina");
-  const [area, setArea] = useState(95);
-  const [factor, setFactor] = useState(9.5);
-  const [fixtureUse, setFixtureUse] = useState<FixtureUse>("oficina");
-  const [men, setMen] = useState(10);
-  const [women, setWomen] = useState(10);
-  const [light, setLight] = useState(10);
-  const [vent, setVent] = useState(5);
-  const [glass, setGlass] = useState(2);
-  const [opening, setOpening] = useState(1);
-  const [parking, setParking] = useState(20);
+  const [area, setArea] = useState(95),
+    [use, setUse] = useState<keyof typeof OCCUPANCY_USES>("oficina"),
+    [fixtureUse, setFixtureUse] = useState<FixtureUse>("oficina"),
+    [people, setPeople] = useState(20),
+    [audience, setAudience] = useState<"empleados" | "publico">("empleados"),
+    [parking, setParking] = useState(20),
+    [opening, setOpening] = useState(5),
+    [office, setOffice] = useState(false);
   let main = "",
     details = "",
     error = "";
   try {
     if (tool === "aforo") {
-      main = computeOccupancy(area, factor) + " personas";
-      details = `${area} m² / ${factor} m² por persona · ${OCCUPANCY_USES[use].ref}`;
+      main = computeOccupancy(area, OCCUPANCY_USES[use].factor) + " personas";
+      details = `${OCCUPANCY_USES[use].factor} m²/persona · ${OCCUPANCY_USES[use].ref}. A.130 arts.20–21: calcular por uso y sumar pisos/áreas; mobiliario fijo según plazas.`;
     }
     if (tool === "sanitarios") {
-      const m = computeFixtures(men, fixtureUse),
-        w = computeFixtures(women, fixtureUse);
-      main = `${m.toilets + w.toilets} inodoros estimados`;
-      details = `Hombres: ${m.toilets} I, ${m.lavatories} L, ${m.urinals} U · Mujeres: ${w.toilets} I, ${w.lavatories} L. Poblaciones calculadas por separado.`;
-    }
-    if (tool === "luz") {
-      const r = computeDaylight(area, light, vent, glass, opening);
-      main = `${r.requiredGlazing.toFixed(2)} m² de iluminación`;
-      details = `Apertura efectiva requerida ${r.requiredOpening.toFixed(2)} m² · vidrio: ${r.lightPass ? "alcanza" : "insuficiente"} · ventilación: ${r.ventPass ? "alcanza" : "insuficiente"}`;
+      const r = fixtureSchedule(people, fixtureUse, audience);
+      const text = (x: typeof r.men) => `${x.toilets} I, ${x.lavatories} L, ${x.urinals} U`;
+      main = r.mixed.toilets ? "Servicio mixto: " + text(r.mixed) : `Hombres: ${text(r.men)}`;
+      details = r.mixed.toilets
+        ? "Dotación común de población total dentro del rango mixto de la tabla."
+        : "Mujeres: " + text(r.women);
+      details +=
+        " · A.080 art.15 / A.070 art.16.4–16.5. Personal y público se calculan independientemente. No incluye aparatos accesibles; aplicar A.120 a la distribución.";
     }
     if (tool === "parking") {
       main = accessibleParking(parking) + " plazas accesibles";
       details =
-        "Reserva referencial A.120: 1–20: 1; 21–50: 2; 51–400: 2 por cada 50 o fracción; más de 400: 16 + 1 por cada 100 adicionales o fracción.";
+        "A.120-2023 art.20: hasta 500, 4% redondeado hacia arriba; desde 501, las 20 plazas base + 1 por cada 100 adicionales o fracción. Art.23: individual 3.70×5.00 m; altura libre 2.10 m.";
+    }
+    if (tool === "luz") {
+      if (!Number.isFinite(area) || area <= 0 || !Number.isFinite(opening) || opening < 0)
+        throw new Error("Área positiva y abertura no negativa requeridas.");
+      const need = area * (office ? 0.1 : 0.05),
+        pass = office ? opening > need : opening >= need;
+      main = `${office ? ">" : "≥"} ${need.toFixed(2)} m² de apertura`;
+      details = `${pass ? "Alcanza" : "No alcanza"} · ${office ? "A.080 art.5: superior al 10%" : "A.010 art.38.2: no menor al 5%"}. A.010 art.36 no fija un 10% universal de vidrio: iluminación suficiente según uso; no se certifica iluminación con un porcentaje arbitrario.`;
     }
   } catch (e) {
     error = (e as Error).message;
@@ -56,143 +58,94 @@ export function RneExtraCalculators({ tool }: { tool: RneTool }) {
   return (
     <section>
       <h2>{titles[tool]}</h2>
-      <p className="warning">
-        Por verificar · referencias de anteproyecto, pendientes de contraste con el RNE vigente. No
-        certifican cumplimiento. Confirma norma específica, artículo, modificaciones y población
-        aplicable antes de usar en expediente.
+      <p>
+        Normativa peruana obligatoria · contraste con los PDFs del repositorio, 17/11/2026. Se
+        muestra el supuesto aplicable a cada tabla; no extrapolar a otros usos.
       </p>
       {tool === "aforo" && (
-        <>
-          <label>
-            Uso
-            <select
-              className="input"
-              value={use}
-              onChange={(e) => {
-                const u = e.target.value as typeof use;
-                setUse(u);
-                setFactor(OCCUPANCY_USES[u].factor);
-              }}
-            >
-              {Object.entries(OCCUPANCY_USES).map(([u, v]) => (
-                <option value={u} key={u}>
-                  {v.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <NumberField
-            label="Factor de ocupación (editable)"
-            unit="m²/persona"
-            value={factor}
-            onValueChange={(v) => setFactor(v ?? NaN)}
-          />
-          <p>
-            Usa área útil del ambiente indicado, sin mezclar usos. En asientos fijos cuenta las
-            plazas; suma aforos de ambientes independientes.
-          </p>
-        </>
+        <Select
+          label="Uso y ambiente"
+          value={use}
+          onChange={(e) => setUse(e.target.value as typeof use)}
+          options={Object.entries(OCCUPANCY_USES).map(([value, v]) => ({ value, label: v.label }))}
+        />
       )}
       {(tool === "aforo" || tool === "luz") && (
         <NumberField
           label="Área útil del ambiente"
           unit="m²"
           value={area}
-          onValueChange={(v) => setArea(v ?? NaN)}
+          onValueChange={(v) => setArea(v ?? 0)}
         />
       )}
       {tool === "sanitarios" && (
         <>
-          <label>
-            Uso
-            <select
-              className="input"
-              value={fixtureUse}
-              onChange={(e) => setFixtureUse(e.target.value as FixtureUse)}
-            >
-              {["oficina", "comercio", "restaurante"].map((u) => (
-                <option key={u}>{u}</option>
-              ))}
-            </select>
-          </label>
-          <div className="field-grid">
-            <NumberField
-              label="Población masculina"
-              value={men}
-              onValueChange={(v) => setMen(v ?? NaN)}
+          <Select
+            label="Uso sanitario"
+            value={fixtureUse}
+            onChange={(e) => setFixtureUse(e.target.value as FixtureUse)}
+            options={[
+              { value: "oficina", label: "Oficina · empleados" },
+              { value: "comercio", label: "Tienda independiente (A.070 16.4)" },
+              { value: "restaurante", label: "Restaurante o cafetería (A.070 16.5)" },
+            ]}
+          />
+          {fixtureUse !== "oficina" && (
+            <Select
+              label="Población servida"
+              value={audience}
+              onChange={(e) => setAudience(e.target.value as typeof audience)}
+              options={[
+                { value: "empleados", label: "Empleados" },
+                { value: "publico", label: "Público (independiente de empleados)" },
+              ]}
             />
-            <NumberField
-              label="Población femenina"
-              value={women}
-              onValueChange={(v) => setWomen(v ?? NaN)}
-            />
-          </div>
+          )}
+          <NumberField
+            label="Población TOTAL de la tabla"
+            value={people}
+            onValueChange={(v) => setPeople(v ?? 0)}
+          />
           <p>
-            Estimación por grupo; I = inodoro, L = lavatorio, U = urinario. No incluye servicios
-            independientes de personal, aparatos accesibles ni otros usos. Oficinas: hasta
-            6/20/60/150 personas: 1/1/2/3 I y L, luego +1 por 60. Hasta 6: sin U; después U igual a
-            I. Comercio/restaurante: hasta 50/100/150: 1/2/3 por aparato, luego +1 por 100. Tablas
-            por verificar.
+            I: inodoro · L: lavatorio · U: urinario. Se retiró el método incorrecto que aplicaba la
+            tabla a cada sexo por separado. Para otros establecimientos comerciales usa su tabla
+            específica (art.16.6 y siguientes).
           </p>
         </>
       )}
       {tool === "luz" && (
         <>
-          <p>
-            Criterio de estudio inicial 10% de iluminación y 5% de ventilación; edita según uso y
-            norma aplicable. No verifica patios, orientación ni obstrucciones. No aplica a
-            ventilación mecánica.
-          </p>
-          <div className="field-grid">
-            <NumberField
-              label="Iluminación requerida"
-              unit="% del piso"
-              value={light}
-              onValueChange={(v) => setLight(v ?? NaN)}
-            />
-            <NumberField
-              label="Ventilación requerida"
-              unit="% del piso"
-              value={vent}
-              onValueChange={(v) => setVent(v ?? NaN)}
-            />
-            <NumberField
-              label="Superficie vidriada útil"
-              unit="m²"
-              value={glass}
-              onValueChange={(v) => setGlass(v ?? NaN)}
-            />
-            <NumberField
-              label="Apertura efectiva al exterior"
-              unit="m²"
-              value={opening}
-              onValueChange={(v) => setOpening(v ?? NaN)}
-            />
-          </div>
+          <label>
+            <input type="checkbox" checked={office} onChange={(e) => setOffice(e.target.checked)} />{" "}
+            Oficina con ventilación natural
+          </label>
+          <NumberField
+            label="Área efectiva del vano que abre al exterior"
+            unit="m²"
+            value={opening}
+            onValueChange={(v) => setOpening(v ?? 0)}
+          />
         </>
       )}
       {tool === "parking" && (
-        <>
-          <NumberField
-            label="Total de estacionamientos"
-            value={parking}
-            onValueChange={(v) => setParking(v ?? NaN)}
-          />
-          <Link href="/normativa/estacionamiento-accesible">
-            Ver ficha de dimensiones y transferencia (por verificar)
-          </Link>
-        </>
-      )}
+        <NumberField
+          label="Total de estacionamientos de uso público"
+          value={parking}
+          onValueChange={(v) => setParking(v ?? 0)}
+        />
+      )}{" "}
       {error ? (
         <p role="alert">{error}</p>
       ) : (
         <CalculatorResult
-          eyebrow="RNE / POR VERIFICAR"
+          eyebrow="RNE · CONTRASTADO CON PDF"
           main={main}
           details={details}
           checks={[]}
-          warnings={["Resultado referencial. Revisa la norma vigente y los supuestos indicados."]}
-          copyText={`TRAZZO · ${titles[tool]} (por verificar): ${main}. ${details}`}
+          warnings={[
+            "Comprueba alcance por uso, condiciones y modificaciones posteriores al documento aportado.",
+          ]}
+          copyText={`${titles[tool]}: ${main}. ${details}`}
         />
       )}
     </section>

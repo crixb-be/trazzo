@@ -41,11 +41,11 @@ describe("main element of the query", () => {
   });
 });
 
-describe("door width card (A.010 Cap. VI - Vanos)", () => {
+describe("door width card (A.020 Art.12.2.b)", () => {
   const card = RNE_CARDS.find((item) => item.slug === "puerta-ancho-minimo");
 
   it("lists 0.90 / 0.80 / 0.70 m and separates the A.120 accessible case", () => {
-    expect(card?.norm_code).toBe("A.010");
+    expect(card?.norm_code).toBe("A.020");
     expect(card?.summary).toContain("0.90 m");
     expect(card?.summary).toContain("0.80 m");
     expect(card?.summary).toContain("0.70 m");
@@ -55,7 +55,7 @@ describe("door width card (A.010 Cap. VI - Vanos)", () => {
   it("appears in the local answer with its own citation", () => {
     const query = "ancho de puerta de baño de servicio";
     const answer = buildLocalAnswer(query, retrieveLocal(query, "extractive"));
-    expect(answer).toContain("[A.010 Cap. VI · Ancho mínimo de puertas según ambiente]");
+    expect(answer).toContain("[A.020 Art. 12.2.b · Ancho mínimo de puertas según ambiente]");
     expect(answer).not.toContain("Pozo de luz");
   });
 });
@@ -64,6 +64,6 @@ describe("strict system prompt", () => {
   it("leads the model prompt", () => {
     const prompt = buildSystemPrompt(retrieveLocal("medida de puerta", "synthesis"));
     expect(prompt.startsWith(STRICT_SYSTEM_PROMPT)).toBe(true);
-    expect(prompt).toContain("ancho estándar (A.010), ancho accesible (A.120) y altura mínima");
+    expect(prompt).toContain("ancho de vivienda (A.020), ancho accesible (A.120) y altura mínima");
   });
 });

@@ -111,8 +111,17 @@ export function NormativeDetail({ slug }: { slug: string }) {
               : "Guardar favorito"}
           </Button>
           <p className="small muted">
+            Normativa peruana obligatoria · contraste: {card.verified_at ?? "sin contraste"}
+          </p>
+          <p className="small muted">
             Resolución: {card.source_resolution ?? "Pendiente de contraste con fuente oficial"}
           </p>
+          {card.source_document && (
+            <p className="small muted">
+              Fuente: {card.source_document} · página PDF {card.source_page} · SHA-256{" "}
+              {card.source_sha256?.slice(0, 12)}
+            </p>
+          )}
           <div className="card-badges">
             {card.is_pro && (
               <Badge variant="pro">
@@ -123,7 +132,7 @@ export function NormativeDetail({ slug }: { slug: string }) {
           </div>
 
           <Card className="highlight-value">
-            <span className="eyebrow">VALOR MÍNIMO REFERENCIAL</span>
+            <span className="eyebrow">VALOR / CONDICIÓN APLICABLE</span>
             <strong className="mono">
               {locked ? "—" : (card.min_value ?? "—")} <small>{locked ? "" : card.unit}</small>
             </strong>

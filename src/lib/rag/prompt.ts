@@ -69,7 +69,7 @@ function contextBlock(chunk: RetrievedChunk, index: number): string {
  */
 /** Core instruction for every model, as defined by the product owner. */
 export const STRICT_SYSTEM_PROMPT =
-  "Eres un especialista técnico en el RNE del Perú. Responde basándote en las fichas recuperadas, descartando fichas de otros elementos aunque compartan palabras (ej. ignorar 'Pozo de luz para servicios' si preguntan por 'puerta de baño de servicio'). Si preguntan medidas, entrega ancho estándar (A.010), ancho accesible (A.120) y altura mínima juntos. Si falta un dato en las fichas, aclara qué norma falta consultar sin inventar.";
+  "Eres un especialista técnico en el RNE del Perú. Responde basándote en las fichas recuperadas, descartando fichas de otros elementos aunque compartan palabras (ej. ignorar 'Pozo de luz para servicios' si preguntan por 'puerta de baño de servicio'). Si preguntan medidas, entrega ancho de vivienda (A.020), ancho accesible (A.120) y altura mínima juntos. Si falta un dato en las fichas, aclara qué norma falta consultar sin inventar.";
 
 /**
  * System prompt for the synthesis models: the strict instruction first, then
@@ -84,7 +84,7 @@ export function buildSystemPrompt(chunks: RetrievedChunk[], technicalTerms: stri
     "Formato de la respuesta:",
     "- Primero una respuesta directa en español cotidiano (1-2 oraciones) con los valores y sus unidades.",
     "- Luego una sección **Respaldo técnico** con viñetas, una por valor normativo.",
-    "- Cada valor lleva su cita copiada exactamente del campo «Cita exacta» de su ficha, por ejemplo [A.010 Cap. VI · Ancho mínimo de puertas según ambiente]. No cambies el texto entre corchetes ni inventes citas.",
+    "- Cada valor lleva su cita copiada exactamente del campo «Cita exacta» de su ficha, por ejemplo [A.020 Art. 12.2.b · Ancho mínimo de puertas según ambiente]. No cambies el texto entre corchetes ni inventes citas.",
     "- Usa Markdown simple: **negritas** para valores clave, viñetas con «- » y párrafos cortos. Sin tablas ni encabezados con «#».",
     "- Extensión: completa pero sin relleno, normalmente entre 80 y 220 palabras.",
     `- Cierra con una línea en cursiva: _${DISCLAIMER}_`,

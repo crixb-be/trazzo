@@ -10,7 +10,7 @@ it("aforo redondea hacia arriba y admite área cero", () => {
   expect(() => computeOccupancy(2, 0)).toThrow();
 });
 it("sanitarios comprueba saltos de tablas y exceso", () => {
-  expect(computeFixtures(6, "oficina").urinals).toBe(0);
+  expect(computeFixtures(6, "oficina").urinals).toBe(1);
   expect(computeFixtures(7, "oficina").urinals).toBe(1);
   expect(computeFixtures(60, "oficina").toilets).toBe(2);
   expect(computeFixtures(61, "oficina").toilets).toBe(3);
@@ -27,7 +27,7 @@ it("iluminación distingue vidrio de apertura efectiva", () => {
 });
 it("reserva accesible en cada frontera", () => {
   expect([0, 1, 20, 21, 50, 51, 400, 401, 500, 501].map(accessibleParking)).toEqual([
-    0, 1, 1, 2, 2, 4, 16, 17, 17, 18,
+    0, 1, 1, 1, 2, 3, 16, 17, 20, 21,
   ]);
   expect(() => accessibleParking(-1)).toThrow();
   expect(() => accessibleParking(2.5)).toThrow();

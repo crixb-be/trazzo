@@ -78,6 +78,10 @@ La hoja de ruta propone 3 fases: **Fase 1** corrige lo roto y la base móvil (8 
 
 Severidad: **Crítico** = pérdida de datos, cobro o función pagada rota · **Alto** = flujo roto o engañoso · **Medio** = fricción o riesgo · **Bajo** = deuda o detalle.
 
+### Hallazgo durante el contraste (2026-11-17)
+
+**T-30 — Medio, resuelto en el bloque2.7:** controles de copia de seguridad disponibles antes de la hidratación y listados de proyectos inicialmente indistinguibles de un vacío real; además, la prueba de Restablecer navegaba antes de su recarga. Se añadieron estados de disponibilidad y espera de navegación real. Ver el resultado de QA en la sección9.
+
 ### Críticos
 
 | ID   | Hallazgo                                                                                                                                                                                                                                                                                                                                                                                                                                                              | Evidencia                                                                                                                                                        | Corrección                                                                                                                                                                              |
@@ -249,7 +253,7 @@ Orden propuesto por valor para el usuario frente a esfuerzo.
 
 ## 9. ESTADO DE AVANCE Y HANDOFF
 
-**Última actualización:** 2026-11-16. Fases 1 y 2 fusionadas en `main` (`6b979e3`, PR #3). La Fase 3 (3.1–3.7) está implementada en la rama `claude/gifted-planck-jpk36p`, creada desde ese `main`; no tiene PR ni está fusionada.
+**Última actualización:** 2026-11-17 — contraste documental en `codex/contraste-rne-2026`, desde `main` (`4e16abe`, que incluye las fases previas y los PDFs). Ver ejecución de 2.7 al final de esta sección. Los estados históricos y hashes de las sesiones anteriores se conservan como registro.
 
 ### Completado
 
@@ -326,12 +330,29 @@ Rama `claude/gifted-planck-jpk36p`. Un commit y un push por bloque. Las pruebas 
 
 **Estado al cierre de la Fase 3:** typecheck y lint sin errores (5 avisos previos de imágenes), 220 pruebas unitarias en 39 archivos, build y 21 pruebas de navegador pasan en la rama `claude/gifted-planck-jpk36p`. No se creó PR.
 
-**Lo único pendiente de la hoja de ruta es documental y depende de los PDFs del RNE que entregará el usuario:**
+**Actualización documental 2026-11-17:** los PDFs ya fueron recibidos en `docs/rne/` y `docs/biblioteca/`. El contraste implementado y sus límites se registran a continuación; ya no corresponde afirmar que faltan esos archivos ni que todas las fichas siguen sin contraste.
 
-1. Bloque 2.7: verificar las 17 fichas originales, completar A.130 y contrastar las 7 guías añadidas con artículo y resolución oficiales. Registro en `src/data/rne/verification.ts`; mientras tanto todo sigue «Por verificar».
-2. Contrastar las medidas de 2.1 y las tablas de aforo, sanitarios, iluminación y estacionamientos de 2.5.
+### Bloque 2.7 — contraste del corpus aportado
 
-Al recibir los PDFs: colocarlos fuera del build (no en `public/`), contrastar ficha por ficha, llenar `verified_at`, `article` y `source_resolution`, subir `SEED_VERSION` y actualizar esta sección. No marcar nada como verificado sin el texto delante.
+**Estado:** contraste de código y catálogo ejecutado; **no se declara un cierre definitivo de vigencia integral del RNE a 2026**. IS.010-2025 es una modificatoria de tres páginas, no el texto sanitario completo, y varias reproducciones no acreditan todo su historial de modificatorias. Los campos y límites no comprobables no se inventan. El alcance detallado y la matriz ficha→documento→página están en [INFORME_2_7.md](docs/contraste/INFORME_2_7.md).
+
+- [x] Inventariados con SHA-256 y páginas **18 PDFs RNE (no 17)** y dos libros. Extracción del texto de todas las páginas normativas e índice de encabezados. Reproducible con `python3 scripts/index-rne.py` (requiere Poppler). PDFs conservados fuera de `public/`; no se distribuyen los libros en el build.
+- [x] Las **17 fichas originales** se contrastaron y corrigieron; el catálogo pasa a **33 fichas** con archivo, página PDF, artículo, hash y fecha de contraste. `verified_at` significa correspondencia con el archivo aportado, no garantía de ausencia de modificaciones posteriores. Instrumentos no consignados se identifican como tales, también en `src/data/rne/verification.ts`. `SEED_VERSION=7` renueva el catálogo local.
+- [x] Retiradas las dos guías sin respaldo E.020/E.060 (no se aportaron esos PDFs); incorporadas guías de todas las normas efectivamente aportadas y una calculadora E.030-2026 con alcance delimitado.
+- [x] A.120-2023: tabla de rampas 10% hasta0.30m /8% entre0.31–0.72m, sin extrapolar por encima; tramos9m y descansos1.50m; se retira tabla12/10/8/6/4/2%. Vano accesible1.00m y maniobra contextualizada. Plaza individual3.70×5.00m; reserva4% hasta500 y20+1/cada100 adicionales. Pendiente transversal, protección, maniobras y detalles por aforo se explicitan como revisión de proyecto.
+- [x] IS.010 RM0107-2025: vivienda169/155/129 L/persona/día por clima cálido/templado/frío, incluyendo equivalencia de climas semifrígido/frígido/glaciar a frío. Población de A.020 art.7. Se retiran tablas derogadas por lote/departamento y se advierte régimen transitorio. Oficinas según la tabla aportada de A.080 art.17:20 L/persona/día; jardines5 L/m²/día. **Almacenamiento automático se deshabilita por falta del texto base sanitario; no se atribuye a la modificatoria un capítulo de ventilación inexistente.**
+- [x] A.010/A.020/A.130: alturas por uso; anchos de vivienda correctamente atribuidos a A.020; huellas por uso y máximo17 pasos; Blondel como criterio de diseño, no intervalo obligatorio. Pozos por tramos de18m/lados/tipología de A.020 (se retira H/3–H/4). Evacuación con módulos0.60m en puertas/pasajes, mínimos/excepción de oficina y factores especiales; distancias45/60m con alcance y condiciones.
+- [x] Aforos y aparatos: factores con actividad/piso específicos; tablas sanitarias por población **total**, servicio mixto y separación empleados/público. Se corrige la doble aplicación por sexo. Iluminación sin10% universal inventado y ventilación general≥5% /oficina>10%.
+- [x] E.030 RM183-2026: Z, S/TP/TL para caso sin Vs30 según nota de tablas4/5, restricción S4/Z4, distinción C espectral/estático, R=R0·Ia·Ip y mínimoC/R. No se automatizan EMS, interpolación con Vs30, categoría/regularidad ni la admisibilidad integral del método estático.
+- [x] **A.130:218 artículos consecutivos** consultables en `/biblioteca`, con página y texto extraído; referencias cruzadas no se tratan como nuevos encabezados. Figuras y ecuaciones gráficas requieren el PDF; no se afirma historial consolidado completo. Definiciones seleccionadas G.040 con su página también disponibles.
+- [x] Biblioteca separada en interfaz: **Normativa Peruana Obligatoria (RNE)** / **Teoría y Referencia Arquitectónica Internacional**. OCR focalizado de65 páginas (Neufert1–45, Ching1–20), índices y temas propios; no se afirma OCR/lectura integral de682 páginas. Lámina Neufert PDF39/impresa26 revisada visualmente: figura12 de0.50×1.75m, como promedio ilustrado, no percentil ni obligación RNE. Las demás medidas sin fuente puntual se etiquetan como plantillas de TRAZZO, no como valores de esos libros.
+- [x] Catálogo local contrastado protegido contra sobrescritura remota obsoleta; recuperación vectorial usa texto actual por slug. Seed compatible con columnas SQL existentes, evidencia en `legal_note`. **No se ejecutó seed/embeddings remoto ni SQL contra Supabase real.**
+
+**Calidad:** typecheck y lint sin errores (cinco avisos previos de imágenes), **227 pruebas unitarias en43 archivos** y build pasan. **25 pruebas de navegador pasan**, incluida auditoría AA en19 rutas ×3 temas, nuevos casos RNE y flujos existentes. La copia/restauración corregida pasó además5 repeticiones consecutivas. Todas las verificaciones se ejecutaron sobre el código entregado; no se saltaron pruebas.
+
+**Hallazgo T-30 (Medio, resuelto en2.7):** el flujo de copia/restauración tenía carreras de carga y navegación. Se deshabilitan los controles de copia hasta la hidratación, se espera el listado de proyectos antes de ofrecer guardado y la prueba espera la recarga real de Restablecer; al seleccionar archivos se exige el control listo. No se aumentan tiempos ni se saltan pruebas para ocultar el fallo.
+
+**Pendiente para un cierre definitivo sin reservas de 2.7:** texto íntegro de IS.010 y modificatorias restantes para almacenamiento/otras dotaciones; comprobación de instrumentos e historial de versiones no consignados; revisión de los elementos gráficos y condiciones fuera de los modelos. El contraste entregado no garantiza cumplimiento integral de un proyecto. No se alteran ni se vuelven a certificar los cálculos históricos de usuarios.
 
 **Pendientes que requieren al usuario o servicios reales (no bloquean el código):**
 
@@ -341,4 +362,4 @@ Al recibir los PDFs: colocarlos fuera del build (no en `public/`), contrastar fi
 
 **Mejoras detectadas y no incluidas en la hoja de ruta:** botones de compartir y «Guardar en proyecto» en materiales, utilidades de campo, matriz y medidas; sincronizar con la cuenta los cálculos guardados, vínculos de cotización y fotos (hoy solo en el dispositivo y en la copia de seguridad); auditoría de accesibilidad de la vista previa de la propuesta y de pantallas con datos cargados.
 
-Reglas que siguen vigentes: un commit por bloque con actualización de esta sección; no crear PR salvo pedido; no afirmar verificaciones que no se ejecutaron. Las pruebas de navegador en este entorno necesitan `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/opt/pw-browsers/chromium`.
+Reglas que siguen vigentes: un commit por bloque con actualización de esta sección; no crear PR salvo pedido; no afirmar verificaciones que no se ejecutaron. En esta ejecución las pruebas de navegador usaron `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium`; comprueba la ruta disponible al cambiar de entorno.

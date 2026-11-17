@@ -18,7 +18,7 @@ export function WheelchairTurn({ diameter = 1.5 }: WheelchairTurnProps) {
       heightMeters={safeDiameter}
       scale={scale}
       title="GIRO DE SILLA DE RUEDAS"
-      normReference="A.120 · Art. 9"
+      normReference="A.120-2023 · art.5.f (maniobra)"
       ariaLabel={`Círculo de giro de silla de ruedas de ${safeDiameter.toFixed(2)} m de diámetro`}
       notes={["ÁREA LIBRE DE MANIOBRA · SIN OBSTÁCULOS"]}
     >

@@ -9,9 +9,9 @@ export interface ParkingStallProps {
 }
 
 /** Accessible parking stall plan with a hatched lateral transfer zone. */
-export function ParkingStall({ width = 3.8, length = 5, transfer = 1.2 }: ParkingStallProps) {
+export function ParkingStall({ width = 3.7, length = 5, transfer = 1.2 }: ParkingStallProps) {
   const hatchId = `parking-hatch-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
-  const safeWidth = Math.max(2.4, finiteOr(width, 3.8));
+  const safeWidth = Math.max(2.4, finiteOr(width, 3.7));
   const safeLength = Math.max(4.5, finiteOr(length, 5));
   const safeTransfer = Math.max(0.9, finiteOr(transfer, 1.2));
   const stallWidth = safeWidth - safeTransfer > 2 ? safeWidth - safeTransfer : safeWidth;
@@ -29,7 +29,7 @@ export function ParkingStall({ width = 3.8, length = 5, transfer = 1.2 }: Parkin
       heightMeters={safeLength}
       scale={scale}
       title="ESTACIONAMIENTO ACCESIBLE"
-      normReference="A.120 · Art. 9"
+      normReference="A.120-2023 · art.23"
       ariaLabel={`Planta de estacionamiento accesible de ${safeWidth.toFixed(2)} × ${safeLength.toFixed(2)} m con zona de transferencia de ${safeTransfer.toFixed(2)} m`}
       notes={[
         `CAJÓN ${safeWidth.toFixed(2)} × ${safeLength.toFixed(2)} m`,

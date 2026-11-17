@@ -1,3 +1,5 @@
+import { documentedCatalog } from "./documented-catalog";
+import type { RneCard } from "@/data/seed-rne";
 import { db, ensureSeeded, type FeeQuote, type Outbox, type Project, type Takeoff } from "./db";
 import {
   describeSyncResult,
@@ -203,7 +205,7 @@ export async function pullRemote(): Promise<SyncResult> {
       .select("*")
       .or(canUseProCards(plan) ? "is_pro.eq.false,is_pro.eq.true" : "is_pro.eq.false");
     const { data: materials } = await client.from("materials_catalog").select("*");
-    if (cards && cards.length > 0) await db.rneCards.bulkPut(cards);
+    if (cards) await db.rneCards.bulkPut(documentedCatalog(cards as RneCard[]));
     if (materials && materials.length > 0) await db.materials.bulkPut(materials);
 
     const userId = await sessionUserId(client);

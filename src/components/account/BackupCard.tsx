@@ -1,7 +1,7 @@
 "use client";
 
 import { Download, Upload } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button, Card, confirmDialog, toast } from "@/components/ui";
 import {
   backupFileName,
@@ -15,6 +15,8 @@ import type { Plan } from "@/lib/plans/plans";
 /** Saves the user's work to a file and restores it, with or without an account. */
 export function BackupCard({ plan }: { plan: Plan }) {
   const input = useRef<HTMLInputElement>(null);
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
   const [busy, setBusy] = useState(false);
 
   async function download(): Promise<void> {
@@ -74,16 +76,21 @@ export function BackupCard({ plan }: { plan: Plan }) {
         cuenta.
       </p>
       <div className="hero-actions">
-        <Button onClick={() => void download()} disabled={busy}>
+        <Button onClick={() => void download()} disabled={!ready || busy}>
           <Download size={15} /> Descargar copia
         </Button>
-        <Button variant="secondary" onClick={() => input.current?.click()} disabled={busy}>
+        <Button
+          variant="secondary"
+          onClick={() => input.current?.click()}
+          disabled={!ready || busy}
+        >
           <Upload size={15} /> Restaurar copia
         </Button>
       </div>
       <input
         ref={input}
         type="file"
+        disabled={!ready || busy}
         accept="application/json,.json"
         hidden
         aria-label="Archivo de copia de seguridad"

@@ -5,16 +5,18 @@ export interface PocketMeasure {
   width: number;
   depth: number;
   note: string;
+  source?: string;
   diagram: "persona" | "mueble" | "ambiente";
 }
-/** Criterios de anteproyecto, pendientes de contraste con bibliografía del usuario. Metros. */
+/** Referencia internacional cuando hay source; el resto son plantillas ilustrativas de TRAZZO, no valores atribuidos a los libros. Metros. */
 export const MEASURES: PocketMeasure[] = [
   {
     id: "persona",
-    title: "Persona de pie",
+    title: "Persona de pie (promedio ilustrado)",
+    source: "Neufert, página PDF39 / impresa26, figura12; revisión visual 2026-11-17",
     category: "Antropometría",
-    width: 0.6,
-    depth: 1.7,
+    width: 0.5,
+    depth: 1.75,
     diagram: "persona",
     note: "Envolvente ilustrativa; las dimensiones humanas varían. No representa percentiles ni accesibilidad.",
   },

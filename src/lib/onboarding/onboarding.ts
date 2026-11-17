@@ -36,7 +36,12 @@ export const QUICK_TOOLS: readonly QuickTool[] = [
   { id: "escaleras", title: "Escaleras", detail: "2cp + p", href: "/calculadoras?tab=escaleras" },
   { id: "rampas", title: "Rampas", detail: "Pendientes A.120", href: "/calculadoras?tab=rampas" },
   { id: "agua", title: "Agua", detail: "IS.010", href: "/calculadoras?tab=agua" },
-  { id: "pozos", title: "Pozos de luz", detail: "H/3 · H/4", href: "/calculadoras?tab=pozos" },
+  {
+    id: "pozos",
+    title: "Pozos de luz",
+    detail: "A.020 · cuadro4",
+    href: "/calculadoras?tab=pozos",
+  },
   {
     id: "evacuacion",
     title: "Evacuación",

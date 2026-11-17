@@ -1,38 +1,39 @@
-import { describe, expect, it } from "vitest";
-import { multiFamilyDemand, officeDemand, singleFamilyDemand, storage } from "./water";
-
-describe("water demand", () => {
-  it("calculates the first single-family bracket", () => {
-    expect(singleFamilyDemand(200).values.dailyLiters).toBe(1500);
-  });
-
-  it("calculates the 1,000 m² bracket", () => {
-    expect(singleFamilyDemand(1000).values.dailyLiters).toBe(2600);
-  });
-
-  it("applies the additional area rule above 1,000 m²", () => {
-    expect(singleFamilyDemand(1250).values.dailyLiters).toBe(2900);
-  });
-
-  it("calculates multifamily apartments by bedrooms", () => {
-    const result = multiFamilyDemand([
-      { bedrooms: 1, count: 2 },
-      { bedrooms: 3, count: 1 },
-    ]);
-    expect(result.values.dailyLiters).toBe(2200);
-  });
-
-  it("calculates office demand", () => {
-    expect(officeDemand(100).values.dailyLiters).toBe(600);
-  });
-
-  it("keeps the tank minimum at 1,000 litres", () => {
-    const result = storage(1500);
-    expect(result.values.cisternLiters).toBe(1125);
-    expect(result.values.tankLiters).toBe(1000);
-  });
-
-  it("warns on an invalid lot area", () => {
-    expect(singleFamilyDemand(Number.POSITIVE_INFINITY).ok).toBe(false);
-  });
+import { it, expect } from "vitest";
+import {
+  singleFamilyDemand,
+  multiFamilyDemand,
+  residentialDemand,
+  storage,
+  officeDemand,
+  housingPeople,
+} from "./water";
+it.each([
+  ["calido", 169],
+  ["templado", 155],
+  ["frio", 129],
+] as const)("RM0107-2025 clima %s", (c, rate) =>
+  expect(residentialDemand(3, c).values.dailyLiters).toBe(rate * 3),
+);
+it("A.020 densidad según dormitorios, no la tabla derogada", () => {
+  expect(singleFamilyDemand(2, "templado").values.dailyLiters).toBe(465);
+  expect(
+    multiFamilyDemand(
+      [
+        { bedrooms: 1, count: 2 },
+        { bedrooms: 5, count: 1 },
+      ],
+      "frio",
+    ).values.dailyLiters,
+  ).toBe(10 * 129);
+  expect(housingPeople(3)).toBe(4);
+});
+it("rechaza fracciones y no interpreta área de lote como dormitorios", () => {
+  expect(singleFamilyDemand(200).ok).toBe(false);
+  expect(multiFamilyDemand([{ bedrooms: 2, count: 1.5 }]).ok).toBe(false);
+  expect(residentialDemand(0, "frio").ok).toBe(false);
+});
+it("no atribuye al PDFmodificatorio tablas no incluidas", () => {
+  expect(storage(1500).ok).toBe(false);
+  expect(officeDemand(10).values.dailyLiters).toBe(200);
+  expect(officeDemand(10, 20).values.dailyLiters).toBe(300);
 });

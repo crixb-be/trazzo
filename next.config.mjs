@@ -10,6 +10,7 @@ const APP_ROUTES = [
   "/calculadoras",
   "/matriz",
   "/medidas",
+  "/biblioteca",
   "/metrados",
   "/honorarios",
   "/asistente",
@@ -21,7 +22,7 @@ const APP_ROUTES = [
 
 // One page per RNE card; the slugs are read from the seed so the list cannot drift.
 const seed = readFileSync(new URL("./src/data/seed-rne.ts", import.meta.url), "utf8");
-const cardRoutes = [...seed.matchAll(/^\s+slug: "([a-z0-9-]+)",$/gm)].map(
+const cardRoutes = [...seed.matchAll(/(?:slug|"slug"):\s*"([a-z0-9-]+)"/g)].map(
   (match) => "/normativa/" + match[1],
 );
 
@@ -33,19 +34,7 @@ const withSerwist = withSerwistInit({
   disable: process.env.NODE_ENV === "development",
   // Reloading on reconnect would discard a half-filled form on site.
   reloadOnOnline: false,
-  additionalPrecacheEntries: [
-    ...APP_ROUTES,
-    ...cardRoutes,
-    ...[
-      "vivienda-programa-a020",
-      "comercio-aforo-a070",
-      "oficinas-aforo-a080",
-      "seguridad-rutas-a130",
-      "sanitarios-dotacion-is010",
-      "estructuras-cargas-e020",
-      "estructuras-concreto-e060",
-    ].map((slug) => "/normativa/" + slug),
-  ].map((url) => ({ url, revision })),
+  additionalPrecacheEntries: [...APP_ROUTES, ...cardRoutes].map((url) => ({ url, revision })),
 });
 
 /** @type {import('next').NextConfig} */

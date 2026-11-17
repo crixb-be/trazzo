@@ -11,13 +11,13 @@ const GROUND = 5;
 
 /**
  * Schematic section of the storage required by IS.010: cistern at ground level
- * (≥ 3/4 of the daily allowance) and elevated tank (≥ 1/3, never under 1000 L).
+ * No se fijan proporciones sin el texto base sanitario.
  * The drawing is not to scale; the volumes come from the daily allowance.
  */
 export function WaterTank({ daily_liters = 1500 }: WaterTankProps) {
   const daily = Math.max(0, finiteOr(daily_liters, 1500));
-  const cistern = daily * 0.75;
-  const tank = Math.max(daily / 3, 1000);
+  const cistern = 0;
+  const tank = 0;
   const scale = createDiagramScale(SCENE_WIDTH, SCENE_HEIGHT);
   const s = scale;
   const liters = (value: number): string => Math.round(value).toLocaleString("es-PE") + " L";
@@ -28,12 +28,12 @@ export function WaterTank({ daily_liters = 1500 }: WaterTankProps) {
       heightMeters={SCENE_HEIGHT}
       scale={scale}
       title="CISTERNA Y TANQUE ELEVADO"
-      normReference="IS.010 · Dotaciones y almacenamiento"
-      ariaLabel={`Esquema de almacenamiento de agua: dotación diaria ${liters(daily)}, cisterna mínima ${liters(cistern)} y tanque elevado mínimo ${liters(tank)}`}
+      normReference="Esquema ilustrativo; almacenamiento fuera del PDF IS.010-2025"
+      ariaLabel={`Esquema de almacenamiento de agua: dotación diaria ${liters(daily)}, capacidades de almacenamiento según proyecto`}
       notes={[
         `DOTACIÓN ${liters(daily)} POR DÍA · SIN ESCALA`,
-        `CISTERNA ≥ 3/4 = ${liters(cistern)}`,
-        `TANQUE ≥ 1/3 = ${liters(tank)} (MÍN. 1000 L)`,
+        "CISTERNA: dimensionar con el texto íntegro de IS.010",
+        "TANQUE: no calculado con la modificatoria residencial",
       ]}
     >
       {/* Ground line */}
@@ -80,7 +80,7 @@ export function WaterTank({ daily_liters = 1500 }: WaterTankProps) {
         TANQUE ELEVADO
       </text>
       <text x={s(4.55)} y={s(1.15)} textAnchor="middle" className="diagram-label-text">
-        {liters(tank)}
+        {"Según proyecto"}
       </text>
       {/* Cistern below ground */}
       <rect
@@ -97,7 +97,7 @@ export function WaterTank({ daily_liters = 1500 }: WaterTankProps) {
         CISTERNA
       </text>
       <text x={s(1.35)} y={s(GROUND + 1.35)} textAnchor="middle" className="diagram-label-text">
-        {liters(cistern)}
+        {"Según proyecto"}
       </text>
       {/* Riser from the cistern to the tank */}
       <path

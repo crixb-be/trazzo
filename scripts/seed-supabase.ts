@@ -1,3 +1,4 @@
+import { catalogRow } from "@/lib/offline/documented-catalog";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { RNE_CARDS, MATERIALS } from "@/data/seed-rne";
 
@@ -14,7 +15,7 @@ async function main(): Promise<void> {
   // Seed rows carry no id: match existing rows by their natural unique keys.
   const { error: cardsError } = await client
     .from("rne_cards")
-    .upsert(RNE_CARDS, { onConflict: "slug" });
+    .upsert(RNE_CARDS.map(catalogRow), { onConflict: "slug" });
   if (cardsError) throw cardsError;
   const { error: materialsError } = await client
     .from("materials_catalog")

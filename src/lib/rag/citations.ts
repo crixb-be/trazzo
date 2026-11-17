@@ -14,8 +14,8 @@ const CITATION_PATTERN = /\[([A-Z]{1,3}\.\d{3}\s+[^\]]+)\]/g;
 export const CITATION_TITLE_SEPARATOR = " · ";
 
 /**
- * Card-specific citation, e.g. "[A.120 Art. 9 · Ancho de puerta accesible]".
- * Several cards share one article (A.120 Art. 9 covers ramps, doors, parking…),
+ * Card-specific citation, e.g. "[A.120 Art. 4.b · Ancho de puerta accesible]".
+ * Several cards may share an article (e.g. A.120 Art.6 for ramp conditions),
  * so the title is what lets each citation link to the card actually used.
  */
 export function citationForCard(card: {
@@ -28,6 +28,12 @@ export function citationForCard(card: {
 }
 
 function findSlug(citation: string): string | null {
+  const legacy: Record<string, string> = {
+    "A.010 Cap. VI - Vanos": "vano-puerta-altura",
+    "A.120 Art. 9": "rampa-pendiente-maxima",
+    "A.120 Art. 9 - Accesibilidad": "rampa-pendiente-maxima",
+  };
+  if (legacy[citation]) return legacy[citation];
   const firstSpace = citation.indexOf(" ");
   if (firstSpace < 0) return null;
 

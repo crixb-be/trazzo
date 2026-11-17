@@ -7,6 +7,17 @@ import {
 } from "./types";
 
 export interface StairInput {
+  activity?:
+    | "vivienda"
+    | "industria"
+    | "oficinas"
+    | "hospedaje"
+    | "comercio"
+    | "servicios"
+    | "salud"
+    | "educacion"
+    | "transporte"
+    | "recreacion";
   floorHeight: number;
   preferredTread?: number;
   width: number;
@@ -42,7 +53,7 @@ const ZERO_VALUES: StairValues = {
 };
 
 function buildFlights(risers: number): number[] {
-  const flights = Math.ceil(risers / 17);
+  const flights = Math.ceil(risers / 18);
   const base = Math.floor(risers / flights);
   const remainder = risers % flights;
 
@@ -50,8 +61,8 @@ function buildFlights(risers: number): number[] {
 }
 
 /**
- * Calculates an RNE A.010 stair using 2cp+p and the 17-riser flight rule.
- * References: A.010, Cap. VI, and A.130, Cap. V for evacuation width.
+ * Calculates an RNE A.010 stair using an optional Blondel design criterion and the 17-step flight rule.
+ * References: A.010-2021 art.23.2, and A.130 arts.22–24 for evacuation width.
  */
 export function computeStair(input: StairInput): CalcResult<StairValues> {
   const { floorHeight, preferredTread, width, use } = input;
@@ -73,7 +84,13 @@ export function computeStair(input: StairInput): CalcResult<StairValues> {
 
   const risers = Math.ceil(floorHeight / 0.18 - 1e-9);
   const riserHeight = floorHeight / risers;
-  const tread = preferredTread ?? Math.max(0.25, 0.63 - 2 * riserHeight);
+  const activity = input.activity ?? "vivienda";
+  const minTread = ["vivienda", "industria"].includes(activity)
+    ? 0.25
+    : ["oficinas", "hospedaje", "comercio", "servicios"].includes(activity)
+      ? 0.28
+      : 0.3;
+  const tread = preferredTread ?? Math.max(minTread, 0.63 - 2 * riserHeight);
   const blondel = 2 * riserHeight + tread;
   const risersPerFlight = buildFlights(risers);
   const flights = risersPerFlight.length;
@@ -82,35 +99,28 @@ export function computeStair(input: StairInput): CalcResult<StairValues> {
     (total, flightRisers) => total + Math.max(0, flightRisers - 1) * tread,
     0,
   );
-  const minimumWidth = use === "evacuacion" ? 1.2 : 0.9;
+  const minimumWidth = use === "evacuacion" || activity !== "vivienda" ? 1.2 : 0.9;
   const checks: CalcCheck[] = [
     {
       label: "Contrapaso ≤ 0.18 m",
       pass: riserHeight <= 0.18 + 1e-9,
       value: riserHeight,
       limit: 0.18,
-      ref: "A.010 · Cap. VI",
+      ref: "A.010-2021 · art. 23.2",
     },
     {
-      label: "Paso ≥ 0.25 m",
-      pass: tread >= 0.25 - 1e-9,
+      label: "Paso mínimo por uso ≥ " + minTread + " m",
+      pass: tread >= minTread - 1e-9,
       value: tread,
-      limit: 0.25,
-      ref: "A.010 · Cap. VI",
+      limit: minTread,
+      ref: "A.010-2021 · art. 23.2",
     },
     {
-      label: "0.60 ≤ 2cp+p ≤ 0.64 m",
-      pass: blondel >= 0.6 - 1e-9 && blondel <= 0.64 + 1e-9,
-      value: blondel,
-      limit: "0.60–0.64",
-      ref: "A.010 · Cap. VI",
-    },
-    {
-      label: "Contrapasos por tramo ≤ 17",
-      pass: risersPerFlight.every((flightRisers) => flightRisers <= 17),
-      value: Math.max(...risersPerFlight),
+      label: "Pasos por tramo ≤ 17",
+      pass: risersPerFlight.every((flightRisers) => flightRisers - 1 <= 17),
+      value: Math.max(...risersPerFlight) - 1,
       limit: 17,
-      ref: "A.010 · Cap. VI",
+      ref: "A.010-2021 · art. 23.2",
     },
     {
       label: "Ancho mínimo para " + use,
@@ -121,7 +131,10 @@ export function computeStair(input: StairInput): CalcResult<StairValues> {
     },
   ];
 
-  const warnings = [RNE_WARNING];
+  const warnings = [
+    RNE_WARNING,
+    "Blondel 2cp+p es criterio de diseño, no un intervalo exigido por A.010-2021. Paso mínimo por uso: vivienda/industria 0.25 m; hospedaje/comercio/oficinas/servicios comunales 0.28 m; salud/educación/recreación/transporte 0.30 m. El ancho por aforo requiere cálculo independiente.",
+  ];
   if (flights > 1) {
     warnings.unshift("La altura requiere descansos entre tramos; verifica su geometría en planta.");
   }

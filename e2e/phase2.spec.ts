@@ -5,7 +5,7 @@ test("medidas filtra y las nuevas calculadoras responden", async ({ page }) => {
   await page.goto("/medidas");
   await page.getByRole("textbox", { name: "Buscar medidas" }).fill("fondo de colgado");
   await expect(page.locator("article")).toHaveCount(1);
-  await expect(page.locator("article")).toContainText("Por verificar");
+  await expect(page.locator("article")).toContainText("Plantilla ilustrativa TRAZZO");
   await page.goto("/calculadoras?tab=cabida");
   await expect(page.locator(".result-main")).toHaveText("560.00 m² techados");
   await page.getByRole("combobox", { name: "Calculadora", exact: true }).selectOption("aforo");

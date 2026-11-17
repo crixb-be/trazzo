@@ -51,8 +51,8 @@ describe("local RAG", () => {
 });
 
 describe("card-specific citations", () => {
-  it("links each A.120 Art. 9 citation to its own card", () => {
-    const shared = RNE_CARDS.filter((card) => card.article.startsWith("Art. 9"));
+  it("links each A.120 Art. 6 citation to its own card", () => {
+    const shared = RNE_CARDS.filter((card) => card.article.startsWith("Art. 6"));
     expect(shared.length).toBeGreaterThan(1);
     for (const card of shared) {
       const [segment] = parseCitations(citationForCard(card));

@@ -89,19 +89,12 @@ export async function retrieveVector(query: string, limit = 6): Promise<Retrieve
   });
   if (error || !data) throw error ?? new Error("No se pudieron recuperar documentos vectoriales.");
 
-  return (data as VectorDocument[]).slice(0, limit).map((document) => {
-    const metadata = document.metadata ?? {};
-    const slug = slugFromMetadata(metadata, document.norm_code, document.article);
-    const card = RNE_CARDS.find((candidate) => candidate.slug === slug);
-    return {
-      slug,
-      normCode: document.norm_code,
-      article: document.article,
-      text: document.chunk_text,
-      citation: card ? citationForCard(card) : legacyCitation(document.norm_code, document.article),
-      similarity: document.similarity,
-      card,
-    };
+  return (data as VectorDocument[]).slice(0, limit).flatMap((document) => {
+    const slug = slugFromMetadata(document.metadata ?? {}, document.norm_code, document.article);
+    const card = RNE_CARDS.find((c) => c.slug === slug);
+    // Los embeddings históricos pueden seguir indexando tablas derogadas: recuperar
+    // el texto actual contrastado por slug, nunca devolver chunk_text antiguo.
+    return card?.source_sha256 ? [{ ...chunkFromCard(card), similarity: document.similarity }] : [];
   });
 }
 

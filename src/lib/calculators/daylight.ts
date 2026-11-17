@@ -1,3 +1,4 @@
+/** Aritmética de porcentajes configurables; no define un porcentaje normativo universal de iluminación. */
 export function computeDaylight(
   area: number,
   lightPct: number,

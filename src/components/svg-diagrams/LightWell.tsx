@@ -1,3 +1,4 @@
+import { computeLightWell } from "@/lib/calculators/lightwell";
 import { createDiagramScale, DiagramFrame, finiteOr } from "./DiagramFrame";
 import { Dimension } from "./Dimension";
 
@@ -7,24 +8,33 @@ export interface LightWellProps {
   kind?: "habitable" | "servicios" | "services";
   proposedSide?: number;
   side?: number;
+  sides?: 1 | 2 | 3 | 4;
+  building?: "bifamiliar" | "multifamiliar";
 }
 
 const WALL = 0.15;
 const GAP = 1.2;
 
-/** Plan and section of a light well showing the H/3 or H/4 rule. */
+/** Esquema de A.020-2021, cuadro4. */
 export function LightWell({
   wallHeight,
   height,
   kind = "habitable",
   proposedSide,
   side,
+  sides = 2,
+  building = "multifamiliar",
 }: LightWellProps) {
   const safeHeight = Math.max(2, finiteOr(wallHeight ?? height, 6));
   const normalizedKind = kind === "habitable" ? "habitable" : "servicios";
-  const ratio = normalizedKind === "habitable" ? 3 : 4;
-  const base = normalizedKind === "habitable" ? 2.2 : 1.8;
-  const minimumSide = Math.max(base, safeHeight / ratio);
+  const result = computeLightWell({
+    wallHeight: safeHeight,
+    kind: normalizedKind,
+    sides,
+    building,
+  });
+  const base = result.values.baseSide;
+  const minimumSide = result.values.minSide;
   const wellSide = Math.max(minimumSide, finiteOr(proposedSide ?? side, minimumSide));
 
   const planSize = wellSide + WALL * 2;
@@ -45,11 +55,11 @@ export function LightWell({
       heightMeters={frameHeight}
       scale={scale}
       title="POZO DE LUZ / H"
-      normReference="A.010 · Cap. VIII"
+      normReference="A.020-2021 · art.11.3.b, cuadro4"
       ariaLabel={`Planta y sección de pozo de luz: altura ${safeHeight.toFixed(2)} m, lado ${wellSide.toFixed(2)} m`}
       notes={[
-        `${normalizedKind.toUpperCase()} · L ≥ máx(${base.toFixed(2)} m, H/${ratio})`,
-        `H/${ratio} = ${(safeHeight / ratio).toFixed(2)} m → L mín ${minimumSide.toFixed(2)} m`,
+        `${normalizedKind.toUpperCase()} · ${sides} lados propios · ${building}`,
+        `Suma por tramos de18 m; mínimo base ${base.toFixed(2)} m → L mín ${minimumSide.toFixed(2)} m`,
       ]}
     >
       {/* Plan */}

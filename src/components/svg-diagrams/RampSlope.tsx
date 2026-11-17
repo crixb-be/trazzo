@@ -52,7 +52,7 @@ function BreakMark({
 }
 
 /** Section of a ramp: landings, true slope, rise, run and handrail. */
-export function RampSlope({ rise = 0.75, width = 1, slope = 0.1, landing = 1.5 }: RampSlopeProps) {
+export function RampSlope({ rise = 0.3, width = 1, slope = 0.1, landing = 1.5 }: RampSlopeProps) {
   const safeRise = Math.max(0.05, finiteOr(rise, 0.75));
   const safeSlope = Math.max(0.01, finiteOr(slope, 0.1));
   const safeLanding = Math.max(0.9, finiteOr(landing, 1.5));
@@ -119,7 +119,7 @@ export function RampSlope({ rise = 0.75, width = 1, slope = 0.1, landing = 1.5 }
       heightMeters={frameHeight}
       scale={scale}
       title="RAMPA / SECCIÓN"
-      normReference="A.120 · Art. 9"
+      normReference="A.120-2023 · art.6"
       ariaLabel={`Sección de rampa: desnivel ${safeRise.toFixed(2)} m, pendiente ${(safeSlope * 100).toFixed(1)} %, longitud ${run.toFixed(2)} m`}
       notes={[
         `PENDIENTE ${(safeSlope * 100).toFixed(1)} % · ANCHO ${safeWidth.toFixed(2)} m`,

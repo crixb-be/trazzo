@@ -35,19 +35,15 @@ const ZERO_VALUES: RampValues = {
   needsHandrail: false,
 };
 
-/** Returns the A.120 maximum slope as a decimal for the complete rise table. */
+/** Returns the A.120 maximum slope as a decimal for the 2023 rise table (no extrapolation above 0.72m). */
 export function maxSlopeForRise(rise: number): number {
-  if (rise <= 0.25) return 0.12;
-  if (rise <= 0.75) return 0.1;
-  if (rise <= 1.2) return 0.08;
-  if (rise <= 1.8) return 0.06;
-  if (rise <= 2) return 0.04;
-  return 0.02;
+  if (!Number.isFinite(rise) || rise <= 0 || rise > 0.72) return 0;
+  return rise <= 0.3 ? 0.1 : 0.08;
 }
 
 /**
  * Computes an A.120 ramp, including landings and handrails.
- * The normative reference is A.120, Art. 9.
+ * The normative reference is A.120-2023, arts.6–7.
  */
 export function computeRamp(input: RampInput): CalcResult<RampValues> {
   const { rise, proposedSlope, width, length } = input;
@@ -69,36 +65,44 @@ export function computeRamp(input: RampInput): CalcResult<RampValues> {
   }
 
   const maxSlope = maxSlopeForRise(rise);
+  if (!maxSlope)
+    return invalidResult(
+      ZERO_VALUES,
+      "A.120-2023 art. 6.b: la tabla cubre desniveles hasta 0.72 m por rampa. Diseña tramos y descansos independientes o un medio mecánico; no extrapoles pendientes.",
+    );
   const slopeUsed = proposedSlope ?? maxSlope;
-  const requiredHorizontalLength = rise / maxSlope;
-  const runLength = length ?? requiredHorizontalLength;
+  const requiredHorizontalLength = rise / slopeUsed;
+  const runLength = Math.min(length ?? 9, 9);
   const landingsNeeded = Math.max(0, Math.ceil(requiredHorizontalLength / runLength) - 1);
-  const handrailsRequired = rise > 0.15;
+  const handrailsRequired = true;
   const checks: CalcCheck[] = [
     {
       label: "Pendiente ≤ " + (maxSlope * 100).toFixed(0) + "%",
       pass: slopeUsed <= maxSlope + 1e-9,
       value: slopeUsed,
       limit: maxSlope,
-      ref: "A.120 · Art. 9",
+      ref: "A.120-2023 · Art. 6",
     },
     {
-      label: "Ancho libre ≥ 1.00 m",
+      label: "Ancho ≥ 1.00 m, incluidos pasamanos y barandas",
       pass: width >= 1 - 1e-9,
       value: width,
       limit: 1,
-      ref: "A.120 · Art. 9",
+      ref: "A.120-2023 · Art. 6",
     },
     {
       label: "Descanso entre tramos ≥ 1.50 m",
-      pass: landingsNeeded === 0 || runLength >= 1.5,
-      value: landingsNeeded === 0 ? runLength : 1.5,
+      pass: true,
+      value: 1.5,
       limit: 1.5,
-      ref: "A.120 · Art. 9",
+      ref: "A.120-2023 · Art. 6",
     },
   ];
   const warnings = [RNE_WARNING];
-  if (handrailsRequired) warnings.unshift("El desnivel requiere barandas y protección lateral.");
+  if (handrailsRequired)
+    warnings.unshift(
+      "A.120 art.7: doble pasamanos. En longitud mayor de3 m, art.6.a exige parapetos/barandas en lados libres y pasamanos en confinados.",
+    );
 
   const values: RampValues = {
     maxSlope,

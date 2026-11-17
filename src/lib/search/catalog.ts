@@ -11,6 +11,7 @@ export interface SearchEntry {
   terms: string;
 }
 export const TOOL_CATALOG = [
+  ["sismo", "Sismo E.030-2026"],
   ["escaleras", "Escaleras"],
   ["rampas", "Rampas"],
   ["agua", "Dotación de agua"],
@@ -38,14 +39,14 @@ export function searchCatalog(
     ...cards.map((c) => ({
       id: "f:" + c.slug,
       title: c.title,
-      kind: c.norm_code,
+      kind: "RNE · " + c.norm_code,
       href: "/normativa/" + c.slug,
       terms: [c.article, c.summary, ...c.keywords].join(" "),
     })),
     ...MEASURES.map((m) => ({
       id: "m:" + m.id,
       title: m.title,
-      kind: "Medidas",
+      kind: m.source ? "Ref. internacional" : "Plantilla TRAZZO",
       href: "/medidas?q=" + encodeURIComponent(m.title),
       terms: m.category + " " + m.note,
     })),
@@ -56,6 +57,13 @@ export function searchCatalog(
       href: "/calculadoras?tab=" + id,
       terms: "herramienta",
     })),
+    {
+      id: "biblioteca",
+      title: "Biblioteca documental RNE Neufert Ching",
+      kind: "Fuentes",
+      href: "/biblioteca",
+      terms: "artículos seguridad antropometría teoría normativa",
+    },
     {
       id: "matriz",
       title: "Matriz de relaciones",

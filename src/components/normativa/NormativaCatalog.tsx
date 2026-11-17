@@ -6,7 +6,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge, Card, Chip, EmptyState, Input, LoadingState, PaywallModal } from "@/components/ui";
 import { useLibraryActivity } from "@/lib/offline/library";
-import type { RneCategory } from "@/data/seed-rne";
+import { RNE_CARDS, type RneCategory } from "@/data/seed-rne";
 import { useCards } from "@/lib/offline/hooks";
 import { ensureSeeded } from "@/lib/offline/db";
 import { canUseProCards } from "@/lib/plans/plans";
@@ -21,18 +21,7 @@ const categories: Array<"Todas" | RneCategory> = [
   "Sanitarias",
   "Estacionamientos",
 ];
-const normCodes = [
-  "Todos",
-  "A.010",
-  "A.020",
-  "A.070",
-  "A.080",
-  "A.120",
-  "A.130",
-  "IS.010",
-  "E.020",
-  "E.060",
-];
+const normCodes = ["Todos", ...new Set(RNE_CARDS.map((card) => card.norm_code))];
 
 export function NormativaCatalog() {
   const cards = useCards();

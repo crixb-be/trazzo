@@ -1,79 +1,63 @@
-import {
-  invalidResult,
-  isFiniteNonNegative,
-  type CalcCheck,
-  type CalcResult,
-  RNE_WARNING,
-} from "./types";
-
+import { invalidResult, type CalcResult } from "./types";
 export interface LightWellInput {
   wallHeight: number;
   kind: "habitable" | "servicios";
   proposedSide?: number;
+  sides?: 1 | 2 | 3 | 4;
+  building?: "bifamiliar" | "multifamiliar";
 }
-
 export interface LightWellValues {
   minSide: number;
-  ratio: 3 | 4;
-  baseSide: number;
   minimumSide: number;
+  baseSide: number;
+  ratio: number;
 }
-
-const ZERO_VALUES: LightWellValues = {
-  minSide: 0,
-  ratio: 3,
-  baseSide: 2.2,
-  minimumSide: 0,
-};
-
-/**
- * Computes A.010 light-well geometry: H/3 for habitable rooms and H/4 for services.
- * The fixed minimums are 2.20 m and 1.80 m respectively.
- */
-export function computeLightWell(input: LightWellInput): CalcResult<LightWellValues> {
-  const { wallHeight, kind, proposedSide } = input;
-
-  if (!isFiniteNonNegative(wallHeight) || wallHeight <= 0) {
-    return invalidResult(ZERO_VALUES, "La altura del paramento debe ser finita y mayor que cero.");
-  }
-
-  if (proposedSide !== undefined && (!isFiniteNonNegative(proposedSide) || proposedSide <= 0)) {
-    return invalidResult(ZERO_VALUES, "El lado propuesto debe ser finito y mayor que cero.");
-  }
-
-  const ratio = kind === "habitable" ? 3 : 4;
-  const baseSide = kind === "habitable" ? 2.2 : 1.8;
-  const minSide = Math.max(baseSide, wallHeight / ratio);
-  const sideToCheck = proposedSide ?? minSide;
-  const checks: CalcCheck[] = [
-    {
-      label: "Lado libre ≥ " + baseSide.toFixed(2) + " m",
-      pass: sideToCheck >= baseSide - 1e-9,
-      value: sideToCheck,
-      limit: baseSide,
-      ref: "A.010 · Cap. VIII",
-    },
-    {
-      label: "Lado libre ≥ H/" + ratio,
-      pass: sideToCheck >= wallHeight / ratio - 1e-9,
-      value: sideToCheck,
-      limit: wallHeight / ratio,
-      ref: "A.010 · Cap. VIII",
-    },
-  ];
-
-  const values: LightWellValues = { minSide, ratio, baseSide, minimumSide: minSide };
-  return { ok: checks.every((check) => check.pass), values, checks, warnings: [RNE_WARNING] };
+export function computeLightWell(p: LightWellInput): CalcResult<LightWellValues> {
+  const sides = p.sides ?? 2,
+    building = p.building ?? "multifamiliar",
+    zero = { minSide: 0, minimumSide: 0, baseSide: 0, ratio: 0 };
+  if (
+    !Number.isFinite(p.wallHeight) ||
+    p.wallHeight <= 0 ||
+    ![1, 2, 3, 4].includes(sides) ||
+    (p.proposedSide !== undefined && (!Number.isFinite(p.proposedSide) || p.proposedSide <= 0))
+  )
+    return invalidResult(zero, "Dimensiones positivas y entre 1 y 4 lados propios requeridos.");
+  const rates =
+    p.kind === "habitable"
+      ? sides <= 2
+        ? [0.3, 0.15, 0.1, 0.1]
+        : [0.35, 0.25, 0.15, 0.15]
+      : sides <= 2
+        ? [0.25, 0.13, 0.1, 0.1]
+        : [0.3, 0.16, 0.13, 0.13];
+  let distance = 0;
+  for (let i = 0; i < 4; i++)
+    distance += Math.max(0, Math.min(18, p.wallHeight - 18 * i)) * rates[i];
+  distance += Math.max(0, p.wallHeight - 72) * 0.1;
+  const baseSide = building === "multifamiliar" ? 2.1 : p.kind === "habitable" ? 2 : 1.8;
+  const minSide = Math.max(baseSide, distance);
+  return {
+    ok: (p.proposedSide ?? minSide) >= minSide,
+    values: { minSide, minimumSide: minSide, baseSide, ratio: 0 },
+    checks: [
+      {
+        label: "Distancia perpendicular mínima",
+        pass: (p.proposedSide ?? minSide) >= minSide,
+        value: p.proposedSide ?? minSide,
+        limit: minSide,
+        ref: "A.020-2021 art. 11.3.b, cuadro 4",
+      },
+    ],
+    warnings: [
+      "Modelo de vivienda bifamiliar/multifamiliar. H desde alféizar más bajo o 1.00 m sobre piso hasta parapeto superior; verificar lados propios, distancia paralela, compensación y retranques conforme notas del cuadro 4. No aplica a otros usos.",
+    ],
+  };
 }
-
-/** Compatibility wrapper accepting the old "services" spelling. */
 export function calculateLightWell(
   wallHeight: number,
   kind: "habitable" | "services" = "habitable",
-): CalcResult<LightWellValues> {
+) {
   return computeLightWell({ wallHeight, kind: kind === "services" ? "servicios" : kind });
 }
-
-export type Check = CalcCheck;
-export type { CalcResult } from "./types";
 export { RNE_WARNING } from "./types";

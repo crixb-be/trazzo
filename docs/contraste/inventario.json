@@ -1,0 +1,162 @@
+[
+  {
+    "file": "docs/rne/A-030-2019-HOSPEDAJE.pdf",
+    "bytes": 12254431,
+    "sha256": "d0ac5f74231c9196999a9b4a46f9ddc126690c6ead84fe0b7d33278958630fcc",
+    "chars": 68015,
+    "pages": "19",
+    "error": ""
+  },
+  {
+    "file": "docs/rne/A.010-Condiciones-Generales-de-Diseno-Actualizado-julio-2021.pdf",
+    "bytes": 3958479,
+    "sha256": "a18e83e3139a05f47578e24dc0afab71acf164de86c99b7061ec3ddd244c8333",
+    "chars": 101961,
+    "pages": "47",
+    "error": ""
+  },
+  {
+    "file": "docs/rne/A.020-RNE-actualizada-el-2021.pdf",
+    "bytes": 882045,
+    "sha256": "bbad8f2e0e9a8992c1c60c6786442b3f8b944bc98d9a86fcaba49daa87543315",
+    "chars": 64675,
+    "pages": "16",
+    "error": ""
+  },
+  {
+    "file": "docs/rne/A.040 EDUCACIÓN - RM N° 068-2020-VIVIENDA.pdf",
+    "bytes": 7700537,
+    "sha256": "6eb44f4f68d2dd7ad3aaad46f3272cd7d13161013419e10452d4ef2583aa115c",
+    "chars": 38289,
+    "pages": "12",
+    "error": ""
+  },
+  {
+    "file": "docs/rne/A.050 SALUD DS N° 011-2012.pdf",
+    "bytes": 2167519,
+    "sha256": "29f60341ece9a47281e40de5fb27956d9c705811f52d2476c5cd5ebd77d16f5a",
+    "chars": 29550,
+    "pages": "10",
+    "error": ""
+  },
+  {
+    "file": "docs/rne/A.060 INDUSTRIA.pdf",
+    "bytes": 445992,
+    "sha256": "3bb2a2f010b974a094624afb8dcdb6363e3ba7f2859982242d87a5aa11ff0d57",
+    "chars": 22496,
+    "pages": "3",
+    "error": ""
+  },
+  {
+    "file": "docs/rne/A.070 COMERCIO - RM N°061-2021-VIVIENDA.pdf",
+    "bytes": 1138253,
+    "sha256": "7b4e80c871cd95845d1657cc91a2b8531769090eb9695d7911aa042fbe0aa8ed",
+    "chars": 107497,
+    "pages": "16",
+    "error": ""
+  },
+  {
+    "file": "docs/rne/A.080 OFICINAS.pdf",
+    "bytes": 443414,
+    "sha256": "42309ba3cb0b0eb6e3b5aa395f5bd8b3be04a841637e8a3e0998c056efcd8169",
+    "chars": 15000,
+    "pages": "3",
+    "error": ""
+  },
+  {
+    "file": "docs/rne/A.090 SERVICIOS COMUNALES.pdf",
+    "bytes": 433479,
+    "sha256": "3ca289b7b066c1218aad2d260854df5ef641a1683b193da8e15bb09c58559a35",
+    "chars": 13455,
+    "pages": "2",
+    "error": ""
+  },
+  {
+    "file": "docs/rne/A.100 RECREACIÓN Y DEPORTES DS N° 006-2014.pdf",
+    "bytes": 548091,
+    "sha256": "a5ddbffc34ad00ddf35ad6e14c6d474964ddd1cc4a41b88eb1d87482598f0df5",
+    "chars": 28733,
+    "pages": "12",
+    "error": ""
+  },
+  {
+    "file": "docs/rne/A.110.pdf",
+    "bytes": 446333,
+    "sha256": "1ae1f4b3e6e5fd4fe2583512e3fe5bcaf40e13fbbcc3302f6dbe8862e2edc5dd",
+    "chars": 18881,
+    "pages": "3",
+    "error": ""
+  },
+  {
+    "file": "docs/rne/A.120-2023.pdf",
+    "bytes": 8274867,
+    "sha256": "3c06d2a32bff3a480f8c45a42b15d989bb53917f4cae1485d6018f67e05a2c94",
+    "chars": 103122,
+    "pages": "65",
+    "error": ""
+  },
+  {
+    "file": "docs/rne/A.130-Requisitos-de-seguridad.pdf",
+    "bytes": 4440548,
+    "sha256": "04d3e85a0bffe1d95458060509536952ad3a8b0df64a59a733a9e9d7ee5ac084",
+    "chars": 218587,
+    "pages": "78",
+    "error": ""
+  },
+  {
+    "file": "docs/rne/E.030-Diseno-sismorresistente-2026.pdf",
+    "bytes": 15058005,
+    "sha256": "5800f5a314d28d784fc80bb3ee41128526233b12e0f5c53f1e977e74fd6d8bac",
+    "chars": 295142,
+    "pages": "68",
+    "error": ""
+  },
+  {
+    "file": "docs/rne/G.010.pdf",
+    "bytes": 548648,
+    "sha256": "8cb4eae15d2186e788da2ad6af8848d08e22eb5ada404e70bd40840c16ca0c42",
+    "chars": 8639,
+    "pages": "3",
+    "error": ""
+  },
+  {
+    "file": "docs/rne/G.020.pdf",
+    "bytes": 570002,
+    "sha256": "d2e4f8841aab3b0860a0fc33c57f1c56b8f9aed6f1b0dc716202cfa500710ec0",
+    "chars": 2831,
+    "pages": "2",
+    "error": ""
+  },
+  {
+    "file": "docs/rne/G.040-2021.pdf",
+    "bytes": 1645248,
+    "sha256": "3e7fcd78088c84c02764fc2b8d7357facbfe3aebbd5d9441a73150201a9d6398",
+    "chars": 53389,
+    "pages": "28",
+    "error": ""
+  },
+  {
+    "file": "docs/rne/IS.010-2025.pdf",
+    "bytes": 942402,
+    "sha256": "59b395472e00dc9a4a3160984c2b872053850b95ccd954d0e251bdc6f5f16314",
+    "chars": 25318,
+    "pages": "3",
+    "error": ""
+  },
+  {
+    "file": "docs/biblioteca/ERNST NEUFERT- ARTE DE PROYECTAR EN ARQUITECTURA.pdf",
+    "bytes": 57864100,
+    "sha256": "e5dca42c12e19d6e67a1cc6b7a94945e438dc08efa5702b668169c90c0212d76",
+    "chars": 268,
+    "pages": "268",
+    "error": ""
+  },
+  {
+    "file": "docs/biblioteca/FRANCIS D.K. CHING- FORMA, ESPACIO Y ORDEN.pdf",
+    "bytes": 36717978,
+    "sha256": "acf61635654791c6b1f45402cb601d80dba117feeec08e2dab45c1ebd5d4c5b4",
+    "chars": 414,
+    "pages": "414",
+    "error": ""
+  }
+]

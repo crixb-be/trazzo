@@ -3,17 +3,21 @@
 import { FolderPlus } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { useProjects } from "@/lib/offline/hooks";
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "@/lib/offline/db";
 import { saveProjectNote } from "@/lib/offline/project-hub";
 import type { ResultSheet } from "@/lib/share/result-sheet";
 import { toast } from "./Feedback";
 
 /** Files the current calculator result under one of the user's projects. */
 export function SaveToProject({ sheet }: { sheet: ResultSheet }) {
-  const projects = useProjects();
+  const projects = useLiveQuery(
+    async () => (db ? db.projects.orderBy("updatedAt").reverse().toArray() : []),
+    [],
+  );
   const [open, setOpen] = useState(false);
   const [projectId, setProjectId] = useState("");
-  const chosen = projects.find((project) => project.id === projectId) ?? projects[0];
+  const chosen = projects?.find((project) => project.id === projectId) ?? projects?.[0];
 
   async function save(): Promise<void> {
     if (!chosen) return;
@@ -31,12 +35,18 @@ export function SaveToProject({ sheet }: { sheet: ResultSheet }) {
 
   if (!open) {
     return (
-      <button type="button" className="btn btn-sm" onClick={() => setOpen(true)}>
+      <button
+        type="button"
+        className="btn btn-sm"
+        disabled={projects === undefined}
+        onClick={() => setOpen(true)}
+      >
         <FolderPlus size={14} aria-hidden="true" /> Guardar en proyecto
       </button>
     );
   }
 
+  if (!projects) return <p role="status">Cargando proyectos…</p>;
   if (projects.length === 0) {
     return (
       <p className="save-to-project muted small" role="status">

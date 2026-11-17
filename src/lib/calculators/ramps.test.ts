@@ -1,43 +1,31 @@
-import { describe, expect, it } from "vitest";
+import { describe, it, expect } from "vitest";
 import { computeRamp, maxSlopeForRise } from "./ramps";
-
-describe("computeRamp", () => {
+describe("A.120-2023 RM075 arts.6–7", () => {
   it.each([
-    [0.25, 0.12],
-    [0.26, 0.1],
-    [0.75, 0.1],
-    [0.76, 0.08],
-    [2, 0.04],
-    [2.01, 0.02],
-  ])("uses the table at rise %s", (rise, expected) => {
-    expect(maxSlopeForRise(rise)).toBe(expected);
+    [0.25, 0.1],
+    [0.3, 0.1],
+    [0.31, 0.08],
+    [0.72, 0.08],
+    [0.73, 0],
+    [2, 0],
+  ])("tabla actual, desnivel %s", (rise, expected) => expect(maxSlopeForRise(rise)).toBe(expected));
+  it("no extrapola por encima de0.72m", () =>
+    expect(computeRamp({ rise: 1.2, width: 1 }).ok).toBe(false));
+  it("calcula longitud por pendiente usada y descansa cada9m", () => {
+    const r = computeRamp({ rise: 0.72, width: 1, proposedSlope: 0.06 });
+    expect(r.values.length).toBe(12);
+    expect(r.values.requiredHorizontalLength).toBe(12);
+    expect(r.values.landingsNeeded).toBe(1);
   });
-
-  it("computes required horizontal length", () => {
-    const result = computeRamp({ rise: 0.75, width: 1 });
-    expect(result.values.requiredHorizontalLength).toBeCloseTo(7.5);
-    expect(result.values.slopeUsed).toBe(0.1);
+  it("rechaza12% aunque antes estuviera permitido", () =>
+    expect(computeRamp({ rise: 0.25, width: 1, proposedSlope: 0.12 }).ok).toBe(false));
+  it("no usa la longitud de tramo como longitud de descanso", () => {
+    const r = computeRamp({ rise: 0.6, width: 1, length: 3 });
+    expect(r.values.landingsNeeded).toBe(2);
+    expect(r.checks.find((c) => c.label.includes("Descanso"))?.limit).toBe(1.5);
   });
-
-  it("rejects a proposed slope above the limit", () => {
-    const result = computeRamp({ rise: 0.26, proposedSlope: 0.12, width: 1 });
-    expect(result.ok).toBe(false);
-  });
-
-  it("requires a landing when the available run is short", () => {
-    const result = computeRamp({ rise: 2, width: 1, length: 10 });
-    expect(result.values.landingsNeeded).toBe(4);
-    expect(result.checks.some((check) => check.label.includes("Descanso"))).toBe(true);
-  });
-
-  it("rejects a narrow ramp", () => {
-    const result = computeRamp({ rise: 0.25, width: 0.9 });
-    expect(result.ok).toBe(false);
-  });
-
-  it("warns on invalid values", () => {
-    const result = computeRamp({ rise: -1, width: 1 });
-    expect(result.ok).toBe(false);
-    expect(result.warnings[0]).toMatch(/desnivel/i);
+  it("ancho y entradas inválidas", () => {
+    expect(computeRamp({ rise: 0.3, width: 0.9 }).ok).toBe(false);
+    expect(computeRamp({ rise: NaN, width: 1 }).ok).toBe(false);
   });
 });

@@ -17,7 +17,9 @@ import { CabidaCalculator } from "./CabidaCalculator";
 
 import { RneExtraCalculators, type RneTool } from "./RneExtraCalculators";
 
+import { SeismicCalculator } from "./SeismicCalculator";
 type CalculatorTab =
+  | "sismo"
   | RneTool
   | "cabida"
   | "utilidades"
@@ -29,6 +31,7 @@ type CalculatorTab =
   | "evacuacion";
 
 const tabs: Array<{ id: CalculatorTab; label: string }> = [
+  { id: "sismo", label: "Sismo E.030-2026" },
   { id: "aforo", label: "Aforo" },
   { id: "sanitarios", label: "Aparatos sanitarios" },
   { id: "luz", label: "Luz y ventilación" },
@@ -108,6 +111,7 @@ export function CalculatorWorkspace() {
       {(["aforo", "sanitarios", "luz", "parking"] as string[]).includes(activeTab) && (
         <RneExtraCalculators key={activeTab} tool={activeTab as RneTool} />
       )}
+      {activeTab === "sismo" && <SeismicCalculator />}
       {activeTab === "cabida" && <CabidaCalculator />}
       {activeTab === "utilidades" && <FieldTools />}
       {activeTab === "materiales" && <MaterialsCalculator />}

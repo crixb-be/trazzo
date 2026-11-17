@@ -136,12 +136,14 @@ test("el proyecto reúne cálculos y la copia de seguridad los restaura", async 
 
   // Se borra todo lo del dispositivo y se restaura desde el archivo.
   await page.getByRole("button", { name: "Restablecer datos" }).click();
+  const resetLoaded = page.waitForEvent("load");
   await page.getByRole("button", { name: "Restablecer", exact: true }).click();
-  await page.waitForLoadState("load");
+  await resetLoaded;
   await page.goto("/metrados");
   await expect(page.getByText("Casa eje")).toHaveCount(0);
 
   await page.goto("/cuenta");
+  await expect(page.getByRole("button", { name: "Restaurar copia", exact: true })).toBeEnabled();
   await page.getByLabel("Archivo de copia de seguridad").setInputFiles("test-results/copia.json");
   await expect(page.getByRole("alertdialog")).toContainText("1 proyecto(s)");
   await page.getByRole("button", { name: "Restaurar", exact: true }).click();
@@ -153,6 +155,7 @@ test("el proyecto reúne cálculos y la copia de seguridad los restaura", async 
 
   // Un archivo cualquiera se rechaza con un motivo.
   await page.goto("/cuenta");
+  await expect(page.getByRole("button", { name: "Restaurar copia", exact: true })).toBeEnabled();
   await page.getByLabel("Archivo de copia de seguridad").setInputFiles({
     name: "otro.json",
     mimeType: "application/json",

@@ -8,6 +8,7 @@ import { GlobalSearch, OfflineBadge, ThemeToggle } from "@/components/ui";
 import { useStudioProfile } from "@/lib/offline/hooks";
 
 const titles: Record<string, string> = {
+  "/biblioteca": "Biblioteca documental",
   "/medidas": "Medidas de bolsillo",
   "/": "Espacio de trabajo",
   "/normativa": "Biblioteca RNE",
@@ -50,7 +51,7 @@ export function Header() {
           className="icon-btn header-search-trigger"
           type="button"
           onClick={() => setMobileSearchOpen(true)}
-          aria-label="Buscar en el RNE"
+          aria-label="Buscar en TRAZZO"
           aria-expanded={mobileSearchOpen}
         >
           <Search size={17} aria-hidden="true" />
@@ -67,7 +68,7 @@ export function Header() {
       </div>
 
       {mobileSearchOpen && (
-        <div className="mobile-search-sheet" role="dialog" aria-label="Buscar en el RNE">
+        <div className="mobile-search-sheet" role="dialog" aria-label="Buscar en TRAZZO">
           <GlobalSearch autoFocus onDismiss={() => setMobileSearchOpen(false)} />
           <button
             className="icon-btn"

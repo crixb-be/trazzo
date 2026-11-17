@@ -25,7 +25,8 @@ export function RampCalculator() {
         <div className="eyebrow">ENTRADA / A.120</div>
         <h2>Rampa accesible</h2>
         <p className="muted small">
-          Ingresa la pendiente propuesta como porcentaje. La tabla usa el desnivel total.
+          Ingresa la pendiente propuesta como porcentaje. A.120-2023 art. 6: hasta 0.30 m, 10%;
+          hasta 0.72 m, 8%. No se extrapola a desniveles mayores.
         </p>
         <div className="field-grid">
           <NumberField
@@ -36,7 +37,7 @@ export function RampCalculator() {
             onValueChange={(value) => setRise(value ?? 0)}
           />
           <NumberField
-            label="Ancho libre"
+            label="Ancho incluidos pasamanos y barandas"
             unit="m"
             value={width}
             min={0}
@@ -51,7 +52,7 @@ export function RampCalculator() {
             onValueChange={setProposedSlope}
           />
           <NumberField
-            label="Longitud disponible"
+            label="Longitud disponible por tramo (máx. 9 m)"
             unit="m"
             value={availableLength}
             min={0}
@@ -66,7 +67,11 @@ export function RampCalculator() {
         <DiagramFor type="ramp-slope" params={{ rise, width, slope: result.values.slopeUsed }} />
         <CalculatorResult
           eyebrow="RESULTADO / A.120"
-          main={(result.values.maxSlope * 100).toFixed(0) + "% máximo"}
+          main={
+            result.values.maxSlope
+              ? (result.values.maxSlope * 100).toFixed(0) + "% máximo"
+              : "Fuera de la tabla"
+          }
           details={
             "Longitud requerida " +
             result.values.requiredHorizontalLength.toFixed(2) +

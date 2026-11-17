@@ -1,0 +1,57 @@
+[
+  {
+    "term": "Aforo",
+    "page": 3,
+    "text": "Capacidad de personas que puede albergar una edificación, piso, nivel o ambiente en relación a su funcionalidad"
+  },
+  {
+    "term": "Altura de la edificación",
+    "page": 4,
+    "text": "Dimensión vertical expresada en metros de una edificación."
+  },
+  {
+    "term": "Área libre",
+    "page": 5,
+    "text": "Área y/o superficie de terreno en la cual no existen proyecciones de áreas techadas, y se calcula sumando las"
+  },
+  {
+    "term": "Área ocupada",
+    "page": 6,
+    "text": "Área y/o superficie total de una unidad inmobiliaria que encierra la suma de áreas techadas y sin techar"
+  },
+  {
+    "term": "Área techada",
+    "page": 6,
+    "text": "Sumatoria de la superficie y/o área de las proyecciones de los límites de la poligonal del techo que"
+  },
+  {
+    "term": "Área útil",
+    "page": 7,
+    "text": "Área y/o superficie de un ambiente, donde se desarrollan las actividades de acuerdo al uso de la misma, sin"
+  },
+  {
+    "term": "Coeficiente de edificación",
+    "page": 9,
+    "text": "Factor que se multiplica por el área de un terreno urbano y cuyo resultado es el área techada"
+  },
+  {
+    "term": "Densidad habitacional",
+    "page": 10,
+    "text": "Número de habitantes por hectárea de una edificación, que corresponde a la sumatoria de los"
+  },
+  {
+    "term": "Vivienda bifamiliar",
+    "page": 28,
+    "text": "Edificación de uso residencial constituida por dos unidades de vivienda con acceso independiente,"
+  },
+  {
+    "term": "Vivienda multifamiliar",
+    "page": 28,
+    "text": "Edificación de dos a más unidades de vivienda en un edificio, cuyos bienes y servicios comunes"
+  },
+  {
+    "term": "Vivienda unifamiliar",
+    "page": 28,
+    "text": "Unidad de vivienda sobre un lote único, destinado a la residencia de un solo grupo familiar."
+  }
+]

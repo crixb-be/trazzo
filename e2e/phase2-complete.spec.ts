@@ -26,9 +26,9 @@ test("asistente responde sin red y conserva historial", async ({ page }) => {
     .getByRole("textbox", { name: "Pregunta al asistente RNE" })
     .fill("ancho de puerta accesible");
   await page.locator(".chat-form button[type=submit]").click();
-  await expect(page.locator(".chat-message.assistant")).toContainText("0.90");
+  await expect(page.locator(".chat-message.assistant")).toContainText("1.00");
   await page.reload();
-  await expect(page.locator(".chat-message.assistant")).toContainText("0.90");
+  await expect(page.locator(".chat-message.assistant")).toContainText("1.00");
 });
 test("buscador abre medidas y honorarios conserva datos entre pasos", async ({ page }) => {
   await page.goto("/");

@@ -39,10 +39,10 @@ export function DoorClearance({
       widthMeters={frameWidth}
       heightMeters={frameHeight}
       scale={scale}
-      title="PUERTA / LUZ LIBRE"
-      normReference="A.120 · Art. 9 / A.010 · Vanos"
-      ariaLabel={`Planta de puerta con arco de giro: ancho libre ${clearWidth.toFixed(2)} m, altura ${clearHeight.toFixed(2)} m`}
-      notes={[`ANCHO LIBRE ${clearWidth.toFixed(2)} m · ALTURA ${clearHeight.toFixed(2)} m`]}
+      title="PUERTA / VANO"
+      normReference="A.120-2023 art.4 / A.020 art.12.2"
+      ariaLabel={`Planta de puerta con arco de giro: ancho de vano ${clearWidth.toFixed(2)} m, altura ${clearHeight.toFixed(2)} m`}
+      notes={[`ANCHO VANO ${clearWidth.toFixed(2)} m · ALTURA ${clearHeight.toFixed(2)} m`]}
     >
       {/* Plan: wall stubs, open leaf and swing arc */}
       <rect

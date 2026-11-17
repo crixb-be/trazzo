@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { MEASURES } from "@/data/medidas";
 import { PocketDiagram } from "@/components/svg-diagrams/PocketDiagram";
@@ -22,9 +23,12 @@ export function MeasuresWorkspace() {
     <div>
       <h1 className="page-title">Medidas de bolsillo</h1>
       <p>
-        Referencias para anteproyecto. Los módulos de ambientes no son mínimos normativos. Todas las
-        fichas están por verificar con bibliografía.
+        Teoría y referencia arquitectónica internacional · no es normativa peruana. La antropometría
+        con fuente se identifica por página y figura. Los módulos de mobiliario y ambientes sin
+        fuente son plantillas ilustrativas de TRAZZO, no mínimos legales ni medidas extraídas de
+        Neufert.
       </p>
+      <Link href="/biblioteca">Fuentes: Neufert y Ching / consultar RNE por separado</Link>
       <div className="field-grid">
         <label>
           Buscar medidas
@@ -43,11 +47,15 @@ export function MeasuresWorkspace() {
       <div className="category-grid">
         {matches.map((m) => (
           <article className="card" key={m.id}>
-            <span className="badge">Por verificar</span>
+            <span className="badge">
+              {m.source ? "Referencia internacional documentada" : "Plantilla ilustrativa TRAZZO"}
+            </span>
             <h2>{m.title}</h2>
             <PocketDiagram measure={m} />
             <p>{m.note}</p>
-            <small>Referencia de diseño · pendiente de fuente · {m.category}</small>
+            <small>
+              {m.source ?? "Ejemplo de diseño, sin atribución bibliográfica"} · {m.category}
+            </small>
           </article>
         ))}
       </div>

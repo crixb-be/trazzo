@@ -1,35 +1,27 @@
-import { describe, expect, it } from "vitest";
+import { it, expect } from "vitest";
 import { computeLightWell } from "./lightwell";
-
-describe("computeLightWell", () => {
-  it("uses H/3 for habitable rooms", () => {
-    expect(computeLightWell({ wallHeight: 9, kind: "habitable" }).values.minSide).toBe(3);
-  });
-
-  it("uses the 2.20 m habitable minimum", () => {
-    expect(computeLightWell({ wallHeight: 4, kind: "habitable" }).values.minSide).toBe(2.2);
-  });
-
-  it("uses H/4 for services", () => {
-    expect(computeLightWell({ wallHeight: 8, kind: "servicios" }).values.minSide).toBe(2);
-  });
-
-  it("uses the 1.80 m service minimum", () => {
-    expect(computeLightWell({ wallHeight: 4, kind: "servicios" }).values.minSide).toBe(1.8);
-  });
-
-  it("fails a proposed side below the rule", () => {
-    const result = computeLightWell({
-      wallHeight: 9,
-      kind: "habitable",
-      proposedSide: 2.2,
-    });
-    expect(result.ok).toBe(false);
-  });
-
-  it("warns for invalid height", () => {
-    const result = computeLightWell({ wallHeight: 0, kind: "habitable" });
-    expect(result.ok).toBe(false);
-    expect(result.warnings.length).toBeGreaterThan(0);
-  });
+it("A.020 cuadro4 primertramo, lados propios y mínimo multifamiliar", () => {
+  expect(computeLightWell({ wallHeight: 9, kind: "habitable" }).values.minSide).toBeCloseTo(2.7);
+  expect(
+    computeLightWell({ wallHeight: 9, kind: "habitable", sides: 4 }).values.minSide,
+  ).toBeCloseTo(3.15);
+  expect(computeLightWell({ wallHeight: 4, kind: "servicios" }).values.minSide).toBe(2.1);
+});
+it("suma tramos, no aplica el último porcentaje a toda la altura", () => {
+  expect(
+    computeLightWell({ wallHeight: 36, kind: "habitable", sides: 2 }).values.minSide,
+  ).toBeCloseTo(8.1);
+  expect(
+    computeLightWell({ wallHeight: 36, kind: "servicios", sides: 4 }).values.minSide,
+  ).toBeCloseTo(8.28);
+  expect(
+    computeLightWell({ wallHeight: 73, kind: "habitable", sides: 2 }).values.minSide,
+  ).toBeCloseTo(11.8);
+});
+it("base bifamiliar y entrada inválida", () => {
+  expect(
+    computeLightWell({ wallHeight: 4, kind: "servicios", building: "bifamiliar" }).values.minSide,
+  ).toBe(1.8);
+  expect(computeLightWell({ wallHeight: 0, kind: "servicios" }).ok).toBe(false);
+  expect(computeLightWell({ wallHeight: 9, kind: "habitable", proposedSide: 2.2 }).ok).toBe(false);
 });

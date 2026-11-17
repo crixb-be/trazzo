@@ -5,7 +5,9 @@ it("encuentra herramientas y medidas sin tildes", () => {
   expect(
     searchCatalog("pintura", RNE_CARDS, [], []).some((e) => e.href.includes("materiales")),
   ).toBe(true);
-  expect(searchCatalog("closet", RNE_CARDS, [], []).some((e) => e.kind === "Medidas")).toBe(true);
+  expect(
+    searchCatalog("closet", RNE_CARDS, [], []).some((e) => e.kind === "Plantilla TRAZZO"),
+  ).toBe(true);
   expect(searchCatalog("", RNE_CARDS, [], [])).toEqual([]);
 });
 it("busca proyectos locales sin confundir identificadores", () => {
