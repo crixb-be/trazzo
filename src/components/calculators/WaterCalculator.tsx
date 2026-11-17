@@ -1,37 +1,22 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Trash2, Waves } from "lucide-react";
-import { Button, Card, NumberField, Select } from "@/components/ui";
-import {
-  multiFamilyDemand,
-  officeDemand,
-  singleFamilyDemand,
-  type ApartmentDemand,
-} from "@/lib/calculators/water";
+import { Waves } from "lucide-react";
+import { Card, NumberField, Select } from "@/components/ui";
+import { residentialDemand, officeDemand, type ClimateCharacter } from "@/lib/calculators/water";
 import { CalculatorResult } from "./CalculatorResult";
 
 type WaterMode = "unifamiliar" | "multifamiliar" | "oficinas";
 
 export function WaterCalculator() {
   const [mode, setMode] = useState<WaterMode>("unifamiliar");
-  const [area, setArea] = useState(200);
-  const [units, setUnits] = useState<ApartmentDemand[]>([{ bedrooms: 2, count: 1 }]);
+  const [climate, setClimate] = useState<ClimateCharacter>("templado");
+  const [people, setPeople] = useState(4);
   const [officeArea, setOfficeArea] = useState(100);
 
   const result = useMemo(() => {
-    if (mode === "unifamiliar") return singleFamilyDemand(area);
-    if (mode === "oficinas") return officeDemand(officeArea);
-    return multiFamilyDemand(units);
-  }, [area, mode, officeArea, units]);
-
-  function addUnit(): void {
-    setUnits((current) => [...current, { bedrooms: 1, count: 1 }]);
-  }
-
-  function updateUnit(index: number, next: ApartmentDemand): void {
-    setUnits((current) => current.map((unit, unitIndex) => (unitIndex === index ? next : unit)));
-  }
+    return mode === "oficinas" ? officeDemand(officeArea) : residentialDemand(climate, people);
+  }, [climate, mode, officeArea, people]);
 
   return (
     <div className="calculator-layout water-layout">
@@ -48,13 +33,25 @@ export function WaterCalculator() {
             { value: "oficinas", label: "Oficinas" },
           ]}
         />
-        {mode === "unifamiliar" && (
+        {mode !== "oficinas" && (
+          <Select
+            label="Carácter de clima"
+            value={climate}
+            onChange={(event) => setClimate(event.target.value as ClimateCharacter)}
+            options={[
+              { value: "calido", label: "Cálido · 169 L/persona/día" },
+              { value: "templado", label: "Templado · 155 L/persona/día" },
+              { value: "frio", label: "Frío · 129 L/persona/día" },
+            ]}
+          />
+        )}
+        {mode !== "oficinas" && (
           <NumberField
-            label="Área de lote"
-            unit="m²"
-            value={area}
-            min={0}
-            onValueChange={(value) => setArea(value ?? 0)}
+            label="Personas estimadas"
+            value={people}
+            min={1}
+            step={1}
+            onValueChange={(value) => setPeople(value ?? 0)}
           />
         )}
         {mode === "oficinas" && (
@@ -66,43 +63,9 @@ export function WaterCalculator() {
             onValueChange={(value) => setOfficeArea(value ?? 0)}
           />
         )}
-        {mode === "multifamiliar" && (
-          <div className="unit-rows">
-            {units.map((unit, index) => (
-              <div className="unit-row" key={index}>
-                <NumberField
-                  label="Dormitorios"
-                  value={unit.bedrooms}
-                  min={1}
-                  max={5}
-                  step={1}
-                  onValueChange={(value) => updateUnit(index, { ...unit, bedrooms: value ?? 1 })}
-                />
-                <NumberField
-                  label="Cantidad"
-                  unit="dptos."
-                  value={unit.count}
-                  min={1}
-                  step={1}
-                  onValueChange={(value) => updateUnit(index, { ...unit, count: value ?? 1 })}
-                />
-                <button
-                  className="icon-btn"
-                  type="button"
-                  onClick={() => setUnits((current) => current.filter((_, row) => row !== index))}
-                  aria-label="Eliminar tipo de departamento"
-                >
-                  <Trash2 size={15} />
-                </button>
-              </div>
-            ))}
-            <Button variant="ghost" size="sm" onClick={addUnit}>
-              <Plus size={14} /> Agregar tipo
-            </Button>
-          </div>
-        )}
         <div className="input-note">
-          <Waves size={15} /> Cisterna = 3/4 de la dotación. Tanque = max(1/3, 1,000 L).
+          <Waves size={15} /> IS.010, RM N° 0107-2025-VIVIENDA: cálido 169, templado 155, frío 129
+          L/persona/día.
         </div>
       </Card>
       <div className="calculator-visual">

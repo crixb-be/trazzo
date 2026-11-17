@@ -44,7 +44,7 @@ export interface Material {
   notes: string;
 }
 
-export const SEED_VERSION = 6;
+export const SEED_VERSION = 7;
 
 const LEGAL_NOTE =
   "Valores referenciales según la edición indicada del RNE. Verifica la versión vigente publicada por el MVCS antes de usar en expedientes.";
@@ -415,9 +415,9 @@ export const RNE_CARDS: RneCard[] = [
   },
   {
     slug: "dotacion-agua-vivienda",
-    title: "Dotación de agua para vivienda unifamiliar",
+    title: "Dotación de agua residencial por clima",
     norm_code: "IS.010",
-    article: "Cap. II - Dotaciones",
+    article: "Numeral 2, párrafo 2.2, literal a) - Dotaciones",
     category: "Sanitarias",
     keywords: [
       "agua",
@@ -429,23 +429,26 @@ export const RNE_CARDS: RneCard[] = [
       "falso piso",
       "sanitaria",
     ],
-    min_value: 1500,
-    unit: "L/d",
-    summary: "La dotación unifamiliar parte de 1,500 L/d hasta 200 m² de lote.",
-    body: "La tabla por área de lote comienza en 1,500 L/d hasta 200 m² y aumenta por rangos hasta 2,600 L/d a 1,000 m². Para áreas mayores se agregan 100 L/d por cada 100 m² adicionales.",
+    min_value: 129,
+    unit: "L/persona/día",
+    summary:
+      "Las viviendas calculan la dotación según el carácter del clima: 169, 155 o 129 L/persona/día.",
+    body: "Para viviendas unifamiliares y edificios multifamiliares, asigna 169 L/persona/día en clima cálido, 155 en templado y 129 en frío. Determina el clima con el Mapa climático del Perú del SENAMHI; los climas semifrígido, frígido y glaciar se consideran fríos. Estima las personas según el Cuadro N° 02 del artículo 7 de la Norma Técnica A.020.",
     legal_note:
-      "La cisterna se dimensiona con 3/4 de la dotación y el tanque con 1/3, sin bajar de 1,000 L.",
-    edition: EDITION,
+      "La modificación fue aprobada por la RM N° 0107-2025-VIVIENDA y se aplica a la dotación residencial por clima. El almacenamiento requiere revisar las demás disposiciones aplicables de IS.010.",
+    edition: "IS.010 modificada por RM N° 0107-2025-VIVIENDA",
     svg_type: "water-tank",
-    params: { lot_area: 200, daily_liters: 1500 },
+    params: { climate: "templado", people: 4, daily_liters: 620 },
     is_pro: false,
-    verified_at: null,
+    verified_at: "2026-11-17",
+    source_resolution: "Resolución Ministerial N° 0107-2025-VIVIENDA, El Peruano, 12/04/2025",
+    updated_at: "2026-11-17",
   },
   {
     slug: "dotacion-agua-multifamiliar",
-    title: "Dotación de agua multifamiliar",
+    title: "Dotación de agua para edificio multifamiliar por clima",
     norm_code: "IS.010",
-    article: "Cap. II - Dotaciones",
+    article: "Numeral 2, párrafo 2.2, literal a) - Dotaciones",
     category: "Sanitarias",
     keywords: [
       "agua",
@@ -458,18 +461,20 @@ export const RNE_CARDS: RneCard[] = [
       "sanitaria",
       "vivienda",
     ],
-    min_value: 500,
-    unit: "L/d por departamento",
+    min_value: 129,
+    unit: "L/persona/día",
     summary:
-      "La dotación por departamento depende del número de dormitorios: 500, 850, 1,200, 1,350 o 1,500 L/d.",
-    body: "Para multifamiliares se asignan 500 L/d a un dormitorio, 850 L/d a dos, 1,200 L/d a tres, 1,350 L/d a cuatro y 1,500 L/d a cinco dormitorios. Multiplica cada tipo por su cantidad y dimensiona cisterna y tanque con la demanda total.",
+      "Los edificios multifamiliares calculan la dotación por persona según el carácter del clima.",
+    body: "Para edificios multifamiliares, asigna 169 L/persona/día en clima cálido, 155 en templado y 129 en frío. Usa el Mapa climático del Perú del SENAMHI y estima el número de personas por vivienda con el Cuadro N° 02 del artículo 7 de la Norma Técnica A.020.",
     legal_note:
-      "La dotación de áreas comunes o usos complementarios puede exigir una revisión adicional del proyecto sanitario.",
-    edition: EDITION,
+      "La modificación fue aprobada por la RM N° 0107-2025-VIVIENDA y se refiere a la dotación residencial por clima; revisa áreas comunes y demás usos con las disposiciones aplicables de IS.010.",
+    edition: "IS.010 modificada por RM N° 0107-2025-VIVIENDA",
     svg_type: "water-tank",
-    params: { bedrooms: 2, daily_liters: 850, units: 1 },
+    params: { climate: "templado", people: 4, daily_liters: 620 },
     is_pro: false,
-    verified_at: null,
+    verified_at: "2026-11-17",
+    source_resolution: "Resolución Ministerial N° 0107-2025-VIVIENDA, El Peruano, 12/04/2025",
+    updated_at: "2026-11-17",
   },
   ...ADDITIONAL_CARDS,
 ];

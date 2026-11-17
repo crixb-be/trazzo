@@ -6,7 +6,7 @@ import {
   RNE_WARNING,
 } from "./types";
 
-export type WaterKind = "unifamiliar" | "multifamiliar" | "oficina";
+export type ClimateCharacter = "calido" | "templado" | "frio";
 
 export interface WaterValues {
   dailyLiters: number;
@@ -17,17 +17,10 @@ export interface WaterValues {
   tankM3: number;
 }
 
-export interface ApartmentDemand {
-  bedrooms: number;
-  count: number;
-}
-
-const BEDROOM_DEMAND: Record<number, number> = {
-  1: 500,
-  2: 850,
-  3: 1200,
-  4: 1350,
-  5: 1500,
+export const RESIDENTIAL_WATER_BY_CLIMATE: Record<ClimateCharacter, number> = {
+  calido: 169,
+  templado: 155,
+  frio: 129,
 };
 
 function buildStorage(
@@ -72,67 +65,25 @@ function resultForDailyDemand(dailyLiters: number, warning?: string): CalcResult
   return { ok: checks.every((check) => check.pass), values, checks, warnings };
 }
 
-/** Calculates IS.010 single-family demand, including the >1,000 m² increment rule. */
-export function singleFamilyDemand(lotArea: number): CalcResult<WaterValues> {
-  if (!isFiniteNonNegative(lotArea) || lotArea <= 0) {
+/** Calculates the residential IS.010 demand introduced by RM N° 0107-2025-VIVIENDA. */
+export function residentialDemand(
+  climate: ClimateCharacter,
+  people: number,
+): CalcResult<WaterValues> {
+  if (!(climate in RESIDENTIAL_WATER_BY_CLIMATE)) {
     return invalidResult(
       { dailyLiters: 0, dailyM3: 0, ...buildStorage(0) },
-      "El área de lote debe ser finita y mayor que cero.",
+      "Selecciona un carácter de clima válido.",
+    );
+  }
+  if (!isFiniteNonNegative(people) || people <= 0) {
+    return invalidResult(
+      { dailyLiters: 0, dailyM3: 0, ...buildStorage(0) },
+      "El número de personas debe ser finito y mayor que cero.",
     );
   }
 
-  const baseArea = Math.min(lotArea, 1000);
-  const baseDemand =
-    baseArea <= 200
-      ? 1500
-      : baseArea <= 300
-        ? 1700
-        : baseArea <= 400
-          ? 1900
-          : baseArea <= 500
-            ? 2100
-            : baseArea <= 600
-              ? 2200
-              : baseArea <= 700
-                ? 2300
-                : baseArea <= 800
-                  ? 2400
-                  : baseArea <= 900
-                    ? 2500
-                    : 2600;
-  const extraHundreds = Math.ceil(Math.max(0, lotArea - 1000) / 100);
-  const dailyLiters = baseDemand + extraHundreds * 100;
-
-  return resultForDailyDemand(dailyLiters);
-}
-
-/** Calculates the IS.010 apartment table for a list of unit types and counts. */
-export function multiFamilyDemand(units: ApartmentDemand[]): CalcResult<WaterValues> {
-  if (!Array.isArray(units) || units.length === 0) {
-    return invalidResult(
-      { dailyLiters: 0, dailyM3: 0, ...buildStorage(0) },
-      "Ingresa al menos un tipo de departamento.",
-    );
-  }
-
-  let dailyLiters = 0;
-  for (const unit of units) {
-    if (
-      !Number.isInteger(unit.bedrooms) ||
-      unit.bedrooms < 1 ||
-      unit.bedrooms > 5 ||
-      !isFiniteNonNegative(unit.count) ||
-      unit.count <= 0
-    ) {
-      return invalidResult(
-        { dailyLiters: 0, dailyM3: 0, ...buildStorage(0) },
-        "Cada unidad debe tener de 1 a 5 dormitorios y una cantidad mayor que cero.",
-      );
-    }
-    dailyLiters += BEDROOM_DEMAND[unit.bedrooms] * unit.count;
-  }
-
-  return resultForDailyDemand(dailyLiters);
+  return resultForDailyDemand(RESIDENTIAL_WATER_BY_CLIMATE[climate] * people);
 }
 
 /** Calculates office demand at 6 L/d per square metre of useful area. */
@@ -182,17 +133,6 @@ export function storage(dailyDemand: number): CalcResult<StorageValues> {
   ];
 
   return { ok: true, values, checks, warnings: [RNE_WARNING] };
-}
-
-/** Compatibility wrapper used by the existing water calculator page. */
-export function calculateWater(
-  kind: WaterKind,
-  input: number,
-  bedrooms = 1,
-): CalcResult<WaterValues> {
-  if (kind === "unifamiliar") return singleFamilyDemand(input);
-  if (kind === "oficina") return officeDemand(input);
-  return multiFamilyDemand([{ bedrooms, count: input }]);
 }
 
 export type Check = CalcCheck;

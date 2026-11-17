@@ -23,6 +23,7 @@ const PARAMS: Record<string, ParamMeta> = {
   transfer: { label: "Zona de transferencia", unit: "m" },
   lot_area: { label: "Área de lote", unit: "m²" },
   daily_liters: { label: "Dotación diaria", unit: "L/d" },
+  people: { label: "Personas estimadas", unit: "pers." },
   bedrooms: { label: "Dormitorios", unit: "und" },
   units: { label: "Departamentos", unit: "und" },
   without_sprinklers: { label: "Recorrido sin rociadores", unit: "m" },
