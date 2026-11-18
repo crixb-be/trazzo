@@ -12,7 +12,7 @@ import { useCards } from "@/lib/offline/hooks";
 import { RNE_CARDS } from "@/data/seed-rne";
 import { deviceAnswer } from "@/lib/rag/device";
 import { useCurrentPlan } from "@/lib/plans/use-current-plan";
-import { canUseProCards } from "@/lib/plans/plans";
+import { canUseProCards, type Plan } from "@/lib/plans/plans";
 import { useOnlineStatus } from "@/lib/offline/hooks";
 import { ChatMessage } from "./ChatMessage";
 import { SuggestedPrompts } from "./SuggestedPrompts";
@@ -29,12 +29,15 @@ function chatErrorMessage(error: Error): string {
   return "No pudimos completar la consulta. Puedes intentarlo de nuevo.";
 }
 
-export function AssistantWorkspace() {
+export function AssistantWorkspace({ limits }: { limits: Record<Plan, number> }) {
   const searchParams = useSearchParams();
   const online = useOnlineStatus();
   const [input, setInput] = useState(searchParams.get("q") ?? "");
   const chat = useChat({
-    transport: new DefaultChatTransport({ api: "/api/chat" }),
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+      prepareSendMessagesRequest: ({ messages }) => ({ body: { messages: messages.slice(-6) } }),
+    }),
   });
   const cards = useCards();
   const { plan } = useCurrentPlan();
@@ -134,7 +137,7 @@ export function AssistantWorkspace() {
               {chat.messages.map((message) => (
                 <ChatMessage key={message.id} message={message} />
               ))}
-              {chat.error && <p className="warning">{chatErrorMessage(chat.error)}</p>}
+              {chat.error && <p className="warning" role="alert">{chatErrorMessage(chat.error)}</p>}
             </div>
           )}
           <form className="chat-form chat-composer" onSubmit={(event) => void submit(event)}>
@@ -185,7 +188,7 @@ export function AssistantWorkspace() {
           </p>
         </Card>
         <aside className="assistant-sidebar">
-          <AssistantQuota />
+          <AssistantQuota limits={limits} />
           <Card>
             <div className="eyebrow">CÓMO RESPONDE</div>
             <h3>Solo con el RNE</h3>

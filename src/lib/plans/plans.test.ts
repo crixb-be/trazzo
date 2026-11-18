@@ -40,9 +40,10 @@ describe("plans", () => {
   });
 
   it("applies AI query limits", () => {
-    expect(canUseAiQueries("free", 9)).toBe(true);
-    expect(canUseAiQueries("free", 10)).toBe(false);
-    expect(canUseAiQueries("pro", 100000)).toBe(true);
+    expect(canUseAiQueries("free", 4)).toBe(true);
+    expect(canUseAiQueries("free", 5)).toBe(false);
+    expect(canUseAiQueries("pro", 39)).toBe(true);
+    expect(canUseAiQueries("pro", 40)).toBe(false);
   });
 
   it("requires student verification for Pro cards", () => {

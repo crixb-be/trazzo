@@ -18,7 +18,7 @@ export const PLANS: Record<Plan, PlanDefinition> = {
     label: "Gratis",
     prices: { monthly: 0, annual: 0 },
     projects: 1,
-    aiQueriesPerDay: 10,
+    aiQueriesPerDay: 5,
     pdfExport: false,
     proCards: false,
     requiresStudentVerification: false,
@@ -38,7 +38,7 @@ export const PLANS: Record<Plan, PlanDefinition> = {
     label: "PRO",
     prices: { monthly: 14.99, annual: 109 },
     projects: Number.POSITIVE_INFINITY,
-    aiQueriesPerDay: Number.POSITIVE_INFINITY,
+    aiQueriesPerDay: 40,
     pdfExport: true,
     proCards: true,
     requiresStudentVerification: false,
@@ -121,7 +121,7 @@ export function canCreateProject(plan: Plan, currentProjects: number): boolean {
 }
 
 /** Visitors without an account, per day. */
-export const ANONYMOUS_AI_QUERIES_PER_DAY = 5;
+export const ANONYMOUS_AI_QUERIES_PER_DAY = PLANS.free.aiQueriesPerDay;
 
 export function canUseAiQueries(plan: Plan, usedToday: number): boolean {
   return usedToday < PLANS[plan].aiQueriesPerDay;

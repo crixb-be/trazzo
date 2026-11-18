@@ -58,19 +58,19 @@ const features: Record<Plan, string[]> = {
     "Todas las calculadoras",
     "Fichas básicas",
     "1 proyecto",
-    "10 consultas al asistente por día",
+    "Cupo diario de consultas al asistente",
     "PDF con marca de agua",
   ],
   student: [
     "Fichas Pro",
     "Proyectos ilimitados",
-    "50 consultas al asistente por día",
+    "Cupo ampliado de consultas al asistente",
     "PDF limpio",
   ],
   pro: [
     "Fichas verificadas avanzadas",
     "Proyectos ilimitados",
-    "Consultas IA ilimitadas",
+    "Cupo ampliado de consultas IA",
     "Exportación completa",
   ],
 };

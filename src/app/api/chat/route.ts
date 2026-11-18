@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import {
   createUIMessageStream,
   createUIMessageStreamResponse,
@@ -12,16 +11,22 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { streamClaudeAnswer, type ChatTurn } from "@/lib/ai/anthropic";
 import { GEMINI_MODEL, providerKey, selectProvider } from "@/lib/ai/provider";
+import {
+  aiRateLimiter,
+  dailyLimits,
+  dailyQuotaExceeded,
+  MAX_GEMINI_OUTPUT_TOKENS,
+  MAX_PROMPT_LENGTH,
+  promptLengthError,
+  quotaKey,
+} from "@/lib/ai/rate-limit";
 import { retrieve } from "@/lib/rag/retrieve";
 import { expandColloquialQuery } from "@/lib/search/colloquial";
 import { buildLocalAnswer, buildSystemPrompt, NO_RESULT_ANSWER } from "@/lib/rag/prompt";
 import {
-  ANONYMOUS_AI_QUERIES_PER_DAY,
-  canUseAiQueries,
   queriesUsedToday,
   resolveEffectivePlan,
   usageDay,
-  type Plan,
 } from "@/lib/plans/plans";
 
 export const runtime = "nodejs";
@@ -55,9 +60,6 @@ type ChatDataTypes = {
 
 type ServerChatMessage = UIMessage<unknown, ChatDataTypes>;
 
-// Fallback when the database counter is unavailable: per server instance only.
-const anonymousUsage = new Map<string, { day: string; count: number }>();
-
 function getMessageText(message: z.infer<typeof messageSchema>): string {
   if (message.content) {
     return message.content.trim();
@@ -69,31 +71,69 @@ function getMessageText(message: z.infer<typeof messageSchema>): string {
     .trim();
 }
 
-function getClientKey(request: Request): string {
-  return request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+/** Reserve against the same profile fields used by the existing daily counter.
+ * A conditional update prevents concurrent instances from spending the same slot. */
+async function reserveAccountQuota(
+  admin: NonNullable<ReturnType<typeof createAdminClient>>,
+  userId: string,
+): Promise<Response | undefined> {
+  const limits = dailyLimits();
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const { data: profile, error } = await admin
+      .from("profiles")
+      .select("plan, student_verified, subscription_expires_at, ai_queries_used, ai_queries_day")
+      .eq("id", userId)
+      .single();
+    if (error) throw error;
+
+    const now = new Date();
+    const count = queriesUsedToday(profile, now);
+    if (count >= limits[resolveEffectivePlan(profile, now)]) {
+      return dailyQuotaExceeded(now.getTime());
+    }
+
+    const update = admin
+      .from("profiles")
+      .update({ ai_queries_used: count + 1, ai_queries_day: usageDay(now) })
+      .eq("id", userId)
+      .eq("ai_queries_used", profile.ai_queries_used);
+    const { data, error: updateError } = await (
+      profile.ai_queries_day === null
+        ? update.is("ai_queries_day", null)
+        : update.eq("ai_queries_day", profile.ai_queries_day)
+    ).select("id");
+    if (updateError) throw updateError;
+    if (data.length > 0) return;
+  }
+  throw new Error("El contador de consultas se modificó en paralelo.");
 }
 
-/** Counts one model query for a visitor without an account; false when today's limit is used up. */
-async function consumeAnonymousQuota(request: Request): Promise<boolean> {
-  const key = createHash("sha256").update(getClientKey(request)).digest("hex");
+async function reserveDailyQuota(
+  key: string,
+  userId: string | undefined,
+  supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<Response | undefined> {
   const admin = createAdminClient();
+  const limits = dailyLimits();
+  if (admin && userId) return reserveAccountQuota(admin, userId);
   if (admin) {
     const { data, error } = await admin.rpc("consume_anonymous_ai_query", {
-      p_key: key,
-      p_limit: ANONYMOUS_AI_QUERIES_PER_DAY,
+      p_key: key.slice(3), // Keep using the existing anonymous hash format.
+      p_limit: limits.free,
     });
-    if (!error) return data === true;
+    if (error) throw error;
+    return data === true ? undefined : dailyQuotaExceeded();
   }
-
-  const day = usageDay();
-  const current = anonymousUsage.get(key);
-  if (!current || current.day !== day) {
-    anonymousUsage.set(key, { day, count: 1 });
-    return true;
+  if (supabase && userId) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("plan, student_verified, subscription_expires_at")
+      .eq("id", userId)
+      .maybeSingle();
+    if (error) throw error;
+    return aiRateLimiter.consumeDaily(key, limits[resolveEffectivePlan(data)]);
   }
-  if (current.count >= ANONYMOUS_AI_QUERIES_PER_DAY) return false;
-  current.count += 1;
-  return true;
+  return aiRateLimiter.consumeDaily(key, limits.free);
 }
 
 function streamPlainText(text: string, sources: SourceData[]): Response {
@@ -156,54 +196,18 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ error: "Escribe una pregunta antes de consultar." }, { status: 400 });
   }
 
-  const supabase = await createClient();
-  let plan: Plan = "free";
-  // Counts one model query; resolves to false when today's limit is used up.
-  let consume: () => Promise<boolean> = () => consumeAnonymousQuota(request);
-  let limitMessage =
-    "Alcanzaste el límite diario de consultas sin cuenta. Crea una cuenta gratis para tener más.";
-
-  if (supabase) {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (user) {
-      const columns = "plan, student_verified, subscription_expires_at, ai_queries_used";
-      let { data: profile, error } = await supabase
-        .from("profiles")
-        .select(columns + ", ai_queries_day")
-        .eq("id", user.id)
-        .maybeSingle();
-      if (error) {
-        // Database without the daily-quota migration: keep the plan, skip the count.
-        ({ data: profile, error } = await supabase
-          .from("profiles")
-          .select(columns)
-          .eq("id", user.id)
-          .maybeSingle());
-      }
-      const row = profile as Record<string, unknown> | null;
-      plan = resolveEffectivePlan(row);
-
-      if (!canUseAiQueries(plan, queriesUsedToday(row))) {
-        return Response.json(
-          { error: "Alcanzaste el límite diario de consultas de tu plan. Se renueva mañana." },
-          { status: 429 },
-        );
-      }
-
-      limitMessage = "Alcanzaste el límite diario de consultas de tu plan. Se renueva mañana.";
-      consume = async () => {
-        const { error: usageError } = await supabase.rpc("increment_ai_queries");
-        if (usageError) throw new Error("No se pudo registrar el uso del asistente.");
-        return true;
-      };
-    }
-  }
+  const lengthError = promptLengthError(query);
+  if (lengthError) return lengthError;
 
   try {
     const provider = selectProvider();
+    const supabase = provider === "local" ? null : await createClient();
+    const userId = supabase ? (await supabase.auth.getUser()).data.user?.id : undefined;
+    const key = quotaKey(request, userId);
+    if (provider !== "local") {
+      const blocked = aiRateLimiter.checkMinute(key);
+      if (blocked) return blocked;
+    }
     // With a model we hand it up to 6 related cards to synthesise; without one,
     // the local answer keeps to the few clearly relevant cards.
     const chunks = await retrieve(query, provider === "local" ? "extractive" : "synthesis");
@@ -218,9 +222,8 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     // Only answers written by a model count against the daily quota.
-    if (!(await consume())) {
-      return Response.json({ error: limitMessage }, { status: 429 });
-    }
+    const blocked = await reserveDailyQuota(key, userId, supabase);
+    if (blocked) return blocked;
 
     const system = buildSystemPrompt(chunks, expandColloquialQuery(query).technicalTerms);
     const turns: ChatTurn[] = parsed.messages
@@ -228,7 +231,7 @@ export async function POST(request: Request): Promise<Response> {
       .filter((message) => message.role !== "system")
       .map((message) => ({
         role: message.role as "user" | "assistant",
-        text: getMessageText(message),
+        text: getMessageText(message).slice(0, MAX_PROMPT_LENGTH),
       }));
 
     if (provider === "anthropic") {
@@ -244,6 +247,10 @@ export async function POST(request: Request): Promise<Response> {
       system,
       messages: turns.map((turn) => ({ role: turn.role, content: turn.text })),
       temperature: 0.1,
+      ...(provider === "google"
+        ? { maxOutputTokens: MAX_GEMINI_OUTPUT_TOKENS, maxRetries: 0 }
+        : {}),
+      abortSignal: request.signal,
       // Provider failures (bad key, quota, model not found) are logged instead of
       // disappearing inside the stream.
       onError: ({ error }) => {
