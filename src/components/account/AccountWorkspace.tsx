@@ -1,6 +1,16 @@
 "use client";
 
-import { Camera, Check, Cloud, FileUp, FolderOpen, Images, RotateCcw, Trash2 } from "lucide-react";
+import {
+  Camera,
+  Check,
+  Cloud,
+  FileUp,
+  FolderOpen,
+  ImageUp,
+  Images,
+  RotateCcw,
+  Trash2,
+} from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
 import {
@@ -540,7 +550,10 @@ export function AccountWorkspace() {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={logoDataUrl} alt="Logo del estudio" />
               ) : (
-                <span>LOGO</span>
+                <span className="logo-tile-empty">
+                  <ImageUp size={20} aria-hidden="true" />
+                  <span>Sin logo · PNG, JPG, WebP o SVG</span>
+                </span>
               )}
             </div>
             <div className="inline-actions">

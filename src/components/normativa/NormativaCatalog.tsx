@@ -117,14 +117,6 @@ export function NormativaCatalog() {
         <div className="catalog-count mono">{filteredCards.length} resultados</div>
       </div>
 
-      <label>
-        <input
-          type="checkbox"
-          checked={favoritesOnly}
-          onChange={(e) => setFavoritesOnly(e.target.checked)}
-        />{" "}
-        Solo favoritos
-      </label>
       <div className="catalog-toolbar">
         <div className="search-box catalog-search">
           <Search size={17} aria-hidden="true" />
@@ -150,6 +142,14 @@ export function NormativaCatalog() {
             }}
           />
           <span>Solo gratuitas</span>
+        </label>
+        <label className="toggle-control">
+          <input
+            type="checkbox"
+            checked={favoritesOnly}
+            onChange={(e) => setFavoritesOnly(e.target.checked)}
+          />
+          <span>Solo favoritos</span>
         </label>
       </div>
 

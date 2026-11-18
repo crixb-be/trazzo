@@ -5,18 +5,18 @@ import {
   BookOpen,
   Calculator,
   Briefcase,
-  ChevronRight,
   ClipboardList,
   Home,
   MessageSquare,
+  Ruler,
   UserRound,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 const items = [
-  { href: "/medidas", label: "Medidas", icon: BookOpen },
   { href: "/", label: "Inicio", icon: Home },
   { href: "/normativa", label: "Normativa", icon: BookOpen },
+  { href: "/medidas", label: "Medidas", icon: Ruler },
   { href: "/matriz", label: "Matriz de relaciones", icon: ClipboardList },
   { href: "/calculadoras", label: "Calculadoras", icon: Calculator },
   { href: "/metrados", label: "Metrados", icon: ClipboardList },
@@ -52,7 +52,6 @@ export function Sidebar() {
           >
             <Icon size={18} aria-hidden="true" />
             <span>{label}</span>
-            {isActive(pathname, href) && <ChevronRight size={14} aria-hidden="true" />}
           </Link>
         ))}
       </nav>

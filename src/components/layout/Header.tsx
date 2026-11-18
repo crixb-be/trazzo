@@ -41,7 +41,7 @@ export function Header() {
         <span className="brand-mark">T</span>
       </Link>
       <div className="header-title">
-        <span className="eyebrow">TRAZO / LA NAVAJA SUIZA DEL ARQUITECTO</span>
+        <span className="eyebrow">TRAZO</span>
         <strong>{pageTitle(pathname)}</strong>
       </div>
       <div className="header-actions">

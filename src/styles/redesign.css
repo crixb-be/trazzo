@@ -1,0 +1,1180 @@
+/*
+ * Rediseño TRAZO: superficies, jerarquía y microinteracciones comunes.
+ * Va después de los módulos anteriores y antes de display.css, para que el
+ * modo obra siga mandando. Todo sale de los tokens: los tres temas lo heredan.
+ */
+
+/* ---------------------------------------------------------------- tokens */
+:root {
+  --radius-control: 10px;
+  --radius-card: 14px;
+  --radius-panel: 18px;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --press-scale: 0.97;
+  --accent-soft: color-mix(in srgb, var(--accent) 13%, transparent);
+  --accent-line: color-mix(in srgb, var(--accent) 42%, var(--border));
+  --ok-soft: color-mix(in srgb, var(--ok) 14%, transparent);
+  --surface-sunken: color-mix(in srgb, var(--bg) 70%, var(--surface));
+  --card-edge: inset 0 1px 0 rgb(255 255 255 / 0.035);
+  --card-shadow: 0 1px 2px rgb(0 0 0 / 0.28);
+  --nav-glass: color-mix(in srgb, var(--surface) 86%, transparent);
+}
+html:not(.dark) {
+  --card-edge: inset 0 1px 0 rgb(255 255 255 / 0.6);
+  --card-shadow: 0 1px 2px rgb(20 20 30 / 0.06);
+}
+
+/* ------------------------------------------------------------ typography */
+.eyebrow {
+  font-size: calc(11px * var(--font-scale));
+  letter-spacing: 0.12em;
+}
+.page-title {
+  font-size: clamp(
+    calc(26px * var(--font-scale)),
+    calc((1.6vw + 14px) * var(--font-scale)),
+    calc(36px * var(--font-scale))
+  );
+  font-weight: 650;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+  margin: 6px 0 8px;
+}
+.lead {
+  font-size: calc(15px * var(--font-scale));
+  line-height: 1.55;
+  margin: 0 0 22px;
+}
+/* A page header block: title, lead and its side note, then the content. */
+.page-heading-row {
+  align-items: flex-start;
+  margin-bottom: 22px;
+}
+.page-heading-row .lead {
+  margin-bottom: 0;
+}
+.page-heading-row > .badge,
+.page-heading-row > .mono {
+  margin-top: 8px;
+  flex: none;
+}
+.badge {
+  white-space: nowrap;
+}
+.card h2,
+.dashboard-section h2,
+.section-heading h2 {
+  font-size: calc(18px * var(--font-scale));
+  font-weight: 620;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+.card h2 {
+  margin: 6px 0 10px;
+}
+
+/* ----------------------------------------------------------------- shell */
+.page-content {
+  max-width: 1320px;
+  padding: 32px 40px 64px;
+}
+.header {
+  height: 64px;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: saturate(140%) blur(12px);
+  -webkit-backdrop-filter: saturate(140%) blur(12px);
+}
+.header-title .eyebrow {
+  font-size: calc(10px * var(--font-scale));
+}
+.search-box {
+  border-radius: var(--radius-control);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+.search-box:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.search-results {
+  border-radius: var(--radius-card);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.32);
+}
+
+/* Sidebar: one quiet list, the current page marked by a soft accent pill. */
+.sidebar {
+  padding: 22px 12px;
+}
+.brand {
+  padding: 0 10px 26px;
+  gap: 12px;
+}
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-control);
+  flex: none;
+}
+.brand strong {
+  letter-spacing: 0.08em;
+}
+.brand small {
+  letter-spacing: 0.01em;
+  font-size: calc(11.5px * var(--font-scale));
+  line-height: 1.3;
+}
+.sidebar nav a {
+  border-radius: var(--radius-control);
+  padding: 10px 12px;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+.sidebar nav a.active {
+  background: var(--accent-soft);
+  color: var(--text);
+  border-left: 0;
+  padding-left: 12px;
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.sidebar nav a.active svg {
+  color: var(--accent);
+}
+
+/* --------------------------------------------------------------- surfaces */
+.card,
+.surface-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--card-edge), var(--card-shadow);
+}
+.card {
+  padding: 20px;
+}
+.quick-tile,
+.category-tile,
+.featured-row,
+.project-row,
+.normative-card,
+.state-panel,
+.loading-state,
+.plan-card {
+  border-radius: var(--radius-card);
+}
+.normative-card {
+  box-shadow: var(--card-edge), var(--card-shadow);
+}
+/* Lifting cards on hover moved data the user is reading; only the edge reacts. */
+.quick-tile:hover,
+.category-tile:hover,
+.normative-card:hover {
+  transform: none;
+}
+
+/* ---------------------------------------------------------------- controls */
+.btn {
+  min-height: 40px;
+  border-radius: var(--radius-control);
+  justify-content: center;
+  font-weight: 560;
+  transition:
+    transform 160ms var(--ease-out),
+    border-color 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease;
+}
+.btn-primary {
+  font-weight: 680;
+}
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.input,
+.select,
+textarea.input {
+  border-radius: var(--radius-control);
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+.input:focus,
+.select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.chip,
+.quick-chip {
+  transition:
+    transform 160ms var(--ease-out),
+    border-color 150ms ease,
+    background-color 150ms ease,
+    color 150ms ease;
+}
+.chip.active {
+  background: var(--accent-soft);
+}
+.badge {
+  align-items: center;
+  font-weight: 560;
+  line-height: 1.2;
+}
+.icon-btn {
+  border-radius: var(--radius-control);
+  transition:
+    transform 160ms var(--ease-out),
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+/* Press feedback: every pressable thing confirms the touch. */
+.btn:active:not(:disabled),
+.chip:active,
+.quick-chip:active,
+.icon-btn:active,
+.calculator-tile:active,
+.discipline-card:active,
+.status-card:active,
+.project-row:active,
+.featured-row:active,
+.normative-card:active {
+  transform: scale(var(--press-scale));
+}
+
+/* Hover only where a real pointer hovers; touch would leave it stuck on. */
+@media (hover: hover) and (pointer: fine) {
+  .btn:hover:not(:disabled) {
+    border-color: var(--accent-line);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 88%, var(--text));
+    border-color: transparent;
+  }
+  .calculator-tile:hover,
+  .discipline-card:hover,
+  .status-card:hover,
+  .project-row:hover,
+  .featured-row:hover,
+  .normative-card:hover {
+    border-color: var(--accent-line);
+    background: color-mix(in srgb, var(--surface) 88%, var(--surface-2));
+  }
+  .quick-chip:hover {
+    color: var(--text);
+    border-color: var(--accent-line);
+  }
+}
+
+/* ------------------------------------------------------------------- home */
+.home-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  grid-template-areas:
+    "copy search"
+    "status status";
+  gap: 20px 32px;
+  align-items: center;
+  padding: 26px 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  background:
+    radial-gradient(
+      120% 160% at 0% 0%,
+      color-mix(in srgb, var(--accent) 9%, transparent),
+      transparent 55%
+    ),
+    var(--surface);
+  background-size: auto;
+  box-shadow: var(--card-edge), var(--card-shadow);
+  text-align: left;
+}
+.home-hero-copy {
+  grid-area: copy;
+  min-width: 0;
+}
+.home-hero .page-title,
+.home-hero h1 {
+  max-width: none;
+  margin: 6px 0 8px;
+  font-size: clamp(
+    calc(26px * var(--font-scale)),
+    calc((1.6vw + 14px) * var(--font-scale)),
+    calc(36px * var(--font-scale))
+  );
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+.home-hero p {
+  max-width: 46ch;
+  margin: 0;
+}
+.hero-search {
+  grid-area: search;
+  max-width: none;
+  margin: 0;
+  min-width: 0;
+}
+.global-search-inline .search-box {
+  height: 52px;
+  padding: 0 14px;
+  background: var(--surface-sunken);
+  border-radius: 12px;
+}
+.quick-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.quick-chip {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--muted);
+  font:
+    calc(12px * var(--font-scale)) "JetBrains Mono",
+    monospace;
+}
+.quick-chip[aria-pressed="true"] {
+  color: var(--accent);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+.status-cards {
+  grid-area: status;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.status-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-sunken);
+  color: var(--text);
+  text-decoration: none;
+  transition:
+    transform 160ms var(--ease-out),
+    border-color 150ms ease,
+    background-color 150ms ease;
+}
+.status-card-icon,
+.tile-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  border-radius: var(--radius-control);
+  background: var(--accent-soft);
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.status-card-icon {
+  width: 34px;
+  height: 34px;
+}
+.status-card-icon.is-ok {
+  background: var(--ok-soft);
+  color: var(--ok);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ok) 24%, transparent);
+}
+.status-card-body {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.status-card-body small {
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+.status-card-body strong {
+  font-size: calc(14px * var(--font-scale));
+  font-weight: 620;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-section {
+  margin-top: 36px;
+}
+.section-heading {
+  align-items: flex-end;
+  margin-bottom: 14px;
+}
+.section-heading h2 {
+  margin-top: 4px;
+}
+.source-link {
+  color: var(--accent);
+  font-size: var(--text-sm);
+  font-weight: 560;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.source-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Tools: real cards, icon in a warm tile, title and a short mono hint. */
+.calculator-tiles {
+  grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
+  gap: 12px;
+}
+.calculator-tile {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  align-items: start;
+  gap: 14px;
+  min-width: 0;
+  min-height: 128px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--card-edge), var(--card-shadow);
+  color: var(--text);
+  text-decoration: none;
+  transition:
+    transform 160ms var(--ease-out),
+    border-color 150ms ease,
+    background-color 150ms ease;
+}
+.tile-icon {
+  width: 38px;
+  height: 38px;
+  margin: 0;
+}
+.tile-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  align-self: end;
+}
+.calculator-tile strong {
+  font-size: calc(15px * var(--font-scale));
+  font-weight: 620;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.calculator-tile small {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+/* Disciplines: name on the left, the count in its own pill on the right. */
+.category-grid {
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px;
+}
+.discipline-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+  min-height: 54px;
+  padding: 12px 12px 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--card-edge), var(--card-shadow);
+  color: var(--text);
+  text-decoration: none;
+  transition:
+    transform 160ms var(--ease-out),
+    border-color 150ms ease,
+    background-color 150ms ease;
+}
+.discipline-name {
+  min-width: 0;
+  font-size: calc(13.5px * var(--font-scale));
+  font-weight: 560;
+  line-height: 1.3;
+  hyphens: auto;
+}
+.count-pill {
+  flex: none;
+  padding: 2px 8px;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: calc(11.5px * var(--font-scale));
+  white-space: nowrap;
+}
+
+.dashboard-columns {
+  margin-top: 36px;
+  gap: 16px;
+}
+.dashboard-columns > .dashboard-panel {
+  margin-top: 0;
+}
+.dashboard-panel {
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+  box-shadow: var(--card-edge), var(--card-shadow);
+}
+.dashboard-panel .section-heading {
+  align-items: flex-start;
+}
+.dashboard-panel .empty-state {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 18px 8px 6px;
+}
+.dashboard-panel .project-row,
+.dashboard-panel .featured-row {
+  background: var(--surface-sunken);
+  border-radius: 12px;
+  transition:
+    transform 160ms var(--ease-out),
+    border-color 150ms ease,
+    background-color 150ms ease;
+}
+.panel-empty {
+  margin: 0;
+  padding: 18px 16px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  line-height: 1.5;
+}
+
+/* ------------------------------------------------------------ catalogue */
+.search-box kbd {
+  white-space: nowrap;
+}
+.catalog-toolbar {
+  gap: 10px 16px;
+}
+.catalog-toolbar .search-box {
+  height: 46px;
+}
+.filter-row {
+  margin: 18px 0 10px;
+}
+.norm-code-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 22px;
+}
+.norm-code-chip {
+  transition:
+    transform 160ms var(--ease-out),
+    border-color 150ms ease,
+    color 150ms ease,
+    background-color 150ms ease;
+}
+.norm-code-chip.active {
+  color: var(--accent);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+.norm-code-chip:active {
+  transform: scale(var(--press-scale));
+}
+.norm-grid {
+  gap: 14px;
+}
+.normative-card {
+  padding: 18px 18px 16px;
+}
+.normative-card h3 {
+  margin: 12px 0 8px;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+}
+.normative-card.is-locked {
+  border-color: var(--accent-line);
+}
+.norm-card-top {
+  align-items: flex-start;
+}
+.norm-card-top > .small {
+  text-align: right;
+  line-height: 1.4;
+}
+.normative-card .card-badges {
+  margin-top: 10px;
+}
+
+/* --------------------------------------------------------------- medidas */
+.measures-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 12px;
+}
+.measures-page .result-count {
+  margin: 14px 0 12px;
+}
+.measure-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+.measure-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.measure-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.measure-card h2 {
+  margin: 4px 0 0;
+  font-size: calc(16px * var(--font-scale));
+}
+.measure-diagram {
+  display: grid;
+  place-items: center;
+  margin: 4px 0;
+  padding: 10px;
+  border-radius: 12px;
+  background: var(--surface-sunken);
+  color: var(--text);
+}
+.measure-diagram svg {
+  max-width: 100%;
+  height: auto;
+}
+.measure-note {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+.measure-card > small {
+  font-size: var(--text-xs);
+}
+.measure-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 8px;
+}
+.measure-actions .share-result,
+.measure-actions .save-to-project {
+  margin-top: 0;
+}
+.measure-actions .btn {
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .measures-toolbar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ---------------------------------------------------------------- matriz */
+.matrix-workspace .lead {
+  margin-bottom: 6px;
+}
+.matrix-notice {
+  margin: 0 0 18px;
+}
+.matrix-controls {
+  margin: 0;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  background: var(--surface);
+  box-shadow: var(--card-edge), var(--card-shadow);
+}
+.matrix-controls legend {
+  float: left;
+  width: 100%;
+  margin-bottom: 14px;
+  padding: 0;
+  color: var(--accent);
+  font:
+    calc(11px * var(--font-scale)) "JetBrains Mono",
+    monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.matrix-controls legend + * {
+  clear: both;
+}
+.matrix-controls label {
+  display: grid;
+  gap: 6px;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+.matrix-controls form.hero-actions {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+.matrix-controls > .muted {
+  margin: 10px 0 0;
+  font-size: var(--text-xs);
+}
+.matrix-room {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  min-width: 0;
+}
+.matrix-room label {
+  flex: 1;
+  min-width: 0;
+}
+.matrix-subtitle {
+  margin: 26px 0 12px;
+  font-size: calc(18px * var(--font-scale));
+  font-weight: 620;
+  letter-spacing: -0.02em;
+}
+.relation-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+}
+.relation-table th,
+.relation-table td {
+  border: 0;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  font-size: var(--text-sm);
+}
+.relation-table tbody th {
+  text-align: left;
+  font-weight: 560;
+}
+.relation-table thead th {
+  background: var(--surface-2);
+  font-weight: 600;
+  text-align: left;
+}
+.relation-table caption {
+  caption-side: bottom;
+  padding-top: 8px;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  text-align: left;
+}
+.matrix-ranking {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 14px 18px 14px 36px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  font-size: var(--text-sm);
+}
+.matrix-ranking li::marker {
+  color: var(--accent);
+  font-family: "JetBrains Mono", monospace;
+}
+.matrix-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+.matrix-actions .share-result,
+.matrix-actions .save-to-project {
+  margin-top: 0;
+}
+.relation-diagram {
+  border: 1px solid var(--border);
+}
+@media (max-width: 640px) {
+  .matrix-controls {
+    padding: 16px;
+  }
+}
+
+/* ------------------------------------------------------------- fee quote */
+/* Sticky total: figures on one line, the step buttons share the next one. */
+.quote-total-fixed {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 10px 12px;
+  padding: 10px 12px;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.35);
+}
+.quote-total-fixed > strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.quote-total-fixed > span {
+  color: var(--muted);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .quote-total-fixed {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .quote-total-fixed > .btn {
+    width: 100%;
+  }
+}
+html.obra .quote-total-fixed {
+  box-shadow: none;
+}
+
+/* -------------------------------------------------------------- assistant */
+.suggested-prompts button {
+  border-radius: 12px;
+  transition:
+    transform 160ms var(--ease-out),
+    border-color 150ms ease,
+    background-color 150ms ease;
+}
+.suggested-prompts button:active {
+  transform: scale(var(--press-scale));
+}
+.message {
+  border-radius: var(--radius-card);
+}
+.message.user {
+  border-bottom-right-radius: 6px;
+}
+.message.assistant {
+  border-bottom-left-radius: 6px;
+}
+
+/* --------------------------------------------------- inline icon fixes */
+/* Tailwind's preflight makes every svg a block; icons next to text broke lines. */
+.input-with-icon > svg {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  transform: translateY(-50%);
+  color: var(--muted);
+  pointer-events: none;
+}
+.card h2:has(> svg) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card h2 > svg {
+  flex: none;
+  color: var(--accent);
+}
+.plan-card ul {
+  display: grid;
+  gap: 7px;
+  padding-left: 0;
+  list-style: none;
+  line-height: 1.45;
+}
+.plan-card li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.plan-card li svg {
+  flex: none;
+  margin-top: 2px;
+}
+.plan-card > .badge {
+  align-self: flex-start;
+}
+.payment-mode-banner {
+  padding: 12px 14px;
+  border-radius: var(--radius-card);
+  background: var(--surface);
+}
+
+/* ---------------------------------------------------------------- account */
+/* The logo zone stays dark and calm; the old white checkerboard glared. */
+.logo-tile {
+  min-height: 120px;
+  padding: 14px;
+  border: 1.5px dashed color-mix(in srgb, var(--muted) 45%, transparent);
+  border-radius: var(--radius-card);
+  background: var(--surface-sunken);
+  background-image: none;
+  color: var(--muted);
+  transition: border-color 150ms ease;
+}
+.logo-tile:hover {
+  border-color: var(--accent-line);
+}
+.logo-tile-empty {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  text-align: center;
+  font-size: var(--text-xs);
+}
+.logo-tile-empty svg {
+  color: var(--accent);
+}
+.account-access {
+  margin-bottom: 16px;
+}
+.brand-preview-strip {
+  border-radius: 12px;
+}
+
+/* ------------------------------------------------------ mobile bottom nav */
+@media (max-width: 1023px) {
+  .main-shell {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+  .page-content {
+    padding: 24px 20px 32px;
+  }
+  .bottom-nav {
+    min-height: 64px;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+    background: var(--nav-glass);
+    backdrop-filter: saturate(140%) blur(14px);
+    -webkit-backdrop-filter: saturate(140%) blur(14px);
+  }
+  .bottom-nav a {
+    position: relative;
+    gap: 4px;
+    padding-top: 4px;
+    border-radius: 12px;
+    font-weight: 520;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      transform 160ms var(--ease-out),
+      color 150ms ease;
+  }
+  /* The active tab gets a soft pill behind its icon. */
+  .bottom-nav a::before {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 50%;
+    width: 52px;
+    height: 28px;
+    margin-left: -26px;
+    border-radius: var(--radius-pill);
+    background: var(--accent-soft);
+    opacity: 0;
+    transform: scale(0.85);
+    transition:
+      opacity 200ms var(--ease-out),
+      transform 200ms var(--ease-out);
+  }
+  .bottom-nav a > * {
+    position: relative;
+  }
+  .bottom-nav a svg {
+    margin-top: 2px;
+  }
+  .bottom-nav a.active {
+    font-weight: 650;
+  }
+  .bottom-nav a.active::before {
+    opacity: 1;
+    transform: scale(1);
+  }
+  .bottom-nav a:active {
+    transform: scale(0.94);
+  }
+  .home-hero {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "copy"
+      "search"
+      "status";
+    gap: 16px;
+  }
+  .dashboard-columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .page-content {
+    padding: 18px 16px 28px;
+  }
+  /* The side note drops under the title instead of squeezing it. */
+  .page-heading-row {
+    flex-wrap: wrap;
+    gap: 10px 12px;
+  }
+  .page-heading-row > div:first-child {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+  .card,
+  .dashboard-panel {
+    padding: 16px;
+  }
+  .home-hero {
+    padding: 18px 16px;
+    border-radius: 16px;
+  }
+  .home-hero .lead {
+    font-size: var(--text-md);
+  }
+  .status-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .status-cards .status-card:nth-child(2) {
+    grid-column: 1 / -1;
+    order: 3;
+  }
+  .status-card {
+    padding: 10px 12px;
+    gap: 10px;
+  }
+  /* Half-width cards stack icon over text so labels never wrap mid-phrase. */
+  .status-cards .status-card:not(:nth-child(2)) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  /* One swipeable row of chips instead of a ragged second line. */
+  .quick-chips {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    margin-inline: -16px;
+    padding-inline: 16px;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+  .quick-chips::-webkit-scrollbar {
+    display: none;
+  }
+  .quick-chip {
+    flex: none;
+    padding: 0 10px;
+  }
+  .dashboard-section,
+  .dashboard-columns {
+    margin-top: 28px;
+  }
+  /* Two roomy columns of tools on a phone. */
+  .calculator-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  .calculator-tile {
+    min-height: 118px;
+    padding: 14px;
+    gap: 12px;
+  }
+  .category-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+}
+@media (min-width: 480px) and (max-width: 640px) {
+  .category-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 340px) {
+  .calculator-tiles {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* -------------------------------------------------------- reduced motion */
+/* Fewer, gentler: colors still change, nothing scales or moves. */
+@media (prefers-reduced-motion: reduce) {
+  .btn:active:not(:disabled),
+  .chip:active,
+  .quick-chip:active,
+  .icon-btn:active,
+  .calculator-tile:active,
+  .discipline-card:active,
+  .status-card:active,
+  .project-row:active,
+  .featured-row:active,
+  .normative-card:active,
+  .bottom-nav a:active {
+    transform: none;
+  }
+  .bottom-nav a::before {
+    transform: none;
+  }
+}
+
+/* ------------------------------------------------------------ modo obra */
+/* Sun-readable: flat white, black 2px edges, no glass, no soft tints. */
+html.obra {
+  --accent-soft: transparent;
+  --accent-line: #111;
+  --ok-soft: transparent;
+  --surface-sunken: #fff;
+  --card-edge: 0 0 0 0 transparent;
+  --card-shadow: 0 0 0 0 transparent;
+  --nav-glass: #fff;
+}
+html.obra .home-hero {
+  background: var(--surface);
+}
+html.obra .header,
+html.obra .bottom-nav {
+  background: #fff;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+html.obra .surface-card,
+html.obra .home-hero,
+html.obra .calculator-tile,
+html.obra .discipline-card,
+html.obra .status-card,
+html.obra .dashboard-panel,
+html.obra .quick-chip,
+html.obra .count-pill,
+html.obra .logo-tile {
+  border-width: 2px;
+  border-color: var(--border);
+}
+html.obra .logo-tile {
+  border-style: dashed;
+}
+html.obra .tile-icon,
+html.obra .status-card-icon {
+  box-shadow: inset 0 0 0 2px var(--border);
+}
+html.obra .quick-chip[aria-pressed="true"],
+html.obra .chip.active,
+html.obra .bottom-nav a.active::before {
+  background: var(--text);
+  color: #fff;
+}
+html.obra .bottom-nav a.active {
+  color: var(--text);
+}
+html.obra .bottom-nav a.active::before {
+  opacity: 1;
+  height: 30px;
+}
+html.obra .bottom-nav a.active svg {
+  color: #fff;
+}
+html.obra .sidebar nav a.active {
+  background: var(--surface-2);
+  box-shadow: inset 4px 0 0 var(--text);
+}

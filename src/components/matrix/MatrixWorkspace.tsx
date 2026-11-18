@@ -149,12 +149,15 @@ export function MatrixWorkspace() {
   }
   return (
     <div className="matrix-workspace">
+      <div className="eyebrow">Programa / Anteproyecto</div>
       <h1 className="page-title">Matriz de relaciones</h1>
-      <p>
+      <p className="lead">
         Organiza los ambientes y define qué espacios deben estar cerca. La ponderación orienta
         prioridades; el diagrama no es una distribución de planta.
       </p>
-      <p role="status">{notice}</p>
+      <p className="matrix-notice muted small" role="status">
+        {notice}
+      </p>
       <fieldset disabled={!ready} className="matrix-controls">
         <legend>Ambientes y ponderaciones</legend>
         <form onSubmit={addRoom} className="hero-actions">
@@ -176,7 +179,7 @@ export function MatrixWorkspace() {
         </p>
         <div className="field-grid">
           {matrix.rooms.map((room) => (
-            <div key={room.id}>
+            <div className="matrix-room" key={room.id}>
               <label>
                 Nombre de {room.name}
                 <input
@@ -229,7 +232,7 @@ export function MatrixWorkspace() {
             </label>
           ))}
         </div>
-        <h2>Relaciones entre ambientes</h2>
+        <h2 className="matrix-subtitle">Relaciones entre ambientes</h2>
         {matrix.rooms.length < 2 ? (
           <p>Añade al menos dos ambientes para relacionarlos.</p>
         ) : (
@@ -283,15 +286,15 @@ export function MatrixWorkspace() {
           </div>
         )}
       </fieldset>
-      <h2>Prioridad de conexión</h2>
-      <ol>
+      <h2 className="matrix-subtitle">Prioridad de conexión</h2>
+      <ol className="matrix-ranking">
         {ranking.map((room) => (
           <li key={room.id}>
             {room.name || "Sin nombre"}: <strong>{room.score}</strong>
           </li>
         ))}
       </ol>
-      <div className="hero-actions">
+      <div className="hero-actions matrix-actions">
         <ShareResult sheet={sheet} diagramScope=".matrix-workspace" />
         <SaveToProject sheet={sheet} />
         <button className="btn" disabled={!ready} onClick={() => void exportMatrix("svg")}>

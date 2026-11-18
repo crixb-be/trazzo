@@ -22,43 +22,62 @@ export function MeasuresWorkspace() {
       normalize(m.title + " " + m.note).includes(normalize(query)),
   );
   return (
-    <div>
+    <div className="measures-page">
+      <div className="eyebrow">Referencias / Anteproyecto</div>
       <h1 className="page-title">Medidas de bolsillo</h1>
-      <p>
+      <p className="lead">
         Referencias para anteproyecto. Los módulos de ambientes no son mínimos normativos. Todas las
         fichas están por verificar con bibliografía.
       </p>
-      <div className="field-grid">
-        <label>
-          Buscar medidas
-          <input className="input" value={query} onChange={(e) => setQuery(e.target.value)} />
-        </label>
-        <label>
-          Categoría
-          <select className="input" value={category} onChange={(e) => setCategory(e.target.value)}>
+      <div className="measures-toolbar">
+        <div className="field">
+          <label htmlFor="measures-query">Buscar medidas</label>
+          <input
+            id="measures-query"
+            className="input"
+            value={query}
+            placeholder="Persona, baño, clóset…"
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="measures-category">Categoría</label>
+          <select
+            id="measures-category"
+            className="select"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
             {["Todas", "Antropometría", "Mobiliario", "Ambientes", "Montaje"].map((c) => (
               <option key={c}>{c}</option>
             ))}
           </select>
-        </label>
+        </div>
       </div>
-      <p role="status">{matches.length} fichas</p>
-      <div className="category-grid">
+      <p className="result-count mono" role="status">
+        {matches.length} fichas
+      </p>
+      <div className="measure-grid">
         {matches.map((m) => (
           <article className="card measure-card" key={m.id}>
-            <span className="badge">Por verificar</span>
+            <div className="measure-card-head">
+              <span className="badge badge-por-verificar">Por verificar</span>
+              <span className="mono muted small">{m.category}</span>
+            </div>
             <h2>{m.title}</h2>
-            <PocketDiagram measure={m} />
-            <p>{m.note}</p>
-            <small>Referencia de diseño · pendiente de fuente · {m.category}</small>
-            <div className="hero-actions" aria-label={`Acciones de ${m.title}`}>
+            <div className="measure-diagram">
+              <PocketDiagram measure={m} />
+            </div>
+            <p className="measure-note">{m.note}</p>
+            <small className="muted">Referencia de diseño · pendiente de fuente</small>
+            <div className="measure-actions" aria-label={`Acciones de ${m.title}`}>
               <ShareResult sheet={measureResultSheet(m)} diagramScope=".measure-card" />
               <SaveToProject sheet={measureResultSheet(m)} />
             </div>
           </article>
         ))}
       </div>
-      {!matches.length && <p>No hay medidas con ese filtro.</p>}
+      {!matches.length && <p className="panel-empty muted">No hay medidas con ese filtro.</p>}
     </div>
   );
 }
