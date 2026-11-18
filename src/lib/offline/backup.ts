@@ -217,9 +217,16 @@ export async function importBackup(
 
   const now = new Date().toISOString();
   // Restored work is queued again so it also reaches the account when there is one.
-  const projects = backup.projects.map((row) => ({ ...row, syncState: "pending" as const }));
-  const takeoffs = backup.takeoffs.map((row) => ({ ...row, syncState: "pending" as const }));
-  const quotes = backup.feeQuotes.map((row) => ({ ...row, syncState: "pending" as const }));
+  const restored = <T extends object>(row: T) => ({
+    ...row,
+    updatedAt: now,
+    syncState: "pending" as const,
+  });
+  const projects = backup.projects.map(restored);
+  const takeoffs = backup.takeoffs.map(restored);
+  const quotes = backup.feeQuotes.map(restored);
+  const notes = backup.projectNotes.map(restored);
+  const photos = backup.projectPhotos.map(restored);
   await localDb.transaction(
     "rw",
     [
@@ -240,9 +247,9 @@ export async function importBackup(
       await localDb.takeoffs.bulkPut(takeoffs);
       await localDb.fee_quotes.bulkPut(quotes);
       await localDb.project_options.bulkPut(backup.projectOptions);
-      await localDb.project_notes.bulkPut(backup.projectNotes);
+      await localDb.project_notes.bulkPut(notes);
       await localDb.project_links.bulkPut(backup.projectLinks);
-      await localDb.project_photos.bulkPut(backup.projectPhotos);
+      await localDb.project_photos.bulkPut(photos);
       await localDb.library_activity.bulkPut(backup.libraryActivity);
       if (backup.studioProfile) await localDb.studio_profile.put(backup.studioProfile);
       await localDb.meta.bulkPut(backup.meta);
@@ -261,6 +268,18 @@ export async function importBackup(
         })),
         ...quotes.map((payload) => ({
           table: "fee_quotes" as const,
+          op: "upsert" as const,
+          payload,
+          createdAt: now,
+        })),
+        ...notes.map((payload) => ({
+          table: "project_notes" as const,
+          op: "upsert" as const,
+          payload,
+          createdAt: now,
+        })),
+        ...photos.map((payload) => ({
+          table: "project_photos" as const,
           op: "upsert" as const,
           payload,
           createdAt: now,

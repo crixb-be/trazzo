@@ -1,79 +1,116 @@
-import { db, ensureSeeded, type FeeQuote, type Outbox, type Project, type Takeoff } from "./db";
+import { createClient, createSyncClient } from "@/lib/supabase/client";
+import { canUseProCards } from "@/lib/plans/plans";
+import { loadPlanSnapshot } from "@/lib/plans/plan-store";
+import {
+  db,
+  type FeeQuote,
+  type Outbox,
+  type OutboxTable,
+  type Project,
+  type ProjectNote,
+  type ProjectPhoto,
+  type Takeoff,
+  type TrazzoDB,
+} from "./db";
 import {
   describeSyncResult,
   planPull,
   projectToRow,
   quoteToRow,
+  recordToRow,
+  rowToNote,
+  rowToPhoto,
   rowToProject,
   rowToQuote,
   rowToTakeoff,
   takeoffToRow,
+  recordTime,
+  versionFromRow,
+  type RemoteVersion,
   type SyncResult,
 } from "./sync-mappers";
-import { createClient } from "@/lib/supabase/client";
-import { canUseProCards } from "@/lib/plans/plans";
-import { loadPlanSnapshot } from "@/lib/plans/plan-store";
+import { retryDelay, subscribeToSyncTriggers } from "./sync-lifecycle";
 
-export { ensureSeeded, describeSyncResult };
+export { describeSyncResult };
 export type { SyncResult };
 
-export interface SyncStatus {
+export interface SyncActivity {
+  syncing: boolean;
+  signedIn: boolean;
+  accountMismatch: boolean;
+}
+
+export interface SyncStatus extends SyncActivity {
   online: boolean;
   configured: boolean;
-  syncing: boolean;
   pending: number;
   lastSync: string | null;
   error: string | null;
 }
 
-type Client = NonNullable<ReturnType<typeof createClient>>;
-
+type Client = ReturnType<typeof createSyncClient>;
+type Row = Record<string, unknown> & { id: string };
 const LAST_SYNC = "lastSync";
 const LAST_ERROR = "lastSyncError";
+const OWNER = "sync:owner";
+const DELETION_PREFIX = "sync:deleted:";
+const initialActivity: SyncActivity = { syncing: false, signedIn: false, accountMismatch: false };
+let activity = initialActivity;
+const listeners = new Set<() => void>();
+let scheduled: ReturnType<typeof setTimeout> | null = null;
+let failures = 0;
+let rerun = false;
 
-let syncInProgress = false;
+export function subscribeSyncActivity(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+export const getSyncActivity = () => activity;
+export const getInitialSyncActivity = () => initialActivity;
+
+function publish(patch: Partial<SyncActivity>) {
+  activity = { ...activity, ...patch };
+  for (const listener of listeners) listener();
+}
+
+const online = () => typeof navigator !== "undefined" && navigator.onLine;
 
 function result(status: SyncResult["status"], patch: Partial<SyncResult> = {}): SyncResult {
   return { status, sent: 0, failed: 0, pulled: 0, error: null, ...patch };
 }
 
-function isOnline(): boolean {
-  return typeof navigator === "undefined" ? false : navigator.onLine;
-}
+const errorMessage = (error: unknown) =>
+  typeof (error as { message?: unknown } | null)?.message === "string"
+    ? (error as { message: string }).message
+    : "Error de red.";
 
-async function sessionUserId(client: Client): Promise<string | null> {
-  try {
-    const { data } = await client.auth.getSession();
-    return data.session?.user.id ?? null;
-  } catch {
-    return null;
-  }
-}
-
-function payloadId(item: Outbox): string | null {
+function payloadId(item: Outbox): string {
   const id = (item.payload as { id?: unknown } | null)?.id;
-  return typeof id === "string" ? id : null;
+  if (typeof id !== "string") throw new Error("Cambio sin identificador.");
+  return id;
 }
 
-/** Sends one queued change. Returns an error message, or null when the cloud accepted it. */
-async function writeRemoteItem(
-  client: Client,
-  userId: string,
-  item: Outbox,
-): Promise<string | null> {
-  const id = payloadId(item);
-  if (!id) return "Cambio sin identificador.";
+function remoteTable(table: OutboxTable): string {
+  if (table === "takeoffs") return "project_takeoffs";
+  if (table === "project_notes" || table === "project_photos") return "project_records";
+  return table;
+}
 
-  const table =
-    item.table === "projects"
-      ? "projects"
-      : item.table === "takeoffs"
-        ? "project_takeoffs"
-        : "fee_quotes";
-
+async function writeRemote(client: Client, userId: string, item: Outbox, id: string) {
+  const table = remoteTable(item.table);
   if (item.op === "delete") {
-    const { error } = await client.from(table).delete().eq("id", id);
-    return error ? error.message : null;
+    const { error } = await client
+      .from(table)
+      .update({
+        updated_at: item.createdAt,
+        deleted_at: item.createdAt,
+        ...(table === "project_records" ? { data: {} } : {}),
+      })
+      .eq("id", id)
+      .lt("updated_at", item.createdAt);
+    if (error) throw error;
+    return;
   }
 
   const row =
@@ -81,197 +118,385 @@ async function writeRemoteItem(
       ? projectToRow(item.payload as Project, userId)
       : item.table === "takeoffs"
         ? takeoffToRow(item.payload as Takeoff)
-        : quoteToRow(item.payload as FeeQuote, userId);
-  const { error } = await client.from(table).upsert(row);
-  return error ? error.message : null;
+        : item.table === "fee_quotes"
+          ? quoteToRow(item.payload as FeeQuote, userId)
+          : recordToRow(
+              item.payload as ProjectNote | ProjectPhoto,
+              item.table === "project_notes" ? "note" : "photo",
+            );
+  const { error } = await client.from(table).upsert({ ...row, deleted_at: null });
+  if (error) throw error;
 }
 
-async function markSynced(sent: Outbox[]): Promise<void> {
-  if (!db) return;
-  const stillPending = new Set((await db.outbox.toArray()).map(payloadId));
-  for (const item of sent) {
-    const id = payloadId(item);
-    if (!id || item.op === "delete" || stillPending.has(id)) continue;
-    const table =
-      item.table === "projects"
-        ? db.projects
-        : item.table === "takeoffs"
-          ? db.takeoffs
-          : db.fee_quotes;
-    await table.update(id, { syncState: "synced" });
-  }
-}
-
-/**
- * Sends queued changes to the cloud. A change leaves the queue only when the
- * cloud accepted it; failures stay queued and are retried on the next run.
- */
-export async function flushOutbox(): Promise<SyncResult> {
-  if (!db) return result("error");
-  const client = createClient();
-  if (!client) return result("not-configured");
-  if (!isOnline()) return result("offline");
-  if (syncInProgress) return result("busy");
-
-  syncInProgress = true;
-  try {
-    const userId = await sessionUserId(client);
-    if (!userId) return result("signed-out");
-
-    const pending = await db.outbox.orderBy("id").toArray();
-    const sent: Outbox[] = [];
-    let lastError: string | null = null;
-    for (const item of pending) {
-      let error: string | null;
-      try {
-        error = await writeRemoteItem(client, userId, item);
-      } catch (cause) {
-        error = cause instanceof Error ? cause.message : "Error de red.";
+async function flush(local: TrazzoDB, client: Client, userId: string): Promise<SyncResult> {
+  const pending = await local.outbox.orderBy("id").toArray();
+  const blocked = new Set<string>();
+  let sent = 0;
+  let error: string | null = null;
+  for (const item of pending) {
+    let key: string | undefined;
+    try {
+      const id = payloadId(item);
+      key = item.table + ":" + id;
+      const parent = (item.payload as { projectId?: string }).projectId;
+      if (blocked.has(key) || (parent && blocked.has("projects:" + parent))) continue;
+      await writeRemote(client, userId, item, id);
+      if (item.id !== undefined) {
+        const queueId = item.id;
+        await local.transaction("rw", [local.outbox, local.meta], async () => {
+          if (item.op === "delete") await rememberDeletion(local, key!, item.createdAt);
+          await local.outbox.delete(queueId);
+        });
       }
-      if (error) {
-        lastError = error;
-        continue;
-      }
-      if (item.id !== undefined) await db.outbox.delete(item.id);
-      sent.push(item);
+      sent++;
+    } catch (cause) {
+      if (key) blocked.add(key);
+      error = errorMessage(cause);
     }
-    await markSynced(sent);
+  }
+  const failed = pending.length - sent;
+  return result(failed ? "partial" : "ok", { sent, failed, error });
+}
 
-    const failed = pending.length - sent.length;
-    if (lastError) await db.meta.put({ key: LAST_ERROR, value: lastError });
-    else await db.meta.delete(LAST_ERROR);
-    return result(failed > 0 ? "partial" : "ok", { sent: sent.length, failed, error: lastError });
-  } catch (cause) {
-    return result("error", { error: cause instanceof Error ? cause.message : null });
-  } finally {
-    syncInProgress = false;
+async function rememberDeletion(local: TrazzoDB, entity: string, updatedAt: string) {
+  const key = DELETION_PREFIX + entity;
+  const previous = await local.meta.get(key);
+  if (!previous || Date.parse(previous.value) < Date.parse(updatedAt)) {
+    await local.meta.put({ key, value: updatedAt });
   }
 }
 
-async function pullPrivate(client: Client): Promise<number> {
-  if (!db) return 0;
-  const localDb = db;
-  const [projects, takeoffs, quotes] = await Promise.all([
-    client.from("projects").select("*"),
-    client.from("project_takeoffs").select("*"),
-    client.from("fee_quotes").select("*"),
-  ]);
-  if (projects.error) throw projects.error;
-  if (takeoffs.error) throw takeoffs.error;
-  if (quotes.error) throw quotes.error;
-
-  const pendingIds = new Set(
-    (await localDb.outbox.toArray()).map(payloadId).filter((id): id is string => Boolean(id)),
+/** An old pull in another tab must never resurrect a deletion already acknowledged. */
+async function applyDeletionHistory<T>(
+  local: TrazzoDB,
+  table: OutboxTable,
+  versions: RemoteVersion<T>[],
+): Promise<RemoteVersion<T>[]> {
+  const prefix = DELETION_PREFIX + table + ":";
+  const deletes = new Map(
+    (await local.meta.where("key").startsWith(prefix).toArray()).map(({ key, value }) => [
+      key.slice(prefix.length),
+      Date.parse(value),
+    ]),
   );
-  const remoteProjects = (projects.data ?? []).map(rowToProject).filter((r) => r !== null);
-  const remoteTakeoffs = (takeoffs.data ?? []).map(rowToTakeoff).filter((r) => r !== null);
-  const remoteQuotes = (quotes.data ?? []).map(rowToQuote).filter((r) => r !== null);
+  for (const { id, record, updatedAt } of versions) {
+    if (!record && (deletes.get(id) ?? 0) < Date.parse(updatedAt)) {
+      await local.meta.put({ key: prefix + id, value: updatedAt });
+      deletes.set(id, Date.parse(updatedAt));
+    }
+  }
+  return versions.filter((row) => !row.record || (deletes.get(row.id) ?? 0) < recordTime(row));
+}
 
-  const projectPlan = planPull(await localDb.projects.toArray(), remoteProjects, pendingIds);
-  const takeoffPlan = planPull(await localDb.takeoffs.toArray(), remoteTakeoffs, pendingIds);
-  const quotePlan = planPull(await localDb.fee_quotes.toArray(), remoteQuotes, pendingIds);
+/** Keyset paging avoids silently truncating an account at the PostgREST row limit. */
+async function fetchRows(
+  client: Client,
+  table: string,
+  pageSize: number,
+  columns = "*",
+): Promise<Row[]> {
+  const rows: Row[] = [];
+  let after: string | undefined;
+  for (;;) {
+    let query = client.from(table).select(columns).order("id").limit(pageSize);
+    if (after) query = query.gt("id", after);
+    const { data, error } = await query;
+    if (error) throw error;
+    if (!data.length) return rows;
+    const page = data as unknown as Row[];
+    rows.push(...page);
+    after = page.at(-1)!.id;
+  }
+}
 
-  await localDb.transaction(
+/** Already backed up photos don't need to be downloaded on every reconnect. */
+async function fetchProjectRecords(local: TrazzoDB, client: Client): Promise<Row[]> {
+  const [versions, notes, photos] = await Promise.all([
+    fetchRows(client, "project_records", 100, "id,project_id,kind,updated_at,deleted_at"),
+    local.project_notes.toArray(),
+    local.project_photos.toArray(),
+  ]);
+  const current = new Map([...notes, ...photos].map((row) => [row.id, row]));
+  const changed = versions.filter((row) => {
+    const existing = current.get(row.id);
+    return (
+      !row.deleted_at &&
+      (existing?.syncState !== "synced" ||
+        recordTime(existing) < recordTime({ updatedAt: row.updated_at as string }))
+    );
+  });
+  const records = versions.filter((row) => row.deleted_at);
+  for (let index = 0; index < changed.length; index += 10) {
+    const ids = changed.slice(index, index + 10).map((row) => row.id);
+    const { data, error } = await client.from("project_records").select("*").in("id", ids);
+    if (error) throw error;
+    records.push(...data);
+  }
+  return records;
+}
+
+async function pullPrivate(local: TrazzoDB, client: Client): Promise<number> {
+  const [projects, takeoffs, quotes, records] = await Promise.all([
+    fetchRows(client, "projects", 100),
+    fetchRows(client, "project_takeoffs", 100),
+    fetchRows(client, "fee_quotes", 50),
+    fetchProjectRecords(local, client),
+  ]);
+  const activeProjectIds = new Set(projects.filter((row) => !row.deleted_at).map((row) => row.id));
+  const projectVersions = projects.map((row) => versionFromRow(row, rowToProject));
+  const takeoffVersions = takeoffs
+    .filter((row) => activeProjectIds.has(row.project_id as string))
+    .map((row) => versionFromRow(row, rowToTakeoff));
+  const quoteVersions = quotes.map((row) => versionFromRow(row, rowToQuote));
+  const activeRecords = records.filter((row) => activeProjectIds.has(row.project_id as string));
+  const noteVersions = activeRecords
+    .filter((row) => row.kind === "note")
+    .map((row) => versionFromRow(row, rowToNote));
+  const photoVersions = activeRecords
+    .filter((row) => row.kind === "photo")
+    .map((row) => versionFromRow(row, rowToPhoto));
+
+  // Read the queue and the current device versions inside the same transaction
+  // as the writes. A device edit made during the network request wins here.
+  return local.transaction(
     "rw",
-    [localDb.projects, localDb.takeoffs, localDb.fee_quotes],
+    [
+      local.outbox,
+      local.projects,
+      local.takeoffs,
+      local.fee_quotes,
+      local.project_notes,
+      local.project_photos,
+      local.meta,
+    ],
     async () => {
-      await localDb.projects.bulkPut(projectPlan.put);
-      await localDb.projects.bulkDelete(projectPlan.remove);
-      await localDb.takeoffs.bulkPut(takeoffPlan.put);
-      await localDb.takeoffs.bulkDelete(takeoffPlan.remove);
-      await localDb.fee_quotes.bulkPut(quotePlan.put);
-      await localDb.fee_quotes.bulkDelete(quotePlan.remove);
+      const pending = new Map<OutboxTable, Set<string>>();
+      for (const item of await local.outbox.toArray()) {
+        const id = (item.payload as { id?: string } | null)?.id;
+        if (!id) continue;
+        if (!pending.has(item.table)) pending.set(item.table, new Set());
+        pending.get(item.table)!.add(id);
+      }
+
+      const [deviceProjects, deviceTakeoffs, deviceNotes, devicePhotos, deviceQuotes] =
+        await Promise.all([
+          local.projects.toArray(),
+          local.takeoffs.toArray(),
+          local.project_notes.toArray(),
+          local.project_photos.toArray(),
+          local.fee_quotes.toArray(),
+        ]);
+      const pendingProjects = pending.get("projects") ?? new Set<string>();
+      const latestChild = new Map<string, number>();
+      for (const row of [...deviceTakeoffs, ...deviceNotes, ...devicePhotos]) {
+        latestChild.set(
+          row.projectId,
+          Math.max(latestChild.get(row.projectId) ?? 0, recordTime(row)),
+        );
+      }
+      const tombstones = new Map(
+        projectVersions
+          .filter((version) => !version.record)
+          .map((version) => [version.id, recordTime(version)]),
+      );
+      for (const project of deviceProjects) {
+        const deleted = tombstones.get(project.id);
+        const edited = latestChild.get(project.id);
+        if (deleted === undefined || edited === undefined || edited <= deleted) continue;
+        // A stale project deletion must not hide work added later in the field.
+        const updatedAt = new Date(Math.max(edited, recordTime(project))).toISOString();
+        const recovered: Project = { ...project, updatedAt, syncState: "pending" };
+        await local.projects.put(recovered);
+        await local.outbox.add({
+          table: "projects",
+          op: "upsert",
+          payload: recovered,
+          createdAt: updatedAt,
+        });
+        pendingProjects.add(project.id);
+        rerun = true;
+      }
+
+      const projectPlan = planPull(
+        deviceProjects,
+        await applyDeletionHistory(local, "projects", projectVersions),
+        pendingProjects,
+      );
+      await local.projects.bulkPut(projectPlan.put);
+      await local.projects.bulkDelete(projectPlan.remove);
+
+      // Do not recreate children of a project that is pending deletion locally.
+      const liveProjects = new Set(await local.projects.toCollection().primaryKeys());
+      const takeoffPlan = planPull(
+        deviceTakeoffs,
+        (await applyDeletionHistory(local, "takeoffs", takeoffVersions)).filter(
+          (version) => !version.record || liveProjects.has(version.record.projectId),
+        ),
+        pending.get("takeoffs") ?? new Set(),
+      );
+      const quotePlan = planPull(
+        deviceQuotes,
+        await applyDeletionHistory(local, "fee_quotes", quoteVersions),
+        pending.get("fee_quotes") ?? new Set(),
+      );
+      const notePlan = planPull(
+        deviceNotes,
+        (await applyDeletionHistory(local, "project_notes", noteVersions)).filter(
+          (version) => !version.record || liveProjects.has(version.record.projectId),
+        ),
+        pending.get("project_notes") ?? new Set(),
+      );
+      const photoPlan = planPull(
+        devicePhotos,
+        (await applyDeletionHistory(local, "project_photos", photoVersions)).filter(
+          (version) => !version.record || liveProjects.has(version.record.projectId),
+        ),
+        pending.get("project_photos") ?? new Set(),
+      );
+      await local.takeoffs.bulkPut(takeoffPlan.put);
+      await local.takeoffs.bulkDelete(takeoffPlan.remove);
+      await local.fee_quotes.bulkPut(quotePlan.put);
+      await local.fee_quotes.bulkDelete(quotePlan.remove);
+      await local.project_notes.bulkPut(notePlan.put);
+      await local.project_notes.bulkDelete(notePlan.remove);
+      await local.project_photos.bulkPut(photoPlan.put);
+      await local.project_photos.bulkDelete(photoPlan.remove);
+      return (
+        projectPlan.put.length +
+        projectPlan.remove.length +
+        takeoffPlan.put.length +
+        takeoffPlan.remove.length +
+        quotePlan.put.length +
+        quotePlan.remove.length +
+        notePlan.put.length +
+        notePlan.remove.length +
+        photoPlan.put.length +
+        photoPlan.remove.length
+      );
     },
   );
-  return projectPlan.put.length + takeoffPlan.put.length + quotePlan.put.length;
 }
 
-/**
- * Downloads the public catalogue and, for a signed-in user, their projects,
- * takeoffs and fee quotes. Pro cards are requested only for a paid plan.
- */
-export async function pullRemote(): Promise<SyncResult> {
-  if (!db) return result("error");
-  const client = createClient();
-  if (!client) return result("not-configured");
-  if (!isOnline()) return result("offline");
-
-  try {
-    const { plan } = await loadPlanSnapshot();
-    const { data: cards } = await client
+async function syncCatalogue(local: TrazzoDB, client: Client) {
+  const { plan } = await loadPlanSnapshot();
+  const [cards, materials] = await Promise.all([
+    client
       .from("rne_cards")
       .select("*")
-      .or(canUseProCards(plan) ? "is_pro.eq.false,is_pro.eq.true" : "is_pro.eq.false");
-    const { data: materials } = await client.from("materials_catalog").select("*");
-    if (cards && cards.length > 0) await db.rneCards.bulkPut(cards);
-    if (materials && materials.length > 0) await db.materials.bulkPut(materials);
+      .or(canUseProCards(plan) ? "is_pro.eq.false,is_pro.eq.true" : "is_pro.eq.false"),
+    client.from("materials_catalog").select("*"),
+  ]);
+  if (cards.data?.length) await local.rneCards.bulkPut(cards.data);
+  if (materials.data?.length) await local.materials.bulkPut(materials.data);
+}
 
-    const userId = await sessionUserId(client);
-    if (!userId) return result("signed-out");
+/** One account-bound pass for both directions. Changes stay queued on any write failure. */
+export async function syncNow(): Promise<SyncResult> {
+  const local = db;
+  if (!local) return result("error");
+  const authClient = createClient();
+  if (!authClient) return result("not-configured");
+  if (!online()) return result("offline");
+  if (activity.syncing) {
+    rerun = true;
+    return result("busy");
+  }
 
-    const pulled = await pullPrivate(client);
-    await db.meta.put({ key: LAST_SYNC, value: new Date().toISOString() });
-    return result("ok", { pulled });
+  if (scheduled) clearTimeout(scheduled);
+  scheduled = null;
+  publish({ syncing: true });
+  let outcome = result("signed-out");
+  try {
+    const {
+      data: { session },
+      error,
+    } = await authClient.auth.getSession();
+    if (error) throw error;
+    publish({ signedIn: Boolean(session), accountMismatch: false });
+    if (session) {
+      const userId = session.user.id;
+      const ownsDevice = await local.transaction("rw", local.meta, async () => {
+        const owner = (await local.meta.get(OWNER))?.value;
+        if (owner) return owner === userId;
+        await local.meta.put({ key: OWNER, value: userId });
+        return true;
+      });
+      if (!ownsDevice) {
+        publish({ accountMismatch: true });
+        return result("account-mismatch");
+      }
+      const client = createSyncClient(session.access_token);
+      outcome = await flush(local, client, userId);
+      outcome.pulled = await pullPrivate(local, client);
+      if (outcome.error) await local.meta.put({ key: LAST_ERROR, value: outcome.error });
+      else {
+        await local.meta.delete(LAST_ERROR);
+        await local.meta.put({ key: LAST_SYNC, value: new Date().toISOString() });
+      }
+      // Catalogue failure must not turn a successful private backup into a retry.
+      void syncCatalogue(local, client).catch(() => undefined);
+    }
+    return outcome;
   } catch (cause) {
-    const error = cause instanceof Error ? cause.message : "Error de red.";
-    await db.meta.put({ key: LAST_ERROR, value: error });
-    return result("error", { error });
+    outcome = { ...outcome, status: "error", error: errorMessage(cause) };
+    await local.meta.put({ key: LAST_ERROR, value: outcome.error! }).catch(() => undefined);
+    return outcome;
+  } finally {
+    publish({ syncing: false });
+    if (outcome.status === "partial" || outcome.status === "error") {
+      scheduleSync(retryDelay(failures++));
+    } else {
+      failures = 0;
+      if (rerun) scheduleSync(0);
+    }
+    rerun = false;
   }
 }
 
-/** Sends local changes, then downloads the account's data. */
-export async function syncNow(): Promise<SyncResult> {
-  const sent = await flushOutbox();
-  if (sent.status !== "ok" && sent.status !== "partial") return sent;
-  const pulled = await pullRemote();
-  if (pulled.status !== "ok") return { ...pulled, sent: sent.sent, failed: sent.failed };
-  return { ...sent, pulled: pulled.pulled };
-}
-
-let scheduled: ReturnType<typeof setTimeout> | null = null;
-
-/** Called after a local save: sends the queue shortly after, when there is a connection. */
 export function scheduleSync(delayMs = 2500): void {
-  if (typeof window === "undefined" || !isOnline()) return;
+  if (!online() || !createClient()) return;
   if (scheduled) clearTimeout(scheduled);
   scheduled = setTimeout(() => {
     scheduled = null;
-    void flushOutbox();
+    void syncNow();
   }, delayMs);
 }
 
-export async function getSyncStatus(): Promise<SyncStatus> {
-  if (!db) {
-    return {
-      online: false,
-      configured: false,
-      syncing: false,
-      pending: 0,
-      lastSync: null,
-      error: null,
-    };
-  }
-
-  const pending = await db.outbox.count();
-  const lastSync = (await db.meta.get(LAST_SYNC))?.value ?? null;
-  const error = (await db.meta.get(LAST_ERROR))?.value ?? null;
+export async function getSyncStatus(): Promise<Omit<SyncStatus, keyof SyncActivity | "online">> {
   return {
-    online: isOnline(),
     configured: Boolean(createClient()),
-    syncing: syncInProgress,
-    pending,
-    lastSync,
-    error,
+    pending: (await db?.outbox.count()) ?? 0,
+    lastSync: (await db?.meta.get(LAST_SYNC))?.value ?? null,
+    error: (await db?.meta.get(LAST_ERROR))?.value ?? null,
   };
 }
 
+export function describeSyncStatus(status: SyncStatus): string {
+  if (status.syncing) return "Sincronizando…";
+  if (status.accountMismatch) return "Datos de otra cuenta en este dispositivo";
+  if (!status.configured) return "Guardado en este dispositivo";
+  if (status.pending || status.error) return "Pendiente de sincronizar";
+  if (status.signedIn && status.lastSync) return "Respaldado en la nube";
+  return "Guardado en este dispositivo";
+}
+
 export function startOnlineSync(): () => void {
-  if (typeof window === "undefined") return () => undefined;
-
-  const onOnline = (): void => {
-    void syncNow();
+  const client = createClient();
+  if (!client) return () => undefined;
+  const stop = subscribeToSyncTriggers(window, document, () => scheduleSync(0));
+  const auth = client.auth.onAuthStateChange((event, session) => {
+    if (!session) publish({ signedIn: false, accountMismatch: false });
+    // Supabase auth callbacks run under an auth lock; schedule outside it.
+    if (session && (event === "INITIAL_SESSION" || event === "SIGNED_IN")) {
+      // Show a cloud confirmation only after this account has been checked.
+      publish({ signedIn: false });
+      scheduleSync(0);
+    }
+  });
+  return () => {
+    stop();
+    auth.data.subscription.unsubscribe();
+    if (scheduled) clearTimeout(scheduled);
+    scheduled = null;
   };
-  window.addEventListener("online", onOnline);
-
-  return () => window.removeEventListener("online", onOnline);
 }

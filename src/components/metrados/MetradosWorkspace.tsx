@@ -13,7 +13,7 @@ import { type Project, type Takeoff } from "@/lib/offline/db";
 import { useMaterials, useProjects, useTakeoffs, useSyncStatus } from "@/lib/offline/hooks";
 import { ProjectHub } from "./ProjectHub";
 import { deleteProject, deleteTakeoff, saveProject, saveTakeoff } from "@/lib/offline/repositories";
-import { describeSyncResult, syncNow as runSync } from "@/lib/offline/sync";
+import { describeSyncResult, describeSyncStatus, syncNow as runSync } from "@/lib/offline/sync";
 import { canCreateProject, canExportPdf } from "@/lib/plans/plans";
 import { useCurrentPlan } from "@/lib/plans/use-current-plan";
 import { TakeoffExtras } from "./TakeoffExtras";
@@ -316,7 +316,12 @@ export function MetradosWorkspace() {
             dispositivo.
           </p>
         </div>
-        <span className="mono small muted">{sync.pending} pendientes</span>
+        <div className="inline-actions">
+          <span className="small muted" role="status">{describeSyncStatus(sync)}</span>
+          <Button size="sm" disabled={!sync.online || sync.syncing} onClick={() => void syncNow()}>
+            <RefreshCw size={14} aria-hidden="true" /> Sincronizar ahora
+          </Button>
+        </div>
       </div>
       <div className="metrados-layout">
         <ProjectList
@@ -397,13 +402,10 @@ export function MetradosWorkspace() {
                     ? "Última sync " + new Date(sync.lastSync).toLocaleString("es-PE")
                     : "Solo local"}
                 </span>
-                <button type="button" onClick={() => void syncNow()}>
-                  Sincronizar ahora
-                </button>
               </div>
-              {notice && <p className="warning">{notice}</p>}
             </>
           )}
+          {notice && <p className="warning">{notice}</p>}
         </main>
       </div>
       {paywall && (

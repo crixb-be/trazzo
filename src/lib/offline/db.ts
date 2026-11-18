@@ -57,7 +57,8 @@ export interface StudioProfile {
   updatedAt: string;
 }
 
-export type OutboxTable = "projects" | "takeoffs" | "fee_quotes";
+export type OutboxTable =
+  "projects" | "takeoffs" | "fee_quotes" | "project_notes" | "project_photos";
 export type OutboxOperation = "upsert" | "delete";
 
 export interface FeeQuote {
@@ -107,6 +108,8 @@ export interface ProjectNote {
   rows: ProjectNoteRow[];
   notes: string[];
   createdAt: string;
+  updatedAt?: string;
+  syncState?: SyncState;
 }
 
 export interface ProjectPhoto {
@@ -116,6 +119,8 @@ export interface ProjectPhoto {
   dataUrl: string;
   caption: string;
   createdAt: string;
+  updatedAt?: string;
+  syncState?: SyncState;
 }
 
 export interface ProjectLink {
@@ -136,11 +141,11 @@ export class TrazzoDB extends Dexie {
   project_options!: Table<{ projectId: string; area: number }, string>;
 
   library_activity!: Table<{ slug: string; favorite: boolean; visitedAt: string }, string>;
-  /** Calculator results saved inside a project. Kept on this device. */
+  /** Calculator results saved inside a project. */
   project_notes!: Table<ProjectNote, string>;
   /** Which project a fee quote belongs to. Kept on this device. */
   project_links!: Table<ProjectLink, string>;
-  /** Site photos taken for a project. Kept on this device. */
+  /** Site photos taken for a project. */
   project_photos!: Table<ProjectPhoto, string>;
   constructor() {
     super("TrazzoDB");
@@ -162,6 +167,38 @@ export class TrazzoDB extends Dexie {
       fee_quotes: "id,code,updatedAt,syncState",
     });
     this.version(7).stores({ project_photos: "id,projectId,createdAt" });
+    this.version(8)
+      .stores({})
+      .upgrade(async (transaction) => {
+        const outbox = transaction.table<Outbox>("outbox");
+        const pending = new Set(
+          (await outbox.toArray()).map(
+            (item) => item.table + ":" + (item.payload as { id?: string } | null)?.id,
+          ),
+        );
+        for (const table of [
+          "projects",
+          "takeoffs",
+          "fee_quotes",
+          "project_notes",
+          "project_photos",
+        ] as const) {
+          const rows = await transaction
+            .table<Project | Takeoff | FeeQuote | ProjectNote | ProjectPhoto>(table)
+            .toArray();
+          await outbox.bulkAdd(
+            rows
+              .filter((row) => row.syncState !== "synced" && !pending.has(table + ":" + row.id))
+              .map((row) => ({
+                table,
+                op: "upsert",
+                payload: row,
+                createdAt:
+                  row.updatedAt ?? ("createdAt" in row ? row.createdAt : new Date().toISOString()),
+              })),
+          );
+        }
+      });
     this.version(6).stores({
       project_notes: "id,projectId,createdAt",
       project_links: "quoteId,projectId",
@@ -187,6 +224,12 @@ export const db: TrazzoDB | null = typeof window === "undefined" ? null : new Tr
 
 export function createLocalUuid(): string {
   return crypto.randomUUID();
+}
+
+/** Keep consecutive edits ordered even if they happen in the same millisecond. */
+export function nextUpdatedAt(previous?: string): string {
+  const time = previous ? Date.parse(previous) : 0;
+  return new Date(Math.max(Date.now(), Number.isFinite(time) ? time + 1 : 0)).toISOString();
 }
 
 export async function ensureSeeded(): Promise<void> {

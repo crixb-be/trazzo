@@ -31,7 +31,7 @@ import { SEED_VERSION } from "@/data/seed-rne";
 import { db } from "@/lib/offline/db";
 import { getStudioProfile, saveStudioProfile } from "@/lib/offline/profile";
 import { useStudioProfile, useSyncStatus } from "@/lib/offline/hooks";
-import { describeSyncResult, syncNow as runSync } from "@/lib/offline/sync";
+import { describeSyncResult, describeSyncStatus, syncNow as runSync } from "@/lib/offline/sync";
 import {
   formatPlanPrice,
   isEduPeEmail,
@@ -653,7 +653,7 @@ export function AccountWorkspace() {
         </Card>
         <Card>
           <div className="eyebrow">SINCRONIZACIÓN</div>
-          <h2>{sync.online ? "Listo para sincronizar" : "Trabajando sin conexión"}</h2>
+          <h2 role="status">{describeSyncStatus(sync)}</h2>
           <div className="sync-details">
             <span>
               Estado <strong>{sync.online ? "En línea" : "Sin conexión"}</strong>
@@ -669,7 +669,7 @@ export function AccountWorkspace() {
             </span>
           </div>
           <div className="hero-actions">
-            <Button onClick={() => void syncNow()} disabled={!sync.online}>
+            <Button onClick={() => void syncNow()} disabled={!sync.online || sync.syncing}>
               <RefreshCw size={15} /> Sincronizar ahora
             </Button>
             <Button variant="danger" onClick={() => void resetLocal()}>

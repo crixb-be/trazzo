@@ -8,12 +8,18 @@ import {
   measureResultSheet,
 } from "@/lib/share/workspace-sheets";
 
-const { put } = vi.hoisted(() => ({ put: vi.fn() }));
+const { put, add } = vi.hoisted(() => ({ put: vi.fn(), add: vi.fn() }));
 
 vi.mock("./db", () => ({
-  db: { project_notes: { put } },
+  db: {
+    project_notes: { put },
+    outbox: { add },
+    transaction: (_mode: string, _tables: unknown[], write: () => Promise<void>) => write(),
+  },
   createLocalUuid: () => "note-1",
+  nextUpdatedAt: () => "2026-11-18T10:00:00.000Z",
 }));
+vi.mock("./sync", () => ({ scheduleSync: vi.fn() }));
 
 import { saveProjectNote } from "./project-hub";
 
@@ -40,6 +46,14 @@ describe("project hub result notes", () => {
     for (const sheet of sheets) await saveProjectNote("project-1", sheet);
 
     expect(put).toHaveBeenCalledTimes(4);
+    expect(add).toHaveBeenCalledTimes(4);
+    expect(add).toHaveBeenCalledWith(
+      expect.objectContaining({
+        table: "project_notes",
+        op: "upsert",
+        payload: expect.objectContaining({ id: "note-1" }),
+      }),
+    );
     for (const [sheet] of sheets.map((sheet) => [sheet])) {
       expect(put).toHaveBeenCalledWith(
         expect.objectContaining({

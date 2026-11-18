@@ -1,13 +1,24 @@
 import { useLiveQuery } from "dexie-react-hooks";
 import type { ResultSheet } from "@/lib/share/result-sheet";
-import { createLocalUuid, db, type FeeQuote, type ProjectNote, type ProjectPhoto } from "./db";
+import {
+  createLocalUuid,
+  db,
+  nextUpdatedAt,
+  type FeeQuote,
+  type ProjectNote,
+  type ProjectPhoto,
+} from "./db";
+import { enqueue } from "./repositories";
+import { scheduleSync } from "./sync";
 
 /**
  * The project as the hub of the work: calculator results and fee quotes can be
- * filed under a project next to its takeoffs. These links live on this device.
+ * filed under a project next to its takeoffs.
  */
 export async function saveProjectNote(projectId: string, sheet: ResultSheet): Promise<ProjectNote> {
-  if (!db) throw new Error("La base local no está disponible.");
+  const local = db;
+  if (!local) throw new Error("La base local no está disponible.");
+  const now = nextUpdatedAt();
   const note: ProjectNote = {
     id: createLocalUuid(),
     projectId,
@@ -16,14 +27,20 @@ export async function saveProjectNote(projectId: string, sheet: ResultSheet): Pr
     subtitle: sheet.subtitle,
     rows: sheet.rows,
     notes: sheet.notes,
-    createdAt: new Date().toISOString(),
+    createdAt: now,
+    updatedAt: now,
+    syncState: "pending",
   };
-  await db.project_notes.put(note);
+  await local.transaction("rw", [local.project_notes, local.outbox], async () => {
+    await local.project_notes.put(note);
+    await enqueue("project_notes", "upsert", note, now);
+  });
+  scheduleSync();
   return note;
 }
 
 export async function deleteProjectNote(id: string): Promise<void> {
-  await db?.project_notes.delete(id);
+  await deleteRecord("project_notes", id);
 }
 
 export function useProjectNotes(projectId: string): ProjectNote[] {
@@ -82,31 +99,64 @@ export async function addProjectPhoto(
   projectId: string,
   dataUrl: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  if (!db) return { ok: false, error: "La base local no está disponible." };
-  const count = await db.project_photos.where("projectId").equals(projectId).count();
-  if (count >= MAX_PROJECT_PHOTOS) {
+  const local = db;
+  if (!local) return { ok: false, error: "La base local no está disponible." };
+  const added = await local.transaction("rw", [local.project_photos, local.outbox], async () => {
+    const count = await local.project_photos.where("projectId").equals(projectId).count();
+    if (count >= MAX_PROJECT_PHOTOS) return false;
+    const now = nextUpdatedAt();
+    const photo: ProjectPhoto = {
+      id: createLocalUuid(),
+      projectId,
+      dataUrl,
+      caption: "",
+      createdAt: now,
+      updatedAt: now,
+      syncState: "pending",
+    };
+    await local.project_photos.put(photo);
+    await enqueue("project_photos", "upsert", photo, now);
+    return true;
+  });
+  if (!added)
     return {
       ok: false,
       error:
         "Este proyecto ya tiene " + MAX_PROJECT_PHOTOS + " fotos. Quita alguna para añadir más.",
     };
-  }
-  await db.project_photos.put({
-    id: createLocalUuid(),
-    projectId,
-    dataUrl,
-    caption: "",
-    createdAt: new Date().toISOString(),
-  });
+  scheduleSync();
   return { ok: true };
 }
 
 export async function updateProjectPhotoCaption(id: string, caption: string): Promise<void> {
-  await db?.project_photos.update(id, { caption });
+  const local = db;
+  if (!local) return;
+  await local.transaction("rw", [local.project_photos, local.outbox], async () => {
+    const previous = await local.project_photos.get(id);
+    if (!previous || previous.caption === caption) return;
+    const updatedAt = nextUpdatedAt(previous.updatedAt ?? previous.createdAt);
+    const photo: ProjectPhoto = { ...previous, caption, updatedAt, syncState: "pending" };
+    await local.project_photos.put(photo);
+    await enqueue("project_photos", "upsert", photo, updatedAt);
+  });
+  scheduleSync();
 }
 
 export async function deleteProjectPhoto(id: string): Promise<void> {
-  await db?.project_photos.delete(id);
+  await deleteRecord("project_photos", id);
+}
+
+async function deleteRecord(table: "project_notes" | "project_photos", id: string): Promise<void> {
+  const local = db;
+  if (!local) return;
+  const records = local[table];
+  await local.transaction("rw", [records, local.outbox], async () => {
+    const record = await records.get(id);
+    if (!record) return;
+    await records.delete(id);
+    await enqueue(table, "delete", { id }, nextUpdatedAt(record.updatedAt ?? record.createdAt));
+  });
+  scheduleSync();
 }
 
 export function useProjectPhotos(projectId: string): ProjectPhoto[] {

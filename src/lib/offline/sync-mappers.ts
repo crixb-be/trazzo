@@ -1,4 +1,4 @@
-import type { FeeQuote, Project, ProjectStatus, Takeoff } from "./db";
+import type { FeeQuote, Project, ProjectNote, ProjectPhoto, ProjectStatus, Takeoff } from "./db";
 
 /**
  * Pure translation between the local (camelCase, IndexedDB) records and the
@@ -118,34 +118,105 @@ export interface PullPlan<T> {
   remove: string[];
 }
 
-/**
- * Decides what a pull changes locally.
- * - A record with a queued local change is left alone (the device wins until
- *   its change is sent).
- * - Otherwise the cloud copy replaces the local one.
- * - A local record that was already synced but is gone from the cloud was
- *   deleted on another device, so it is removed here too. Records that never
- *   reached the cloud are kept.
- */
-export function planPull<T extends { id: string }>(
-  local: Array<{ id: string; syncState: string }>,
-  remote: T[],
-  pendingIds: ReadonlySet<string>,
-): PullPlan<T> {
-  const remoteIds = new Set(remote.map((record) => record.id));
+export interface RemoteVersion<T> {
+  id: string;
+  updatedAt: string;
+  /** Explicit deletion, not a record missing from a page of results. */
+  record: T | null;
+}
+
+export function versionFromRow<T>(row: Row, map: (row: Row) => T | null): RemoteVersion<T> {
+  if (typeof row.id !== "string" || typeof row.updated_at !== "string") {
+    throw new Error("La nube devolvió un registro sin versión.");
+  }
+  const record = row.deleted_at ? null : map(row);
+  if (!row.deleted_at && record === null)
+    throw new Error("La nube devolvió un registro incompleto.");
+  return { id: row.id, updatedAt: row.updated_at, record };
+}
+
+export function recordToRow(record: ProjectNote | ProjectPhoto, kind: "note" | "photo"): Row {
   return {
-    put: remote.filter((record) => !pendingIds.has(record.id)),
-    remove: local
-      .filter(
-        (record) =>
-          record.syncState === "synced" && !remoteIds.has(record.id) && !pendingIds.has(record.id),
-      )
-      .map((record) => record.id),
+    id: record.id,
+    project_id: record.projectId,
+    kind,
+    data: record,
+    updated_at: record.updatedAt ?? record.createdAt,
   };
 }
 
+export function rowToNote(row: Row): ProjectNote | null {
+  const data = row.data as ProjectNote | undefined;
+  if (
+    !data ||
+    typeof data.title !== "string" ||
+    !Array.isArray(data.rows) ||
+    !Array.isArray(data.notes) ||
+    typeof data.createdAt !== "string"
+  )
+    return null;
+  return {
+    ...data,
+    id: row.id as string,
+    projectId: row.project_id as string,
+    updatedAt: row.updated_at as string,
+    syncState: "synced",
+  };
+}
+
+export function rowToPhoto(row: Row): ProjectPhoto | null {
+  const data = row.data as ProjectPhoto | undefined;
+  if (
+    !data ||
+    typeof data.dataUrl !== "string" ||
+    !data.dataUrl.startsWith("data:image/") ||
+    typeof data.caption !== "string" ||
+    typeof data.createdAt !== "string"
+  )
+    return null;
+  return {
+    ...data,
+    id: row.id as string,
+    projectId: row.project_id as string,
+    updatedAt: row.updated_at as string,
+    syncState: "synced",
+  };
+}
+
+export function recordTime(row: { updatedAt?: string; createdAt?: string }): number {
+  return Date.parse(row.updatedAt ?? row.createdAt ?? "") || 0;
+}
+
+/**
+ * Keep unacknowledged writes and deletions intact. After the server resolves a
+ * queued change, apply its version only if it is at least as recent as the device.
+ */
+export function planPull<
+  T extends { id: string; updatedAt?: string; createdAt?: string; syncState?: string },
+>(local: T[], remote: RemoteVersion<T>[], pendingIds: ReadonlySet<string>): PullPlan<T> {
+  const current = new Map(local.map((row) => [row.id, row]));
+  const plan: PullPlan<T> = { put: [], remove: [] };
+  for (const version of remote) {
+    const row = current.get(version.id);
+    if (pendingIds.has(version.id) || (row && recordTime(row) > recordTime(version))) continue;
+    if (!version.record) {
+      if (row) plan.remove.push(version.id);
+    } else if (!row || row.syncState !== "synced" || recordTime(row) !== recordTime(version)) {
+      plan.put.push(version.record);
+    }
+  }
+  return plan;
+}
+
 export type SyncOutcome =
-  "ok" | "partial" | "offline" | "not-configured" | "signed-out" | "busy" | "error";
+  | "ok"
+  | "partial"
+  | "offline"
+  | "not-configured"
+  | "signed-out"
+  | "account-mismatch"
+  | "busy"
+  | "error";
 
 export interface SyncResult {
   status: SyncOutcome;
@@ -162,6 +233,8 @@ export function describeSyncResult(result: SyncResult): string {
       return "Tus datos están guardados en este dispositivo. El respaldo en la nube aún no está disponible.";
     case "signed-out":
       return "Tus datos están guardados en este dispositivo. Inicia sesión para respaldarlos en tu cuenta.";
+    case "account-mismatch":
+      return "Este dispositivo contiene datos de otra cuenta. Vuelve a esa cuenta para sincronizar.";
     case "offline":
       return "Sin conexión: tus cambios quedan guardados aquí y se enviarán al reconectar.";
     case "busy":

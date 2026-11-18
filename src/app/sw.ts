@@ -1,5 +1,5 @@
 import { defaultCache } from "@serwist/next/worker";
-import { NetworkFirst, Serwist, type RouteHandlerCallbackOptions } from "serwist";
+import { NetworkFirst, NetworkOnly, Serwist, type RouteHandlerCallbackOptions } from "serwist";
 
 declare const self: {
   __SW_MANIFEST: Array<{ revision: string | null; url: string }>;
@@ -31,6 +31,11 @@ async function handleNavigation(options: RouteHandlerCallbackOptions): Promise<R
 const serwist: Serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
   runtimeCaching: [
+    // Supabase responses can contain private data. Dexie is the offline copy.
+    {
+      matcher: ({ url }) => /^\/(rest|auth|storage)\/v1(?:\/|$)/.test(url.pathname),
+      handler: new NetworkOnly(),
+    },
     {
       matcher: ({ request, sameOrigin }) => sameOrigin && request.mode === "navigate",
       handler: handleNavigation,

@@ -6,7 +6,7 @@ import {
   type PaymentInstallment,
   type PaymentPreset,
 } from "@/lib/calculators/fees";
-import { createLocalUuid, db, type FeeQuote } from "./db";
+import { createLocalUuid, db, nextUpdatedAt, type FeeQuote } from "./db";
 import { scheduleSync } from "./sync";
 
 export interface FeeQuoteDraft {
@@ -42,21 +42,22 @@ export async function saveFeeQuote(
 ): Promise<FeeQuote> {
   if (!db) throw new Error("La base local no está disponible.");
   const localDb = db;
-  const now = new Date().toISOString();
   const result = calculateFeeQuote(draft.input);
-  const existing = options.id ? await localDb.fee_quotes.get(options.id) : undefined;
-  const quote: FeeQuote = {
-    ...draft,
-    id: options.id ?? createLocalUuid(),
-    code: options.code ?? existing?.code ?? (await nextQuoteCode()),
-    createdAt: options.createdAt ?? existing?.createdAt ?? now,
-    updatedAt: now,
-    totals: { subtotal: result.subtotal, taxAmount: result.taxAmount, total: result.total },
-    syncState: "pending",
-  };
-  await localDb.transaction("rw", [localDb.fee_quotes, localDb.outbox], async () => {
-    await localDb.fee_quotes.put(quote);
-    await localDb.outbox.add({ table: "fee_quotes", op: "upsert", payload: quote, createdAt: now });
+  const quote = await localDb.transaction("rw", [localDb.fee_quotes, localDb.outbox], async () => {
+    const existing = options.id ? await localDb.fee_quotes.get(options.id) : undefined;
+    const now = nextUpdatedAt(existing?.updatedAt);
+    const row: FeeQuote = {
+      ...draft,
+      id: options.id ?? createLocalUuid(),
+      code: options.code ?? existing?.code ?? (await nextQuoteCode()),
+      createdAt: options.createdAt ?? existing?.createdAt ?? now,
+      updatedAt: now,
+      totals: { subtotal: result.subtotal, taxAmount: result.taxAmount, total: result.total },
+      syncState: "pending",
+    };
+    await localDb.fee_quotes.put(row);
+    await localDb.outbox.add({ table: "fee_quotes", op: "upsert", payload: row, createdAt: now });
+    return row;
   });
   scheduleSync();
   return quote;
@@ -84,12 +85,14 @@ export async function deleteFeeQuote(id: string): Promise<void> {
   if (!db) throw new Error("La base local no está disponible.");
   const localDb = db;
   await localDb.transaction("rw", [localDb.fee_quotes, localDb.outbox], async () => {
+    const quote = await localDb.fee_quotes.get(id);
+    if (!quote) return;
     await localDb.fee_quotes.delete(id);
     await localDb.outbox.add({
       table: "fee_quotes",
       op: "delete",
       payload: { id },
-      createdAt: new Date().toISOString(),
+      createdAt: nextUpdatedAt(quote.updatedAt),
     });
   });
   scheduleSync();

@@ -115,7 +115,7 @@ Proveedor: se usa `AI_PROVIDER` si su clave está configurada; si no, el primero
 El asistente admite hasta seis solicitudes por minuto por usuario o IP en cada instancia. Por defecto, el cupo de IA generativa es de 5 consultas diarias para visitantes y Free, y 40 para Pro. Ajusta esos cupos con `AI_DAILY_LIMIT_FREE` y `AI_DAILY_LIMIT_PRO`. Estudiante conserva hasta 50 consultas dentro del cupo Pro. Los cupos se renuevan a medianoche en Lima y las respuestas extractivas no los consumen. Con la clave de servicio y la migración 005, el contador diario se comparte entre instancias mediante Supabase. Sin esa clave, el contador vive en memoria por instancia.
 
 1. Crea un proyecto Supabase y configura las variables anteriores.
-2. Ejecuta en orden todas las migraciones de supabase/migrations (001 a 005) desde el SQL Editor o con la CLI. La 004 crea el espacio de fotos de perfil y la 005 el cupo diario del asistente.
+2. Ejecuta en orden todas las migraciones de `supabase/migrations` desde el SQL Editor o con la CLI. Aplica también `versioned_offline_sync` antes de activar la sincronización en producción.
 3. Carga el seed:
 
    npm run seed:supabase
@@ -127,6 +127,8 @@ El asistente admite hasta seis solicitudes por minuto por usuario o IP en cada i
 Los scripts `seed:supabase` y `embed:rne` leen `.env.local` automáticamente; si el archivo no existe, avisan y omiten la carga sin fallar.
 
 La migración activa vector, pgcrypto, RLS, políticas de Storage y el RPC match_rne_documents. Las políticas de perfil protegen los campos de plan, verificación, vencimiento y cuota de IA.
+
+La sincronización respalda proyectos, partidas, cotizaciones, cálculos guardados y fotos de obra. La cola de Dexie se reanuda al reconectar, al volver a la app y al iniciar sesión. Las ediciones se comparan por su fecha y las eliminaciones se transmiten como marcas de borrado. El almacenamiento local conserva la cuenta con la que se vinculó, para impedir que una segunda cuenta reciba esos datos. Las fotos se respaldan en los registros privados del proyecto. El área de proyecto y los vínculos de cotizaciones siguen en el dispositivo y en el archivo de copia. Dos cotizaciones creadas por separado sin señal pueden compartir código visible y mantienen identificadores independientes.
 
 ## PWA y modo offline
 

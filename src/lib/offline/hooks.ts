@@ -5,7 +5,13 @@ import { useLiveQuery } from "dexie-react-hooks";
 import { db, ensureSeeded, type FeeQuote, type Project, type Takeoff } from "./db";
 import { getStudioProfile } from "./profile";
 import type { StudioProfile } from "./db";
-import { getSyncStatus, startOnlineSync, type SyncStatus } from "./sync";
+import {
+  getInitialSyncActivity,
+  getSyncActivity,
+  getSyncStatus,
+  subscribeSyncActivity,
+  type SyncStatus,
+} from "./sync";
 
 export function useCards() {
   const cards = useLiveQuery(async () => (db ? db.rneCards.toArray() : []), [], []);
@@ -48,17 +54,18 @@ export function useSyncStatus(): SyncStatus {
   // The initial value must match the server render (no navigator there) to avoid
   // hydration mismatches; the live query replaces it right after mount.
   const status = useLiveQuery(() => getSyncStatus(), [], {
-    online: true,
     configured: false,
-    syncing: false,
     pending: 0,
     lastSync: null,
     error: null,
   });
   const online = useOnlineStatus();
-
-  useEffect(() => startOnlineSync(), []);
-  return { ...status, online };
+  const activity = useSyncExternalStore(
+    subscribeSyncActivity,
+    getSyncActivity,
+    getInitialSyncActivity,
+  );
+  return { ...status, ...activity, online };
 }
 
 function subscribeToConnection(onChange: () => void): () => void {

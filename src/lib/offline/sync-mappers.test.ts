@@ -73,22 +73,33 @@ describe("sync mappers", () => {
 });
 
 describe("planPull", () => {
-  const local = [
-    { id: "a", syncState: "synced" },
-    { id: "b", syncState: "pending" },
-    { id: "c", syncState: "synced" },
-    { id: "d", syncState: "local" },
-  ];
-
-  it("keeps records with queued changes and unsynced records", () => {
-    const plan = planPull(local, [{ id: "a" }, { id: "b" }], new Set(["b"]));
-    expect(plan.put).toEqual([{ id: "a" }]);
-    // "c" was synced and is gone remotely: deleted elsewhere. "d" never left this device.
-    expect(plan.remove).toEqual(["c"]);
+  const old = "2026-06-01T10:00:00Z";
+  const recent = "2026-06-01T10:05:00Z";
+  const local = [{ ...project, updatedAt: recent }];
+  const version = (updatedAt: string) => ({
+    id: project.id,
+    updatedAt,
+    record: { ...project, name: "Nube", updatedAt },
   });
 
-  it("does not remove a synced record that has a queued change", () => {
-    expect(planPull(local, [], new Set(["a", "c"])).remove).toEqual([]);
+  it("never removes a record just because it was not returned", () => {
+    expect(planPull([{ ...local[0], syncState: "synced" }], [], new Set()).remove).toEqual([]);
+  });
+
+  it("preserves a newer local version and pending edits or deletions", () => {
+    expect(planPull(local, [version(old)], new Set()).put).toEqual([]);
+    expect(planPull(local, [version(recent)], new Set([project.id])).put).toEqual([]);
+    expect(planPull([], [version(recent)], new Set([project.id])).put).toEqual([]);
+    expect(planPull([{ ...project, updatedAt: old }], [version(recent)], new Set()).put).toEqual([
+      version(recent).record,
+    ]);
+  });
+
+  it("honors only a current, explicit tombstone", () => {
+    const tombstone = { ...version(recent), record: null };
+    expect(planPull(local, [tombstone], new Set()).remove).toEqual([project.id]);
+    expect(planPull(local, [{ ...tombstone, updatedAt: old }], new Set()).remove).toEqual([]);
+    expect(planPull(local, [tombstone], new Set([project.id])).remove).toEqual([]);
   });
 });
 
