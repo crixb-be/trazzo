@@ -429,6 +429,8 @@ export function AccountWorkspace() {
           <div className="avatar-picker">
             <div className="avatar-preview" aria-busy={avatarBusy}>
               {avatarDataUrl ? (
+                // The avatar is already resized on the device and stored as a data URL.
+                // eslint-disable-next-line @next/next/no-img-element
                 <img src={avatarDataUrl} alt="Foto de perfil" />
               ) : (
                 <span aria-hidden="true">{initials(name || email)}</span>
@@ -536,7 +538,13 @@ export function AccountWorkspace() {
           <div className="eyebrow">ESTUDIO / MARCA</div>
           <div className="logo-dropzone">
             <div className="logo-tile">
-              {logoDataUrl ? <img src={logoDataUrl} alt="Logo del estudio" /> : <span>LOGO</span>}
+              {logoDataUrl ? (
+                // The logo is already resized on the device and stored as a data URL.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logoDataUrl} alt="Logo del estudio" />
+              ) : (
+                <span>LOGO</span>
+              )}
             </div>
             <div className="inline-actions">
               <Button size="sm" onClick={() => logoInputRef.current?.click()}>

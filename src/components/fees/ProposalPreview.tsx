@@ -64,6 +64,8 @@ export function ProposalPreview({
             <div className="cover-corner" />
             <div className="proposal-cover-logo">
               {studio.logoDataUrl ? (
+                // The logo is already resized on the device and stored as a data URL.
+                // eslint-disable-next-line @next/next/no-img-element
                 <img src={studio.logoDataUrl} alt="Logo del estudio" />
               ) : (
                 <strong>{studio.studioName.slice(0, 2).toUpperCase() || "T"}</strong>
@@ -102,7 +104,13 @@ export function ProposalPreview({
           >
             <header className="proposal-content-header">
               <div className="proposal-mini-logo">
-                {studio.logoDataUrl ? <img src={studio.logoDataUrl} alt="" /> : "T"}
+                {studio.logoDataUrl ? (
+                  // The logo is already resized on the device and stored as a data URL.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={studio.logoDataUrl} alt="" />
+                ) : (
+                  "T"
+                )}
               </div>
               <div>
                 <strong>{studio.studioName || "TRAZZO"}</strong>

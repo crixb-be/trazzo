@@ -59,6 +59,8 @@ export function Header() {
         <ThemeToggle />
         <Link className="account-avatar" href="/cuenta" aria-label="Abrir cuenta">
           {avatarDataUrl ? (
+            // The avatar is already resized on the device and stored as a data URL.
+            // eslint-disable-next-line @next/next/no-img-element
             <img src={avatarDataUrl} alt="" />
           ) : (
             <UserRound size={17} aria-hidden="true" />

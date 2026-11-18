@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 
 test("modo obra y tamaño de letra se aplican y se conservan", async ({ page }) => {
@@ -29,7 +30,7 @@ test("modo obra y tamaño de letra se aplican y se conservan", async ({ page }) 
 test.describe("bienvenida", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
-  test("tres pasos ordenan Inicio y no se repiten", async ({ page }) => {
+  test("tres pasos ordenan Inicio y no se repiten", async ({ page }, testInfo) => {
     await page.goto("/");
     const dialog = page.getByRole("dialog", { name: "Bienvenido a TRAZZO" });
     await expect(dialog).toBeVisible();
@@ -51,7 +52,7 @@ test.describe("bienvenida", () => {
     );
     await install.getByRole("radio", { name: "iPhone" }).click();
     await expect(install).toContainText("Compartir");
-    await page.screenshot({ path: "test-results/bienvenida-instalar.png" });
+    await page.screenshot({ path: testInfo.outputPath("bienvenida-instalar.png") });
     await install.getByRole("button", { name: "Empezar" }).click();
 
     await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -81,15 +82,15 @@ test.describe("bienvenida", () => {
   });
 });
 
-test("resultado y ficha se comparten como imagen y PDF", async ({ page }) => {
-  const { readFileSync } = await import("node:fs");
+test("resultado y ficha se comparten como imagen y PDF", async ({ page }, testInfo) => {
   await page.goto("/calculadoras?tab=escaleras");
   const imageDownload = page.waitForEvent("download");
   await page.getByRole("button", { name: "Compartir imagen" }).click();
   const image = await imageDownload;
   expect(image.suggestedFilename()).toMatch(/^trazzo-\d+-contrapasos\.png$/);
-  await image.saveAs("test-results/compartir-escalera.png");
-  const png = readFileSync("test-results/compartir-escalera.png");
+  const imagePath = testInfo.outputPath("compartir-escalera.png");
+  await image.saveAs(imagePath);
+  const png = await readFile(imagePath);
   expect(png.subarray(1, 4).toString()).toBe("PNG");
   expect(png.readUInt32BE(16)).toBe(1080);
   expect(png.length).toBeGreaterThan(20000);
@@ -99,18 +100,21 @@ test("resultado y ficha se comparten como imagen y PDF", async ({ page }) => {
   await page.getByRole("button", { name: "Compartir PDF" }).click();
   const pdf = await pdfDownload;
   expect(pdf.suggestedFilename()).toMatch(/^trazzo-.+\.pdf$/);
-  await pdf.saveAs("test-results/compartir-ficha.pdf");
-  const bytes = readFileSync("test-results/compartir-ficha.pdf");
+  const pdfPath = testInfo.outputPath("compartir-ficha.pdf");
+  await pdf.saveAs(pdfPath);
+  const bytes = await readFile(pdfPath);
   expect(bytes.subarray(0, 4).toString()).toBe("%PDF");
   // La lámina va incrustada como imagen.
   expect(bytes.includes("/Subtype /Image")).toBe(true);
 
   const cardImage = page.waitForEvent("download");
   await page.getByRole("button", { name: "Compartir imagen" }).click();
-  await (await cardImage).saveAs("test-results/compartir-ficha.png");
+  await (await cardImage).saveAs(testInfo.outputPath("compartir-ficha.png"));
 });
 
-test("el proyecto reúne cálculos y la copia de seguridad los restaura", async ({ page }) => {
+test("el proyecto reúne cálculos y la copia de seguridad los restaura", async ({
+  page,
+}, testInfo) => {
   await page.goto("/metrados");
   await page.getByRole("button", { name: "Nuevo proyecto" }).click();
   await page.getByPlaceholder("Casa Miraflores").fill("Casa eje");
@@ -128,23 +132,36 @@ test("el proyecto reúne cálculos y la copia de seguridad los restaura", async 
 
   // Copia a archivo.
   await page.goto("/cuenta");
-  const download = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Descargar copia" }).click();
-  const file = await download;
+  const [file] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "Descargar copia" }).click(),
+  ]);
   expect(file.suggestedFilename()).toMatch(/^trazzo-copia-\d{4}-\d{2}-\d{2}\.json$/);
-  await file.saveAs("test-results/copia.json");
+  const backupPath = testInfo.outputPath("copia.json");
+  await file.saveAs(backupPath);
+  const backup = JSON.parse(await readFile(backupPath, "utf8"));
+  expect(backup).toMatchObject({
+    format: "trazzo-backup",
+    projects: [{ name: "Casa eje" }],
+    projectNotes: [{ title: expect.stringMatching(/\d+ contrapasos/) }],
+  });
 
   // Se borra todo lo del dispositivo y se restaura desde el archivo.
   await page.getByRole("button", { name: "Restablecer datos" }).click();
-  await page.getByRole("button", { name: "Restablecer", exact: true }).click();
-  await page.waitForLoadState("load");
+  // La recarga solo empieza después de que Dexie termina de borrar la base.
+  await Promise.all([
+    page.waitForEvent("framenavigated", (frame) => frame === page.mainFrame()),
+    page.getByRole("alertdialog").getByRole("button", { name: "Restablecer", exact: true }).click(),
+  ]);
   await page.goto("/metrados");
+  await expect(page.getByRole("heading", { name: "Sin proyectos" })).toBeVisible();
   await expect(page.getByText("Casa eje")).toHaveCount(0);
 
   await page.goto("/cuenta");
-  await page.getByLabel("Archivo de copia de seguridad").setInputFiles("test-results/copia.json");
-  await expect(page.getByRole("alertdialog")).toContainText("1 proyecto(s)");
-  await page.getByRole("button", { name: "Restaurar", exact: true }).click();
+  await page.getByLabel("Archivo de copia de seguridad").setInputFiles(backupPath);
+  const restore = page.getByRole("alertdialog", { name: "¿Restaurar esta copia?" });
+  await expect(restore).toContainText("1 proyecto(s)");
+  await restore.getByRole("button", { name: "Restaurar", exact: true }).click();
   await expect(page.getByText("Copia restaurada.")).toBeVisible();
 
   await page.goto("/metrados");

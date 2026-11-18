@@ -1,12 +1,15 @@
 import nextPlugin from "@next/eslint-plugin-next";
 import parser from "@typescript-eslint/parser";
 export default [
+  { ignores: [".next/**", "public/sw.js", "playwright-report/**", "test-results/**"] },
   {
     plugins: { "@next/next": nextPlugin },
     rules: {
       ...nextPlugin.configs.recommended.rules,
       ...nextPlugin.configs["core-web-vitals"].rules,
     },
+  },
+  {
     files: ["**/*.{ts,tsx}"],
     languageOptions: {
       parser,
