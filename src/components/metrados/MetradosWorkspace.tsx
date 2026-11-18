@@ -248,7 +248,7 @@ export function MetradosWorkspace() {
     ]);
     const pdf = new jsPDF();
     pdf.setFontSize(18);
-    pdf.text("TRAZZO", 14, 18);
+    pdf.text("TRAZO", 14, 18);
     pdf.setFontSize(11);
     pdf.text("Metrado referencial", 14, 26);
     pdf.setFontSize(9);
@@ -293,7 +293,7 @@ export function MetradosWorkspace() {
         pdf.setPage(page);
         pdf.setTextColor(200, 200, 200);
         pdf.setFontSize(46);
-        pdf.text("TRAZZO GRATIS", 105, 160, { align: "center", angle: 35 });
+        pdf.text("TRAZO GRATIS", 105, 160, { align: "center", angle: 35 });
       }
       pdf.setTextColor(0, 0, 0);
     }

@@ -192,7 +192,7 @@ export function RneExtraCalculators({ tool }: { tool: RneTool }) {
           details={details}
           checks={[]}
           warnings={["Resultado referencial. Revisa la norma vigente y los supuestos indicados."]}
-          copyText={`TRAZZO · ${titles[tool]} (por verificar): ${main}. ${details}`}
+          copyText={`TRAZO · ${titles[tool]} (por verificar): ${main}. ${details}`}
         />
       )}
     </section>

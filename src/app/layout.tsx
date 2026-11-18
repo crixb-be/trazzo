@@ -7,8 +7,11 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "sw
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "TRAZZO · RNE Pro Perú",
-  description: "Normativa, calculadoras y metrados offline-first para arquitectura y obra en Perú.",
+  title: "TRAZO · La navaja suiza del arquitecto",
+  applicationName: "TRAZO",
+  description:
+    "TRAZO, la navaja suiza del arquitecto: normativa RNE, calculadoras y metrados offline-first para arquitectura y obra en Perú.",
+  appleWebApp: { title: "TRAZO" },
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [

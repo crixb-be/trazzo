@@ -77,7 +77,7 @@ export async function POST(request: Request): Promise<Response> {
       items: [
         {
           id: "trazzo-" + body.plan + "-" + body.cycle,
-          title: "TRAZZO " + plan.label + " · " + (body.cycle === "annual" ? "Anual" : "Mensual"),
+          title: "TRAZO " + plan.label + " · " + (body.cycle === "annual" ? "Anual" : "Mensual"),
           quantity: 1,
           currency_id: "PEN",
           unit_price: planPrice(body.plan, body.cycle),

@@ -2,9 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "TRAZZO · RNE Pro Perú",
-    short_name: "TRAZZO",
-    description: "Herramientas RNE offline-first para arquitectura y obra.",
+    name: "TRAZO · La navaja suiza del arquitecto",
+    short_name: "TRAZO",
+    description:
+      "La navaja suiza del arquitecto: normativa RNE, calculadoras y metrados offline-first.",
     id: "/",
     lang: "es-PE",
     start_url: "/",

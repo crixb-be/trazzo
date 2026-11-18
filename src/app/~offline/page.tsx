@@ -8,8 +8,8 @@ export default function OfflinePage() {
         <div className="brand">
           <span className="brand-mark">T</span>
           <span>
-            <strong>TRAZZO</strong>
-            <small>RNE PRO · PERÚ</small>
+            <strong>TRAZO</strong>
+            <small>La navaja suiza del arquitecto</small>
           </span>
         </div>
         <div className="eyebrow">SIN CONEXIÓN</div>

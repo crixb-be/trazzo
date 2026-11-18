@@ -106,7 +106,7 @@ export function WaterCalculator() {
           checks={result.checks}
           warnings={result.warnings}
           copyText={
-            "TRAZZO · Agua IS.010\nDotación " +
+            "TRAZO · Agua IS.010\nDotación " +
             result.values.dailyLiters +
             " L/d\nCisterna " +
             result.values.cisternLiters +

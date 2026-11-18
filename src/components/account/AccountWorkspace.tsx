@@ -1,18 +1,8 @@
 "use client";
 
-import {
-  Camera,
-  Check,
-  Cloud,
-  FileUp,
-  FolderOpen,
-  Images,
-  RefreshCw,
-  RotateCcw,
-  Trash2,
-} from "lucide-react";
+import { Camera, Check, Cloud, FileUp, FolderOpen, Images, RotateCcw, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from "react";
 import {
   Badge,
   BillingToggle,
@@ -23,6 +13,7 @@ import {
   Input,
   toast,
 } from "@/components/ui";
+import { AccountAccess } from "./AccountAccess";
 import { BackupCard } from "./BackupCard";
 import { FavoriteToolsEditor } from "@/components/onboarding/FavoriteToolsEditor";
 import { WelcomeGuideButton } from "@/components/onboarding/WelcomeGuide";
@@ -31,7 +22,6 @@ import { SEED_VERSION } from "@/data/seed-rne";
 import { db } from "@/lib/offline/db";
 import { getStudioProfile, saveStudioProfile } from "@/lib/offline/profile";
 import { useStudioProfile, useSyncStatus } from "@/lib/offline/hooks";
-import { describeSyncResult, describeSyncStatus, syncNow as runSync } from "@/lib/offline/sync";
 import {
   formatPlanPrice,
   isEduPeEmail,
@@ -156,21 +146,29 @@ export function AccountWorkspace() {
   }, [studio.updatedAt]);
 
   useEffect(() => {
+    setConfigured(Boolean(createClient()));
+  }, []);
+
+  // AccountAccess owns the session; here it only fills the profile fields.
+  // Token refreshes repeat the same session: load the profile once per account.
+  const loadedAccount = useRef<string | null>(null);
+  const handleSessionChange = useCallback((sessionEmail: string | null): void => {
+    setEmail(sessionEmail ?? "");
+    if (sessionEmail === loadedAccount.current) return;
+    loadedAccount.current = sessionEmail;
+    if (sessionEmail === null) return;
     const client = createClient();
-    setConfigured(Boolean(client));
-    if (client) {
-      void client.auth.getUser().then(async ({ data }) => {
-        if (!data.user) return;
-        setEmail(data.user.email ?? "");
-        const profile = await client
-          .from("profiles")
-          .select("full_name,cap_number")
-          .eq("id", data.user.id)
-          .maybeSingle();
-        if (typeof profile.data?.full_name === "string") setName(profile.data.full_name);
-        if (typeof profile.data?.cap_number === "string") setCapNumber(profile.data.cap_number);
-      });
-    }
+    if (!client) return;
+    void client.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return;
+      const profile = await client
+        .from("profiles")
+        .select("full_name,cap_number")
+        .eq("id", data.user.id)
+        .maybeSingle();
+      if (typeof profile.data?.full_name === "string") setName(profile.data.full_name);
+      if (typeof profile.data?.cap_number === "string") setCapNumber(profile.data.cap_number);
+    });
   }, []);
 
   async function saveProfile(): Promise<void> {
@@ -380,10 +378,6 @@ export function AccountWorkspace() {
     );
   }
 
-  async function syncNow(): Promise<void> {
-    setNotice(describeSyncResult(await runSync()));
-  }
-
   async function resetLocal(): Promise<void> {
     const confirmed = await confirmDialog({
       title: "¿Restablecer los datos de este dispositivo?",
@@ -403,13 +397,13 @@ export function AccountWorkspace() {
       <div className="eyebrow">CUENTA / CONFIGURACIÓN</div>
       <div className="page-heading-row">
         <div>
-          <h1 className="page-title">Tu espacio TRAZZO</h1>
+          <h1 className="page-title">Tu espacio TRAZO</h1>
           <p className="lead">
             Planes, identidad y sincronización para continuar tu trabajo en obra.
           </p>
         </div>
         <Badge variant={configured ? "ok" : "por-verificar"}>
-          {configured ? "Cuentas activas" : "Solo en este dispositivo"}
+          {!configured ? "Solo en este dispositivo" : email ? "Sesión iniciada" : "Modo invitado"}
         </Badge>
       </div>
 
@@ -423,7 +417,9 @@ export function AccountWorkspace() {
         </div>
       )}
 
-      <div className="account-grid">
+      <AccountAccess onSessionChange={handleSessionChange} />
+
+      <div className="account-grid account-section">
         <Card className="profile-card">
           <div className="eyebrow">PERFIL</div>
           <h2>{email || "Trabajo local"}</h2>
@@ -642,7 +638,7 @@ export function AccountWorkspace() {
           <div className="brand-preview-strip">
             <span style={{ background: brandPrimary }} />
             <span style={{ background: brandSecondary }} />
-            <strong>{studioName || "TRAZZO"}</strong>
+            <strong>{studioName || "TRAZO"}</strong>
           </div>
         </Card>
         <Card>
@@ -652,26 +648,13 @@ export function AccountWorkspace() {
           <WelcomeGuideButton />
         </Card>
         <Card>
-          <div className="eyebrow">SINCRONIZACIÓN</div>
-          <h2 role="status">{describeSyncStatus(sync)}</h2>
-          <div className="sync-details">
-            <span>
-              Estado <strong>{sync.online ? "En línea" : "Sin conexión"}</strong>
-            </span>
-            <span>
-              Cola <strong className="mono">{sync.pending} cambios</strong>
-            </span>
-            <span>
-              Último sync{" "}
-              <strong>
-                {sync.lastSync ? new Date(sync.lastSync).toLocaleString("es-PE") : "Nunca"}
-              </strong>
-            </span>
-          </div>
+          <div className="eyebrow">DATOS DEL DISPOSITIVO</div>
+          <h2>{sync.online ? "En línea" : "Trabajando sin conexión"}</h2>
+          <p className="muted small">
+            Borra lo guardado en este dispositivo. Lo que ya esté respaldado en tu cuenta se vuelve
+            a descargar al iniciar sesión.
+          </p>
           <div className="hero-actions">
-            <Button onClick={() => void syncNow()} disabled={!sync.online || sync.syncing}>
-              <RefreshCw size={15} /> Sincronizar ahora
-            </Button>
             <Button variant="danger" onClick={() => void resetLocal()}>
               <RotateCcw size={15} /> Restablecer datos
             </Button>
@@ -689,15 +672,16 @@ export function AccountWorkspace() {
                 <strong>App nativa: compras desactivadas</strong>
                 <span>
                   Tu estado de cuenta se sincroniza automáticamente al iniciar sesión. Plan actual:{" "}
-                  <strong>{billingViewState(true, currentPlan, paymentProviders).currentPlanLabel}</strong>.
+                  <strong>
+                    {billingViewState(true, currentPlan, paymentProviders).currentPlanLabel}
+                  </strong>
+                  .
                 </span>
               </>
             ) : (
               <>
                 <strong>Checkout web</strong>
-                <span>
-                  {billingViewState(false, currentPlan, paymentProviders).message}
-                </span>
+                <span>{billingViewState(false, currentPlan, paymentProviders).message}</span>
               </>
             )}
           </div>
@@ -782,7 +766,8 @@ export function AccountWorkspace() {
         </Card>
         <Card>
           <div className="eyebrow">APLICACIÓN</div>
-          <h2>TRAZZO · RNE Pro Perú</h2>
+          <h2>TRAZO</h2>
+          <p className="muted small">La navaja suiza del arquitecto</p>
           <div className="app-info">
             <span>Versión</span>
             <span className="mono">0.1.0</span>
@@ -804,7 +789,7 @@ export function AccountWorkspace() {
         </Card>
         <Card>
           <div className="eyebrow">INSTALACIÓN</div>
-          <h2>TRAZZO en tu pantalla de inicio</h2>
+          <h2>TRAZO en tu pantalla de inicio</h2>
           <InstallGuide />
         </Card>
       </section>

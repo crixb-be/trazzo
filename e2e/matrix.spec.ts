@@ -18,12 +18,12 @@ test("matriz guarda relaciones y exporta imagen y PDF", async ({ page }) => {
   const svgDownload = page.waitForEvent("download");
   await page.getByRole("button", { name: "Exportar imagen SVG" }).click();
   const svg = await svgDownload;
-  expect(svg.suggestedFilename()).toBe("trazzo-relaciones.svg");
+  expect(svg.suggestedFilename()).toBe("trazo-relaciones.svg");
   expect(await svg.failure()).toBeNull();
   const pdfDownload = page.waitForEvent("download");
   await page.getByRole("button", { name: "Exportar PDF", exact: true }).click();
   const pdf = await pdfDownload;
-  expect(pdf.suggestedFilename()).toBe("trazzo-relaciones.pdf");
+  expect(pdf.suggestedFilename()).toBe("trazo-relaciones.pdf");
   expect(await pdf.failure()).toBeNull();
   await page.getByRole("button", { name: "Eliminar Cocina", exact: true }).click();
   await expect(page.locator("ol li")).toHaveCount(2);

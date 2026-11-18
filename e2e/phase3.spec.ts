@@ -33,7 +33,7 @@ test.describe("configuración guiada de accesos", () => {
   test("tres pasos ordenan Inicio y no se repiten", async ({ page }, testInfo) => {
     await page.goto("/cuenta");
     await page.getByRole("button", { name: "Configurar accesos guiados" }).click();
-    const dialog = page.getByRole("dialog", { name: "Bienvenido a TRAZZO" });
+    const dialog = page.getByRole("dialog", { name: "Bienvenido a TRAZO" });
     await expect(dialog).toBeVisible();
     await expect(dialog).toContainText("Funciona sin cuenta y sin señal");
     await dialog.getByRole("button", { name: /Profesional/ }).click();
@@ -74,7 +74,7 @@ test.describe("configuración guiada de accesos", () => {
     await page.getByRole("button", { name: "Omitir" }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(
-      page.getByRole("heading", { name: "TRAZZO en tu pantalla de inicio" }),
+      page.getByRole("heading", { name: "TRAZO en tu pantalla de inicio" }),
     ).toBeVisible();
     await page
       .getByRole("group", { name: "Herramientas en Inicio" })
@@ -90,7 +90,7 @@ test("resultado y ficha se comparten como imagen y PDF", async ({ page }, testIn
   const imageDownload = page.waitForEvent("download");
   await page.getByRole("button", { name: "Compartir imagen" }).click();
   const image = await imageDownload;
-  expect(image.suggestedFilename()).toMatch(/^trazzo-\d+-contrapasos\.png$/);
+  expect(image.suggestedFilename()).toMatch(/^trazo-\d+-contrapasos\.png$/);
   const imagePath = testInfo.outputPath("compartir-escalera.png");
   await image.saveAs(imagePath);
   const png = await readFile(imagePath);
@@ -102,7 +102,7 @@ test("resultado y ficha se comparten como imagen y PDF", async ({ page }, testIn
   const pdfDownload = page.waitForEvent("download");
   await page.getByRole("button", { name: "Compartir PDF" }).click();
   const pdf = await pdfDownload;
-  expect(pdf.suggestedFilename()).toMatch(/^trazzo-.+\.pdf$/);
+  expect(pdf.suggestedFilename()).toMatch(/^trazo-.+\.pdf$/);
   const pdfPath = testInfo.outputPath("compartir-ficha.pdf");
   await pdf.saveAs(pdfPath);
   const bytes = await readFile(pdfPath);
@@ -139,7 +139,7 @@ test("el proyecto reúne cálculos y la copia de seguridad los restaura", async 
     page.waitForEvent("download"),
     page.getByRole("button", { name: "Descargar copia" }).click(),
   ]);
-  expect(file.suggestedFilename()).toMatch(/^trazzo-copia-\d{4}-\d{2}-\d{2}\.json$/);
+  expect(file.suggestedFilename()).toMatch(/^trazo-copia-\d{4}-\d{2}-\d{2}\.json$/);
   const backupPath = testInfo.outputPath("copia.json");
   await file.saveAs(backupPath);
   const backup = JSON.parse(await readFile(backupPath, "utf8"));
@@ -178,5 +178,5 @@ test("el proyecto reúne cálculos y la copia de seguridad los restaura", async 
     mimeType: "application/json",
     buffer: Buffer.from('{"hola":1}'),
   });
-  await expect(page.getByText("El archivo no es una copia de TRAZZO.")).toBeVisible();
+  await expect(page.getByText("El archivo no es una copia de TRAZO.")).toBeVisible();
 });

@@ -53,7 +53,7 @@ describe("result sheet", () => {
     expect(brand.primary).toBe("#112233");
     expect(brand.secondary).toBe("#C59B27");
     expect(brand.watermark).toBe(true);
-    expect(brandFromStudio({ ...studio, studioName: "", fullName: "" }, false).name).toBe("TRAZZO");
+    expect(brandFromStudio({ ...studio, studioName: "", fullName: "" }, false).name).toBe("TRAZO");
   });
 
   it("wraps text to a width and names files without accents", () => {
@@ -61,6 +61,6 @@ describe("result sheet", () => {
     expect(lines).toEqual(["uno dos", "tres", "cuatro", "cinco"]);
     expect(wrapText("a\n\nb", 10, (text) => text.length)).toEqual(["a", "b"]);
     const sheet = cardSheet({ ...RNE_CARDS[0], title: "Ancho mínimo de pasaje — útil" });
-    expect(sheetFileName(sheet, "png")).toBe("trazzo-ancho-minimo-de-pasaje-util.png");
+    expect(sheetFileName(sheet, "png")).toBe("trazo-ancho-minimo-de-pasaje-util.png");
   });
 });

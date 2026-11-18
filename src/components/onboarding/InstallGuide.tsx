@@ -23,7 +23,7 @@ export function InstallGuide() {
   if (installed) {
     return (
       <p className="install-done" role="status">
-        TRAZZO ya está instalada en este dispositivo.
+        TRAZO ya está instalada en este dispositivo.
       </p>
     );
   }

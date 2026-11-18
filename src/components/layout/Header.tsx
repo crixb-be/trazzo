@@ -22,7 +22,7 @@ const titles: Record<string, string> = {
 function pageTitle(pathname: string): string {
   if (titles[pathname]) return titles[pathname];
   if (pathname.startsWith("/normativa/")) return "Ficha normativa";
-  return "TRAZZO";
+  return "TRAZO";
 }
 
 export function Header() {
@@ -37,11 +37,11 @@ export function Header() {
 
   return (
     <header className="header">
-      <Link className="header-brand" href="/" aria-label="TRAZZO, volver al inicio">
+      <Link className="header-brand" href="/" aria-label="TRAZO, volver al inicio">
         <span className="brand-mark">T</span>
       </Link>
       <div className="header-title">
-        <span className="eyebrow">TRAZZO / RNE PRO</span>
+        <span className="eyebrow">TRAZO / LA NAVAJA SUIZA DEL ARQUITECTO</span>
         <strong>{pageTitle(pathname)}</strong>
       </div>
       <div className="header-actions">

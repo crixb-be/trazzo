@@ -29,7 +29,7 @@ export interface SheetBrand {
   primary: string;
   secondary: string;
   logoDataUrl: string | null;
-  /** Adds the "hecho con TRAZZO" line of the free plan. */
+  /** Adds the "hecho con TRAZO" line of the free plan. */
   watermark: boolean;
 }
 
@@ -42,7 +42,7 @@ export interface StudioBrandSource {
   logoDataUrl: string | null;
 }
 
-export const WATERMARK_TEXT = "Hecho con TRAZZO · plan Gratis";
+export const WATERMARK_TEXT = "Hecho con TRAZO · plan Gratis";
 
 /** Hides floating-point noise such as 0.18000000000000002. */
 function tidy(value: number | string): string {
@@ -102,7 +102,7 @@ export function cardSheet(card: RneCard): ResultSheet {
 const HEX_COLOR = /^#[0-9a-f]{6}$/i;
 
 export function brandFromStudio(studio: StudioBrandSource, watermark: boolean): SheetBrand {
-  const name = studio.studioName.trim() || studio.fullName.trim() || "TRAZZO";
+  const name = studio.studioName.trim() || studio.fullName.trim() || "TRAZO";
   const person = studio.studioName.trim() ? studio.fullName.trim() : "";
   const cap = studio.capNumber.trim() ? "CAP " + studio.capNumber.trim() : "";
   return {
@@ -146,7 +146,7 @@ export function sheetFileName(sheet: ResultSheet, extension: "png" | "pdf"): str
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 48);
-  return "trazzo-" + (slug || sheet.kind) + "." + extension;
+  return "trazo-" + (slug || sheet.kind) + "." + extension;
 }
 
 /** Plain-text version sent along with the file, and useful on its own. */

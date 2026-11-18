@@ -183,7 +183,7 @@ export function AssistantWorkspace({ limits }: { limits: Record<Plan, number> })
             </button>
           )}
           <p className="legal chat-disclaimer">
-            Las respuestas se limitan a las fichas del RNE cargadas en TRAZZO. Verifica siempre la
+            Las respuestas se limitan a las fichas del RNE cargadas en TRAZO. Verifica siempre la
             versión vigente del MVCS.
           </p>
         </Card>
@@ -193,7 +193,7 @@ export function AssistantWorkspace({ limits }: { limits: Record<Plan, number> })
             <div className="eyebrow">CÓMO RESPONDE</div>
             <h3>Solo con el RNE</h3>
             <p className="muted small">
-              Cada respuesta se arma con las fichas del RNE cargadas en TRAZZO y cita su fuente. Si
+              Cada respuesta se arma con las fichas del RNE cargadas en TRAZO y cita su fuente. Si
               el dato no está, lo dice.
             </p>
           </Card>

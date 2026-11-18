@@ -55,7 +55,7 @@ export function HomeDashboard() {
   return (
     <div className="home-dashboard">
       <section className="home-hero">
-        <div className="eyebrow">TRAZZO / ESPACIO DE TRABAJO</div>
+        <div className="eyebrow">TRAZO / ESPACIO DE TRABAJO</div>
         <h1 className="page-title">Herramientas de obra</h1>
         <div className="hero-search">
           <GlobalSearch variant="inline" />

@@ -52,7 +52,7 @@ export function EvacuationCalculator({ allowed = false }: { allowed?: boolean })
         }
         checks={result.checks}
         warnings={result.warnings}
-        copyText={"TRAZZO · Evacuación A.130\nAncho " + result.values.width.toFixed(2) + " m"}
+        copyText={"TRAZO · Evacuación A.130\nAncho " + result.values.width.toFixed(2) + " m"}
       />
     </div>
   );

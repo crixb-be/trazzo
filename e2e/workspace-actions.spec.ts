@@ -16,7 +16,7 @@ test("comparte y guarda materiales, campo, matriz y medidas", async ({ page }) =
     const downloadPromise = page.waitForEvent("download");
     await area.getByRole("button", { name: "Compartir imagen", exact: true }).click();
     const download = await downloadPromise;
-    expect(download.suggestedFilename()).toMatch(/^trazzo-.+\.png$/);
+    expect(download.suggestedFilename()).toMatch(/^trazo-.+\.png$/);
 
     await area.getByRole("button", { name: "Guardar en proyecto", exact: true }).click();
     const saver = area.locator(".save-to-project");

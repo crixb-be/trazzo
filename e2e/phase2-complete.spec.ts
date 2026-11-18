@@ -32,7 +32,7 @@ test("asistente responde sin red y conserva historial", async ({ page }) => {
 });
 test("buscador abre medidas y honorarios conserva datos entre pasos", async ({ page }) => {
   await page.goto("/");
-  await page.getByRole("combobox", { name: "Buscar en TRAZZO" }).last().fill("clóset");
+  await page.getByRole("combobox", { name: "Buscar en TRAZO" }).last().fill("clóset");
   await page.getByRole("option").filter({ hasText: "Clóset" }).first().click();
   await expect(page).toHaveURL(/medidas/);
   await page.goto("/honorarios");

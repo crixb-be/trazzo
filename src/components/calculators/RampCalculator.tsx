@@ -78,7 +78,7 @@ export function RampCalculator() {
           checks={result.checks}
           warnings={result.warnings}
           copyText={
-            "TRAZZO · Rampa A.120\nDesnivel " +
+            "TRAZO · Rampa A.120\nDesnivel " +
             rise.toFixed(2) +
             " m · máximo " +
             (result.values.maxSlope * 100).toFixed(0) +

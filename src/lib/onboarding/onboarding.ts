@@ -127,16 +127,16 @@ export const INSTALL_STEPS: Record<InstallPlatform, { title: string; steps: stri
   ios: {
     title: "iPhone y iPad (Safari)",
     steps: [
-      "Abre TRAZZO en Safari.",
+      "Abre TRAZO en Safari.",
       "Toca el botón Compartir (el cuadrado con la flecha hacia arriba).",
       "Elige «Agregar a inicio» o «Añadir a pantalla de inicio».",
-      "Toca «Agregar». TRAZZO queda como una app más.",
+      "Toca «Agregar». TRAZO queda como una app más.",
     ],
   },
   android: {
     title: "Android (Chrome)",
     steps: [
-      "Abre TRAZZO en Chrome.",
+      "Abre TRAZO en Chrome.",
       "Toca el menú de tres puntos, arriba a la derecha.",
       "Elige «Instalar app» o «Agregar a la pantalla principal».",
       "Confirma con «Instalar».",
@@ -145,7 +145,7 @@ export const INSTALL_STEPS: Record<InstallPlatform, { title: string; steps: stri
   escritorio: {
     title: "Computadora (Chrome o Edge)",
     steps: [
-      "Abre TRAZZO en Chrome o Edge.",
+      "Abre TRAZO en Chrome o Edge.",
       "Haz clic en el ícono de instalar, al final de la barra de direcciones.",
       "Confirma con «Instalar».",
     ],

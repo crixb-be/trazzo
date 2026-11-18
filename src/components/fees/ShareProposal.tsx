@@ -39,7 +39,7 @@ export function ShareProposal({
     if (!file || preparedFor !== signature) return;
     try {
       if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: "Propuesta TRAZZO" });
+        await navigator.share({ files: [file], title: "Propuesta TRAZO" });
         setNotice("PDF compartido.");
       } else {
         const url = URL.createObjectURL(file),

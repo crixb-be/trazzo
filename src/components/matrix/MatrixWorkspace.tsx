@@ -100,7 +100,7 @@ export function MatrixWorkspace() {
     try {
       const markup = new XMLSerializer().serializeToString(svg.current);
       if (format === "svg") {
-        download(new Blob([markup], { type: "image/svg+xml" }), "trazzo-relaciones.svg");
+        download(new Blob([markup], { type: "image/svg+xml" }), "trazo-relaciones.svg");
         return;
       }
       const url = URL.createObjectURL(new Blob([markup], { type: "image/svg+xml" }));
@@ -122,7 +122,7 @@ export function MatrixWorkspace() {
           import("jspdf-autotable"),
         ]);
         const pdf = new jsPDF();
-        pdf.text("TRAZZO · Matriz de relaciones", 14, 18);
+        pdf.text("TRAZO · Matriz de relaciones", 14, 18);
         pdf.addImage(canvas.toDataURL("image/png"), "PNG", 10, 25, 190, 166);
         autoTable(pdf, {
           startY: 198,
@@ -139,7 +139,7 @@ export function MatrixWorkspace() {
             }),
           ),
         });
-        pdf.save("trazzo-relaciones.pdf");
+        pdf.save("trazo-relaciones.pdf");
       } finally {
         URL.revokeObjectURL(url);
       }
@@ -313,7 +313,7 @@ export function MatrixWorkspace() {
       >
         <rect width="800" height="700" fill="#fff" />
         <text x="20" y="25" fontSize="16" fill="#222">
-          TRAZZO · Relaciones entre ambientes
+          TRAZO · Relaciones entre ambientes
         </text>
         <text x="20" y="50" fontSize="13" fill="#444">
           Continua: necesaria · Discontinua: deseable · Sin línea: innecesaria

@@ -98,13 +98,13 @@ export function GlobalSearch({
           placeholder={
             variant === "inline"
               ? "Busca fichas, medidas, herramientas o proyectos…"
-              : "Buscar en TRAZZO…"
+              : "Buscar en TRAZO…"
           }
           value={query}
           onFocus={() => setOpen(true)}
           onChange={(event) => updateQuery(event.target.value)}
           onKeyDown={handleKeyDown}
-          aria-label="Buscar en TRAZZO"
+          aria-label="Buscar en TRAZO"
           role="combobox"
           aria-autocomplete="list"
           aria-expanded={open}

@@ -34,11 +34,11 @@ export function Sidebar() {
 
   return (
     <aside className="sidebar" aria-label="Navegación principal">
-      <Link className="brand" href="/" aria-label="TRAZZO, volver al inicio">
+      <Link className="brand" href="/" aria-label="TRAZO, volver al inicio">
         <span className="brand-mark">T</span>
         <span>
-          <strong>TRAZZO</strong>
-          <small>RNE PRO · PERÚ</small>
+          <strong>TRAZO</strong>
+          <small>La navaja suiza del arquitecto</small>
         </span>
       </Link>
 

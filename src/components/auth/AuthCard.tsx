@@ -21,7 +21,7 @@ export function AuthCard({ mode }: { mode: "login" | "register" }) {
     const client = createClient();
     if (!client) {
       setNotice(
-        "Las cuentas aún no están activas en esta instalación. Puedes usar TRAZZO sin cuenta.",
+        "Las cuentas aún no están activas en esta instalación. Puedes usar TRAZO sin cuenta.",
       );
       return;
     }
@@ -69,8 +69,8 @@ export function AuthCard({ mode }: { mode: "login" | "register" }) {
           T
         </span>
         <span>
-          <strong>TRAZZO</strong>
-          <small>RNE PRO · PERÚ</small>
+          <strong>TRAZO</strong>
+          <small>La navaja suiza del arquitecto</small>
         </span>
       </Link>
       <Badge variant={configured ? "ok" : "por-verificar"}>
@@ -85,7 +85,7 @@ export function AuthCard({ mode }: { mode: "login" | "register" }) {
       </p>
       {!configured && (
         <div className="notice-banner">
-          <Mail size={16} /> Las cuentas aún no están activas. Puedes usar TRAZZO sin cuenta.
+          <Mail size={16} /> Las cuentas aún no están activas. Puedes usar TRAZO sin cuenta.
         </div>
       )}
       <form className="auth-form" onSubmit={(event) => void submit(event)}>

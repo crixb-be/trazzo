@@ -72,8 +72,8 @@ export function ProposalPreview({
               )}
             </div>
             <div className="proposal-cover-brand">
-              {studio.studioName || "TRAZZO"}
-              <small>ARQUITECTURA · RNE PRO · PERÚ</small>
+              {studio.studioName || "TRAZO"}
+              <small>ARQUITECTURA · LA NAVAJA SUIZA DEL ARQUITECTO</small>
             </div>
             <div className="proposal-cover-title">
               <h2>{title}</h2>
@@ -89,8 +89,8 @@ export function ProposalPreview({
               <span>Ubicación: {quote.location || "—"}</span>
             </div>
             <small className="proposal-cover-footer">
-              Elaborado por: {studio.fullName ? "Arq. " + studio.fullName : "TRAZZO"} ·{" "}
-              {studio.studioName || "RNE PRO · PERÚ"}
+              Elaborado por: {studio.fullName ? "Arq. " + studio.fullName : "TRAZO"} ·{" "}
+              {studio.studioName || "La navaja suiza del arquitecto"}
             </small>
           </section>
           <section
@@ -113,7 +113,7 @@ export function ProposalPreview({
                 )}
               </div>
               <div>
-                <strong>{studio.studioName || "TRAZZO"}</strong>
+                <strong>{studio.studioName || "TRAZO"}</strong>
                 <small>{quote.code}</small>
               </div>
             </header>
@@ -267,7 +267,7 @@ export function ProposalPreview({
               ))}
             </div>
           </section>
-          {watermark && <div className="preview-watermark">VISTA PREVIA · TRAZZO GRATIS</div>}
+          {watermark && <div className="preview-watermark">VISTA PREVIA · TRAZO GRATIS</div>}
         </div>
       </div>
     </div>

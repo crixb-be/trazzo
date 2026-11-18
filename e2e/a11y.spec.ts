@@ -68,7 +68,7 @@ test.describe("estados interactivos", () => {
     await expect(page.getByRole("dialog")).toHaveCount(0);
 
     await page.goto("/");
-    await page.getByRole("combobox", { name: "Buscar en TRAZZO" }).last().fill("rampa");
+    await page.getByRole("combobox", { name: "Buscar en TRAZO" }).last().fill("rampa");
     await expect(page.getByRole("option").first()).toBeVisible();
     expect(await scan()).toEqual([]);
   });

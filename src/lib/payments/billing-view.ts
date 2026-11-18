@@ -19,7 +19,7 @@ export function billingViewState(
       mode: "native",
       showCheckout: false,
       message:
-        "Tu estado de cuenta se sincroniza automáticamente al iniciar sesión en TRAZZO.",
+        "Tu estado de cuenta se sincroniza automáticamente al iniciar sesión en TRAZO.",
       currentPlanLabel,
     };
   }
