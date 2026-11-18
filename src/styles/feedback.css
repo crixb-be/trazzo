@@ -120,3 +120,13 @@
   color: var(--accent);
   font-weight: 600;
 }
+.welcome-guide {
+  margin-bottom: var(--space-4);
+}
+
+.welcome-guide-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}

@@ -25,6 +25,7 @@ import {
 } from "@/components/ui";
 import { BackupCard } from "./BackupCard";
 import { FavoriteToolsEditor } from "@/components/onboarding/FavoriteToolsEditor";
+import { WelcomeGuideButton } from "@/components/onboarding/WelcomeGuide";
 import { InstallGuide } from "@/components/onboarding/InstallGuide";
 import { SEED_VERSION } from "@/data/seed-rne";
 import { db } from "@/lib/offline/db";
@@ -648,6 +649,7 @@ export function AccountWorkspace() {
           <div className="eyebrow">PANTALLA</div>
           <h2>Tema y tamaño de letra</h2>
           <DisplaySettings />
+          <WelcomeGuideButton />
         </Card>
         <Card>
           <div className="eyebrow">SINCRONIZACIÓN</div>

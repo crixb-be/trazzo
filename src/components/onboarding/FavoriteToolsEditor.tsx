@@ -4,6 +4,7 @@ import { Check } from "lucide-react";
 import {
   DEFAULT_TOOL_IDS,
   MAX_FAVORITE_TOOLS,
+  OPEN_ONBOARDING_EVENT,
   QUICK_TOOLS,
   toggleTool,
 } from "@/lib/onboarding/onboarding";
@@ -37,8 +38,12 @@ export function FavoriteToolsEditor() {
           );
         })}
       </div>
-      <button type="button" className="link-button" onClick={() => save({ ...state, done: false })}>
-        Ver la bienvenida otra vez
+      <button
+        type="button"
+        className="link-button"
+        onClick={() => window.dispatchEvent(new Event(OPEN_ONBOARDING_EVENT))}
+      >
+        Configurar accesos guiados
       </button>
     </>
   );

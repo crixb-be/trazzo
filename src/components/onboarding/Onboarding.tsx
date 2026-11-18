@@ -4,6 +4,7 @@ import { Check, GraduationCap, HardHat, WifiOff } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import {
   MAX_FAVORITE_TOOLS,
+  OPEN_ONBOARDING_EVENT,
   QUICK_TOOLS,
   suggestedTools,
   toggleTool,
@@ -14,19 +15,24 @@ import { InstallGuide } from "./InstallGuide";
 
 const STEPS = ["Tu perfil", "Tus herramientas", "Instalar"];
 
-/** Three-step welcome shown once, the first time the app opens on a device. */
+/** Optional setup for the shortcuts shown on Home. */
 export function Onboarding() {
-  const { state, save } = useOnboarding();
+  const { save } = useOnboarding();
+  const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
   const [role, setRole] = useState<UserRole | null>(null);
   const [tools, setTools] = useState<string[]>([]);
   const heading = useRef<HTMLHeadingElement>(null);
-  const open = state !== null && !state.done;
-
-  // Reopened from Account: start again from the first step.
   useEffect(() => {
-    if (open) setStep(0);
-  }, [open]);
+    const show = () => {
+      setStep(0);
+      setRole(null);
+      setTools([]);
+      setOpen(true);
+    };
+    window.addEventListener(OPEN_ONBOARDING_EVENT, show);
+    return () => window.removeEventListener(OPEN_ONBOARDING_EVENT, show);
+  }, []);
 
   useEffect(() => {
     if (open) heading.current?.focus();
@@ -36,6 +42,7 @@ export function Onboarding() {
 
   function finish(): void {
     save({ done: true, role, tools });
+    setOpen(false);
   }
 
   function chooseRole(next: UserRole): void {

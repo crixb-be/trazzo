@@ -27,11 +27,12 @@ test("modo obra y tamaño de letra se aplican y se conservan", async ({ page }) 
   await expect(page.locator("html")).toHaveClass(/dark/);
 });
 
-test.describe("bienvenida", () => {
+test.describe("configuración guiada de accesos", () => {
   test.use({ storageState: { cookies: [], origins: [] } });
 
   test("tres pasos ordenan Inicio y no se repiten", async ({ page }, testInfo) => {
-    await page.goto("/");
+    await page.goto("/cuenta");
+    await page.getByRole("button", { name: "Configurar accesos guiados" }).click();
     const dialog = page.getByRole("dialog", { name: "Bienvenido a TRAZZO" });
     await expect(dialog).toBeVisible();
     await expect(dialog).toContainText("Funciona sin cuenta y sin señal");
@@ -56,6 +57,7 @@ test.describe("bienvenida", () => {
     await install.getByRole("button", { name: "Empezar" }).click();
 
     await expect(page.getByRole("dialog")).toHaveCount(0);
+    await page.goto("/");
     await expect(page.getByRole("heading", { name: "Tus herramientas" })).toBeVisible();
     const tiles = page.locator(".calculator-tile strong");
     await expect(tiles.first()).toHaveText("Materiales");
@@ -68,6 +70,7 @@ test.describe("bienvenida", () => {
 
   test("se puede omitir y Cuenta muestra la guía de instalación", async ({ page }) => {
     await page.goto("/cuenta");
+    await page.getByRole("button", { name: "Configurar accesos guiados" }).click();
     await page.getByRole("button", { name: "Omitir" }).click();
     await expect(page.getByRole("dialog")).toHaveCount(0);
     await expect(

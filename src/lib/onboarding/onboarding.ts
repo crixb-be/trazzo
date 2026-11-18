@@ -18,6 +18,7 @@ export interface OnboardingState {
 
 export const ONBOARDING_KEY = "trazzo-onboarding";
 export const ONBOARDING_EVENT = "trazzo:onboarding";
+export const OPEN_ONBOARDING_EVENT = "trazzo:open-onboarding";
 
 /** Every tool that can be pinned to the home screen, in the default order. */
 export const QUICK_TOOLS: readonly QuickTool[] = [

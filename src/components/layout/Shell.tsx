@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Onboarding } from "@/components/onboarding/Onboarding";
+import { WelcomeGuide } from "@/components/onboarding/WelcomeGuide";
 import { FeedbackHost } from "@/components/ui/Feedback";
 import { AppBootstrap } from "./AppBootstrap";
 import { BottomNav } from "./BottomNav";
@@ -15,7 +16,10 @@ export function Shell({ children }: { children: ReactNode }) {
       <Sidebar />
       <div className="main-shell">
         <Header />
-        <main className="page-content">{children}</main>
+        <main className="page-content">
+          <WelcomeGuide />
+          {children}
+        </main>
       </div>
       <BottomNav />
       <FeedbackHost />

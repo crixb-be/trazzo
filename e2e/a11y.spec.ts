@@ -53,7 +53,8 @@ test.describe("estados interactivos", () => {
         violation.nodes.map((node) => violation.id + " · " + node.target.join(" ")),
       );
     };
-    await page.goto("/");
+    await page.goto("/cuenta");
+    await page.getByRole("button", { name: "Configurar accesos guiados" }).click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
     expect(await scan()).toEqual([]);
@@ -66,6 +67,7 @@ test.describe("estados interactivos", () => {
     await page.keyboard.press("Escape");
     await expect(page.getByRole("dialog")).toHaveCount(0);
 
+    await page.goto("/");
     await page.getByRole("combobox", { name: "Buscar en TRAZZO" }).last().fill("rampa");
     await expect(page.getByRole("option").first()).toBeVisible();
     expect(await scan()).toEqual([]);
