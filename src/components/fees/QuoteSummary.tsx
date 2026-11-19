@@ -34,7 +34,7 @@ export function QuoteSummary({
 }: QuoteSummaryProps) {
   return (
     <Card className="quote-summary">
-      <div className="eyebrow">RESUMEN DE HONORARIOS</div>
+      <div className="eyebrow">Resumen de honorarios</div>
       <div className="summary-lines">
         {result.lines.map((line) => (
           <div className="summary-line" key={line.key}>

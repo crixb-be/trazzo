@@ -72,7 +72,7 @@ export function TakeoffTable({
     <Card className="takeoff-card">
       <div className="section-heading">
         <div>
-          <div className="eyebrow">PARTIDAS / METRADO</div>
+          <div className="eyebrow">Partidas / Metrado</div>
           <h2>{draft.id ? "Editar partida" : "Agregar partida"}</h2>
         </div>
         {draft.id && (

@@ -11,7 +11,7 @@ const suggestions = [
 export function SuggestedPrompts({ onSelect }: { onSelect: (prompt: string) => void }) {
   return (
     <div className="suggested-prompts">
-      <div className="eyebrow">PRUEBA UNA CONSULTA</div>
+      <div className="eyebrow">Prueba una consulta</div>
       {suggestions.map((suggestion) => (
         <button type="button" key={suggestion} onClick={() => onSelect(suggestion)}>
           <span>{suggestion}</span>

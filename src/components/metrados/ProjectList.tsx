@@ -94,7 +94,7 @@ export function ProjectList({
     <aside className="project-sidebar">
       <div className="project-sidebar-header">
         <div>
-          <div className="eyebrow">ESPACIOS LOCALES</div>
+          <div className="eyebrow">Espacios locales</div>
           <h2>Proyectos</h2>
         </div>
         <Button size="sm" variant="secondary" type="button" onClick={openCreate}>

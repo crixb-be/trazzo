@@ -21,7 +21,7 @@ export function WaterCalculator() {
   return (
     <div className="calculator-layout water-layout">
       <Card className="calculator-inputs">
-        <div className="eyebrow">ENTRADA / IS.010</div>
+        <div className="eyebrow">Entrada / IS.010</div>
         <h2>Dotación de agua</h2>
         <Select
           label="Tipo de proyecto"
@@ -70,7 +70,7 @@ export function WaterCalculator() {
       </Card>
       <div className="calculator-visual">
         <Card className="water-summary">
-          <div className="eyebrow">CAPACIDAD DIARIA</div>
+          <div className="eyebrow">Capacidad diaria</div>
           <strong className="result-main mono">
             {result.values.dailyLiters.toLocaleString("es-PE")} L/d
           </strong>

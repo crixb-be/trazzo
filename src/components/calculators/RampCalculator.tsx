@@ -22,7 +22,7 @@ export function RampCalculator() {
   return (
     <div className="calculator-layout">
       <Card className="calculator-inputs">
-        <div className="eyebrow">ENTRADA / A.120</div>
+        <div className="eyebrow">Entrada / A.120</div>
         <h2>Rampa accesible</h2>
         <p className="muted small">
           Ingresa la pendiente propuesta como porcentaje. La tabla usa el desnivel total.

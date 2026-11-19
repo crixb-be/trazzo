@@ -154,7 +154,7 @@ export function AccountAccess({ onSessionChange }: AccountAccessProps) {
     <div className="account-grid account-access">
       {!signedIn && (
         <Card className="guest-card">
-          <div className="eyebrow">MODO INVITADO / LOCAL</div>
+          <div className="eyebrow">Modo invitado / Local</div>
           <h2>
             <HardDrive size={18} aria-hidden="true" /> Trabajas en este dispositivo
           </h2>
@@ -180,7 +180,7 @@ export function AccountAccess({ onSessionChange }: AccountAccessProps) {
 
       {configured && sessionReady && !signedIn && (
         <Card className="sign-in-card">
-          <div className="eyebrow">CUENTA</div>
+          <div className="eyebrow">Cuenta</div>
           <h2>Iniciar sesión o crear cuenta</h2>
           <p className="muted small">
             Con una cuenta, lo que guardaste en modo invitado se une a tu cuenta y queda respaldado
@@ -243,7 +243,7 @@ export function AccountAccess({ onSessionChange }: AccountAccessProps) {
 
       {signedIn && (
         <Card className="backup-status-card">
-          <div className="eyebrow">CUENTA / RESPALDO</div>
+          <div className="eyebrow">Cuenta / Respaldo</div>
           <h2>
             <Cloud size={18} aria-hidden="true" /> {sessionEmail || "Sesión iniciada"}
           </h2>

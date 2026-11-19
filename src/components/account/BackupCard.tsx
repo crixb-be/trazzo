@@ -66,7 +66,7 @@ export function BackupCard({ plan }: { plan: Plan }) {
 
   return (
     <Card>
-      <div className="eyebrow">COPIA DE SEGURIDAD</div>
+      <div className="eyebrow">Copia de seguridad</div>
       <h2>Tu trabajo en un archivo</h2>
       <p className="muted small">
         Proyectos, metrados, cálculos guardados, cotizaciones, perfil del estudio, favoritos y

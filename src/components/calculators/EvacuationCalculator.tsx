@@ -16,7 +16,7 @@ export function EvacuationCalculator({ allowed = false }: { allowed?: boolean })
         <Card className="pro-calculator-card">
           <Lock size={22} className="text-accent" />
           <div>
-            <div className="eyebrow">A.130 / PRO</div>
+            <div className="eyebrow">A.130 / Pro</div>
             <h2>Evacuación por ocupante</h2>
             <p className="muted">
               Calcula anchos de puertas, pasadizos y escaleras con el factor de ocupación.
@@ -34,7 +34,7 @@ export function EvacuationCalculator({ allowed = false }: { allowed?: boolean })
   return (
     <div className="calculator-layout">
       <Card className="calculator-inputs">
-        <div className="eyebrow">ENTRADA / A.130</div>
+        <div className="eyebrow">Entrada / A.130</div>
         <h2>Ancho de evacuación</h2>
         <p className="muted small">
           Usa el módulo Pro para revisar puertas, pasadizos y escaleras.

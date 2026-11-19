@@ -12,7 +12,7 @@ import {
   Plus,
 } from "lucide-react";
 import type { CSSProperties } from "react";
-import { DISCIPLINE_FAMILY, tileLayout, toolVisual } from "./tool-visuals";
+import { disciplineVisual, tileLayout, toolVisual } from "./tool-visuals";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useState } from "react";
 import { GlobalSearch, Badge } from "@/components/ui";
@@ -213,15 +213,21 @@ export function HomeDashboard() {
         <div className="category-grid">
           {categories.map((category) => {
             const count = categoryCounts.get(category.name) ?? 0;
+            const { icon: Icon, family } = disciplineVisual(category.name);
             return (
               <Link
                 className="discipline-card"
                 href={"/normativa?cat=" + encodeURIComponent(category.name)}
                 key={category.name}
-                data-family={DISCIPLINE_FAMILY[category.name] ?? "piedra"}
+                data-family={family}
               >
-                <span className="discipline-name">{category.label}</span>
-                <span className="count-pill mono">{plural(count, "ficha", "fichas")}</span>
+                <span className="discipline-icon" aria-hidden="true">
+                  <Icon size={16} />
+                </span>
+                <span className="discipline-copy">
+                  <span className="discipline-name">{category.label}</span>
+                  <span className="count-pill">{plural(count, "ficha", "fichas")}</span>
+                </span>
               </Link>
             );
           })}

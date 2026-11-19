@@ -232,7 +232,7 @@ export function FeeQuoteWorkspace() {
       <ProjectsSwitch />
       <div className="page-heading-row">
         <div>
-          <div className="eyebrow">PROYECTOS / HONORARIOS</div>
+          <div className="eyebrow">Proyectos / Honorarios</div>
           <h1 className="page-title">Honorarios y propuestas</h1>
           <p className="lead">
             Cotiza con claridad, guarda tus condiciones y entrega una propuesta lista para
@@ -244,7 +244,7 @@ export function FeeQuoteWorkspace() {
       <div className="fees-layout">
         <aside className="quote-sidebar">
           <div className="sidebar-heading">
-            <div className="eyebrow">COTIZACIONES</div>
+            <div className="eyebrow">Cotizaciones</div>
             <button className="btn btn-primary" type="button" onClick={newQuote}>
               <Plus size={15} /> Nueva
             </button>

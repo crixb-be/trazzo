@@ -12,6 +12,7 @@ import { ensureSeeded } from "@/lib/offline/db";
 import { canUseProCards } from "@/lib/plans/plans";
 import { useCurrentPlan } from "@/lib/plans/use-current-plan";
 import { searchCards } from "@/lib/search/search";
+import { DISCIPLINE_FAMILY, familyOf } from "@/lib/ui/families";
 
 const categories: Array<"Todas" | RneCategory> = [
   "Todas",
@@ -105,7 +106,7 @@ export function NormativaCatalog() {
 
   return (
     <div className="catalog-page">
-      <div className="eyebrow">BIBLIOTECA / RNE</div>
+      <div className="eyebrow">Biblioteca / RNE</div>
       <div className="page-heading-row">
         <div>
           <h1 className="page-title">Normativa para decidir</h1>
@@ -219,7 +220,9 @@ export function NormativaCatalog() {
                 </div>
                 <div className="norm-card-body">
                   <div className="card-badges">
-                    <Badge variant="norma">{card.category}</Badge>
+                    <Badge variant="norma" family={familyOf(DISCIPLINE_FAMILY, card.category)}>
+                      {card.category}
+                    </Badge>
                     {card.is_pro && (
                       <Badge variant="pro">
                         <Lock size={11} /> Pro

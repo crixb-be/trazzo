@@ -405,7 +405,7 @@ export function AccountWorkspace() {
 
   return (
     <div className="account-page">
-      <div className="eyebrow">CUENTA / CONFIGURACIÓN</div>
+      <div className="eyebrow">Cuenta / Configuración</div>
       <div className="page-heading-row">
         <div>
           <h1 className="page-title">Tu espacio TRAZO</h1>
@@ -432,7 +432,7 @@ export function AccountWorkspace() {
 
       <div className="account-grid account-section">
         <Card className="profile-card">
-          <div className="eyebrow">PERFIL</div>
+          <div className="eyebrow">Perfil</div>
           <h2>{email || "Trabajo local"}</h2>
           <div className="avatar-picker">
             <div className="avatar-preview" aria-busy={avatarBusy}>
@@ -546,7 +546,7 @@ export function AccountWorkspace() {
         </Card>
 
         <Card className="studio-brand-card">
-          <div className="eyebrow">ESTUDIO / MARCA</div>
+          <div className="eyebrow">Estudio / Marca</div>
           <div className="logo-dropzone">
             <div className="logo-tile">
               {logoDataUrl ? (
@@ -659,13 +659,13 @@ export function AccountWorkspace() {
           </div>
         </Card>
         <Card>
-          <div className="eyebrow">PANTALLA</div>
+          <div className="eyebrow">Pantalla</div>
           <h2>Tema y tamaño de letra</h2>
           <DisplaySettings />
           <WelcomeGuideButton />
         </Card>
         <Card>
-          <div className="eyebrow">DATOS DEL DISPOSITIVO</div>
+          <div className="eyebrow">Datos del dispositivo</div>
           <h2>{sync.online ? "En línea" : "Trabajando sin conexión"}</h2>
           <p className="muted small">
             Borra lo guardado en este dispositivo. Lo que ya esté respaldado en tu cuenta se vuelve
@@ -680,7 +680,7 @@ export function AccountWorkspace() {
       </div>
 
       <section className="account-section">
-        <div className="eyebrow">PLANES</div>
+        <div className="eyebrow">Planes</div>
         <BillingToggle value={billingCycle} onChange={setBillingCycle} />
         {nativePlatform !== null && (
           <div className="payment-mode-banner" role="status">
@@ -760,7 +760,7 @@ export function AccountWorkspace() {
 
       <section className="account-grid account-section">
         <Card>
-          <div className="eyebrow">VERIFICACIÓN ESTUDIANTE</div>
+          <div className="eyebrow">Verificación estudiante</div>
           <h2>50% de descuento</h2>
           <p className="muted small">
             Si tu cuenta usa un correo .edu.pe confirmado, se verifica al instante. Si no, adjunta
@@ -782,7 +782,7 @@ export function AccountWorkspace() {
           </Button>
         </Card>
         <Card>
-          <div className="eyebrow">APLICACIÓN</div>
+          <div className="eyebrow">Aplicación</div>
           <h2>TRAZO</h2>
           <p className="muted small">Del estudio a la obra</p>
           <div className="app-info">
@@ -800,12 +800,12 @@ export function AccountWorkspace() {
       <section className="account-grid account-section">
         <BackupCard plan={currentPlan} />
         <Card>
-          <div className="eyebrow">INICIO</div>
+          <div className="eyebrow">Inicio</div>
           <h2>Tus herramientas</h2>
           <FavoriteToolsEditor />
         </Card>
         <Card>
-          <div className="eyebrow">INSTALACIÓN</div>
+          <div className="eyebrow">Instalación</div>
           <h2>TRAZO en tu pantalla de inicio</h2>
           <InstallGuide />
         </Card>

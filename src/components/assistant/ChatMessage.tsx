@@ -119,7 +119,7 @@ function ChatSources({ text }: { text: string }) {
 
   return (
     <div className="chat-sources">
-      <span className="eyebrow">FUENTES</span>
+      <span className="eyebrow">Fuentes</span>
       {unique.map((citation) => (
         <Link className="source-chip" href={citation.href ?? "/normativa"} key={citation.href}>
           <BookOpen size={12} /> {citation.citation}

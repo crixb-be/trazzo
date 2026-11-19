@@ -19,7 +19,7 @@ export function LightWellCalculator() {
   return (
     <div className="calculator-layout">
       <Card className="calculator-inputs">
-        <div className="eyebrow">ENTRADA / A.010</div>
+        <div className="eyebrow">Entrada / A.010</div>
         <h2>Pozo de luz</h2>
         <p className="muted small">H es la altura del paramento más bajo que limita el pozo.</p>
         <div className="field-grid">

@@ -15,7 +15,7 @@ export function ProjectHub({ project }: { project: Project }) {
 
   return (
     <Card className="project-hub">
-      <div className="eyebrow">DEL PROYECTO</div>
+      <div className="eyebrow">Del proyecto</div>
       <h3>Cálculos guardados</h3>
       {notes.length === 0 ? (
         <p className="muted small">

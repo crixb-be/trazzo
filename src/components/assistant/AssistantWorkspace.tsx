@@ -110,7 +110,7 @@ export function AssistantWorkspace({ limits }: { limits: Record<Plan, number> })
 
   return (
     <div className="assistant-page">
-      <div className="eyebrow">ASISTENTE RNE</div>
+      <div className="eyebrow">Asistente RNE</div>
       <div className="page-heading-row">
         <div>
           <h1 className="page-title">Consulta el RNE</h1>
@@ -195,7 +195,7 @@ export function AssistantWorkspace({ limits }: { limits: Record<Plan, number> })
         <aside className="assistant-sidebar">
           <AssistantQuota limits={limits} />
           <Card>
-            <div className="eyebrow">CÓMO RESPONDE</div>
+            <div className="eyebrow">Cómo responde</div>
             <h3>Solo con el RNE</h3>
             <p className="muted small">
               Cada respuesta se arma con las fichas del RNE cargadas en TRAZO y cita su fuente. Si

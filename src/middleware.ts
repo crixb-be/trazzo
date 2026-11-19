@@ -6,5 +6,8 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icons|sw\\.js|manifest\\.webmanifest).*)"],
+  // Static brand assets and link previews skip the session refresh: crawlers fetch them cold.
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|icons|brand|og-image\\.png|og-square\\.png|sw\\.js|manifest\\.webmanifest).*)",
+  ],
 };

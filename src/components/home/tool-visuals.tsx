@@ -1,13 +1,18 @@
 import {
+  Accessibility,
   BookOpen,
   BrickWall,
   Briefcase,
+  Car,
   ClipboardList,
   DoorOpen,
   Droplets,
+  Footprints,
   LandPlot,
   Network,
   Ruler,
+  ShieldCheck,
+  ShowerHead,
   Sun,
   Users,
   Wrench,
@@ -15,13 +20,9 @@ import {
   type LucideProps,
 } from "lucide-react";
 import type { ComponentType } from "react";
+import { DISCIPLINE_FAMILY, type Family } from "@/lib/ui/families";
 
-/**
- * Colour families of TRAZO (tokens in src/styles/families.css):
- * arena = normativa and circulation, salvia = design, pizarra = calculation,
- * terracota = safety and site work, piedra = everything else.
- */
-export type Family = "arena" | "salvia" | "pizarra" | "terracota" | "piedra";
+export { DISCIPLINE_FAMILY, type Family };
 
 type IconComponent = LucideIcon | ComponentType<LucideProps>;
 
@@ -88,14 +89,21 @@ export function toolVisual(id: string): { icon: IconComponent; family: Family } 
   return TOOL_VISUALS[id] ?? { icon: BookOpen, family: "piedra" };
 }
 
-/** RNE disciplines share the same families as the tools that use them. */
-export const DISCIPLINE_FAMILY: Record<string, Family> = {
-  Accesibilidad: "salvia",
-  Circulación: "arena",
-  Seguridad: "terracota",
-  Sanitarias: "pizarra",
-  Estacionamientos: "piedra",
+const DISCIPLINE_ICONS: Record<string, IconComponent> = {
+  Accesibilidad: Accessibility,
+  Circulación: Footprints,
+  Seguridad: ShieldCheck,
+  Sanitarias: ShowerHead,
+  Estacionamientos: Car,
 };
+
+/** Icon and family of an RNE discipline, shown in a tinted circle. */
+export function disciplineVisual(name: string): { icon: IconComponent; family: Family } {
+  return {
+    icon: DISCIPLINE_ICONS[name] ?? BookOpen,
+    family: DISCIPLINE_FAMILY[name] ?? "piedra",
+  };
+}
 
 /**
  * Columns and wide tiles so the last row is never left half empty.

@@ -6,11 +6,48 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap" });
 
+const SITE_URL = "https://trazzo-jade.vercel.app";
+const TITLE = "TRAZO · Del estudio a la obra";
+const DESCRIPTION =
+  "TRAZO, del estudio a la obra: normativa RNE, calculadoras y metrados offline-first para arquitectura y obra en Perú.";
+/** Link previews (WhatsApp, Telegram, social): built from assets/logo.png by `npm run og`. */
+const PREVIEWS = [
+  {
+    url: SITE_URL + "/og-image.png",
+    width: 1200,
+    height: 630,
+    type: "image/png",
+    alt: "TRAZO · Del estudio a la obra",
+  },
+  {
+    url: SITE_URL + "/og-square.png",
+    width: 512,
+    height: 512,
+    type: "image/png",
+    alt: "Logo de TRAZO",
+  },
+];
+
 export const metadata: Metadata = {
-  title: "TRAZO · Del estudio a la obra",
+  metadataBase: new URL(SITE_URL),
+  title: TITLE,
   applicationName: "TRAZO",
-  description:
-    "TRAZO, del estudio a la obra: normativa RNE, calculadoras y metrados offline-first para arquitectura y obra en Perú.",
+  description: DESCRIPTION,
+  openGraph: {
+    type: "website",
+    locale: "es_PE",
+    url: SITE_URL,
+    siteName: "TRAZO",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: PREVIEWS,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [PREVIEWS[0]],
+  },
   appleWebApp: { title: "TRAZO" },
   manifest: "/manifest.webmanifest",
   icons: {

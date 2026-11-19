@@ -13,7 +13,7 @@ export default function OfflinePage() {
             <small>Del estudio a la obra</small>
           </span>
         </div>
-        <div className="eyebrow">SIN CONEXIÓN</div>
+        <div className="eyebrow">Sin conexión</div>
         <h1 className="page-title">La red quedó atrás.</h1>
         <p className="lead">
           Tus fichas, calculadoras y proyectos locales siguen disponibles en este dispositivo.

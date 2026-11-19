@@ -23,7 +23,7 @@ export function StairCalculator() {
   return (
     <div className="calculator-layout">
       <Card className="calculator-inputs">
-        <div className="eyebrow">ENTRADA / A.010</div>
+        <div className="eyebrow">Entrada / A.010</div>
         <h2>Escalera cómoda y verificable</h2>
         <p className="muted small">
           Unidades en metros. El tramo se divide automáticamente cuando supera 17 contrapasos.

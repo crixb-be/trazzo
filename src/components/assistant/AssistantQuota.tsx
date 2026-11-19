@@ -10,7 +10,7 @@ export function AssistantQuota({ limits }: { limits: Record<Plan, number> }) {
   const limit = limits[signedIn ? plan : "free"];
   return (
     <Card className="assistant-quota">
-      <div className="eyebrow">CONSULTAS</div>
+      <div className="eyebrow">Consultas</div>
       <div className="quota-number mono">
         {limit} <span>/ día</span>
       </div>

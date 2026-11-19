@@ -71,30 +71,38 @@ html.obra {
     linear-gradient(180deg, color-mix(in srgb, var(--fam) 6%, transparent), transparent 62%),
     var(--surface);
 }
-[data-family] > .tile-icon {
-  background: color-mix(in srgb, var(--fam) 14%, transparent);
+/* Íconos en un contenedor pastel de su familia: el color vive en el ícono,
+   no en filos ni bordes. */
+:is([data-family] > .tile-icon, .discipline-icon) {
+  background: color-mix(in srgb, var(--fam) 15%, transparent);
   color: var(--fam);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fam) 26%, transparent);
+  box-shadow: none;
 }
-@media (hover: hover) and (pointer: fine) {
-  .calculator-tile[data-family]:hover {
-    border-color: color-mix(in srgb, var(--fam) 45%, var(--border));
-  }
-  .discipline-card[data-family]:hover {
-    border-color: color-mix(in srgb, var(--fam) 45%, var(--border));
-  }
+html.obra [data-family] > :is(.tile-icon, .discipline-icon) {
+  box-shadow: inset 0 0 0 1.5px var(--fam);
 }
 
-/* Disciplinas: un filo interior con su familia (no resta ancho al nombre)
-   y la cuenta en su tono. */
+/* Disciplinas: ícono en círculo, nombre y conteo apilados (caben en 5 columnas). */
 .discipline-card[data-family] {
-  box-shadow:
-    inset 3px 0 0 var(--fam),
-    var(--card-edge),
-    var(--card-shadow);
+  justify-content: flex-start;
+  gap: 12px;
+}
+.discipline-icon {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+}
+.discipline-copy {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+  min-width: 0;
 }
 .discipline-card[data-family] .count-pill {
-  border-color: color-mix(in srgb, var(--fam) 32%, transparent);
+  border-color: transparent;
   background: color-mix(in srgb, var(--fam) 13%, transparent);
   color: var(--fam);
 }

@@ -307,7 +307,7 @@ export function MetradosWorkspace() {
   return (
     <div className="metrados-page">
       <ProjectsSwitch />
-      <div className="eyebrow">PROYECTOS / METRADOS</div>
+      <div className="eyebrow">Proyectos / Metrados</div>
       <div className="page-heading-row">
         <div>
           <h1 className="page-title">Metrados</h1>
@@ -317,7 +317,9 @@ export function MetradosWorkspace() {
           </p>
         </div>
         <div className="inline-actions">
-          <span className="small muted" role="status">{describeSyncStatus(sync)}</span>
+          <span className="small muted" role="status">
+            {describeSyncStatus(sync)}
+          </span>
           <Button size="sm" disabled={!sync.online || sync.syncing} onClick={() => void syncNow()}>
             <RefreshCw size={14} aria-hidden="true" /> Sincronizar ahora
           </Button>
@@ -384,7 +386,7 @@ export function MetradosWorkspace() {
               <ProjectHub key={"hub-" + activeProject.id} project={activeProject} />
               {Object.keys(totals.byMaterial).length > 0 && (
                 <Card className="material-totals">
-                  <div className="eyebrow">TOTALES POR MATERIAL</div>
+                  <div className="eyebrow">Totales por material</div>
                   <div className="totals-grid">
                     {Object.entries(totals.byMaterial).map(([code, total]) => (
                       <div key={code}>

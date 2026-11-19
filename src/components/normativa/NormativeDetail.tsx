@@ -123,7 +123,7 @@ export function NormativeDetail({ slug }: { slug: string }) {
           </div>
 
           <Card className="highlight-value">
-            <span className="eyebrow">VALOR MÍNIMO REFERENCIAL</span>
+            <span className="eyebrow">Valor mínimo referencial</span>
             <strong className="mono">
               {locked ? "—" : (card.min_value ?? "—")} <small>{locked ? "" : card.unit}</small>
             </strong>
@@ -181,7 +181,7 @@ export function NormativeDetail({ slug }: { slug: string }) {
           </div>
 
           <section className="related-section">
-            <div className="eyebrow">MISMA DISCIPLINA</div>
+            <div className="eyebrow">Misma disciplina</div>
             <div className="related-grid">
               {related.map((relatedCard) => (
                 <Link

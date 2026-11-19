@@ -113,7 +113,7 @@ export function QuoteForm({
       <QuoteStepsNav step={step} onSelect={setStep} />
       <QuoteStep active={step === 0} label={QUOTE_STEPS[0]}>
         <Card>
-          <div className="eyebrow">01 / DATOS DEL PROYECTO</div>
+          <div className="eyebrow">01 / Datos del proyecto</div>
           <div className="form-grid two-columns">
             <Select
               label="Tipo de documento"
@@ -214,7 +214,7 @@ export function QuoteForm({
 
       <QuoteStep active={step === 1} label={QUOTE_STEPS[1]}>
         <Card>
-          <div className="eyebrow">02 / ALCANCE Y ESPECIALIDADES</div>
+          <div className="eyebrow">02 / Alcance y especialidades</div>
           <div className="scope-list">
             <div className="scope-option">
               <label>
@@ -561,7 +561,7 @@ export function QuoteForm({
             onClick={() => setShowRates(!showRates)}
           >
             <span>
-              <span className="eyebrow">03 / TARIFAS REFERENCIALES</span>
+              <span className="eyebrow">03 / Tarifas referenciales</span>
               <small>
                 {hasCustomRates
                   ? "Tarifas personalizadas guardadas en este dispositivo."
@@ -769,7 +769,7 @@ export function QuoteForm({
 
       <QuoteStep active={step === 3} label={QUOTE_STEPS[3]}>
         <Card>
-          <div className="eyebrow">04 / ENTREGABLES</div>
+          <div className="eyebrow">04 / Entregables</div>
           <div className="editable-list">
             {draft.deliverables.map((item, index) => (
               <div className="editable-row" key={index}>
@@ -823,7 +823,7 @@ export function QuoteForm({
 
       <QuoteStep active={step === 4} label={QUOTE_STEPS[4]}>
         <Card>
-          <div className="eyebrow">05 / FORMA DE PAGO</div>
+          <div className="eyebrow">05 / Forma de pago</div>
           <Select
             label="Preset"
             value={draft.payment.presetId}
@@ -898,7 +898,7 @@ export function QuoteForm({
 
       <QuoteStep active={step === 5} label={QUOTE_STEPS[5]}>
         <Card>
-          <div className="eyebrow">06 / CRONOGRAMA</div>
+          <div className="eyebrow">06 / Cronograma</div>
           <div className="schedule-rows">
             {draft.schedule.map((milestone, index) => (
               <div className="schedule-row" key={index}>
@@ -992,7 +992,7 @@ export function QuoteForm({
 
       <QuoteStep active={step === 6} label={QUOTE_STEPS[6]}>
         <Card>
-          <div className="eyebrow">07 / CONDICIONES ESPECÍFICAS</div>
+          <div className="eyebrow">07 / Condiciones específicas</div>
           <div className="editable-list">
             {draft.conditions.map((item, index) => (
               <div className="editable-row" key={index}>

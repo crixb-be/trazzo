@@ -1,0 +1,351 @@
+/*
+ * Sistema visual TRAZO (iOS / Material 3): superficies separadas por tono y luz,
+ * no por cajas con borde. Cards sin borde con elevación suave, piezas internas
+ * tonales (nunca tarjeta dentro de tarjeta), radios amables y píldoras.
+ *
+ * Todo va acotado a html:not(.obra): el Modo Obra conserva sus bordes negros de
+ * 2 px y su contraste máximo tal como está en tokens.css y display.css.
+ */
+
+/* ---------------------------------------------------------------- tokens */
+html:not(.obra) {
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-control: 12px;
+  --radius-card: 18px;
+  --radius-panel: 20px;
+  /* Relleno tonal para controles: se lee igual sobre el fondo y sobre una tarjeta. */
+  --fill-tonal: color-mix(in srgb, var(--text) 6.5%, transparent);
+  --fill-tonal-strong: color-mix(in srgb, var(--text) 11%, transparent);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+}
+html.dark:not(.obra) {
+  --bg: #0f1115;
+  --surface: #181b22;
+  --surface-2: #222630;
+  --border: #2c303a;
+  --hairline: rgb(255 255 255 / 0.06);
+  --surface-sunken: #13151a;
+  --card-edge: inset 0 1px 0 rgb(255 255 255 / 0.045);
+  --card-shadow: 0 1px 2px rgb(0 0 0 / 0.32), 0 10px 28px -14px rgb(0 0 0 / 0.6);
+  --card-shadow-hover: 0 2px 4px rgb(0 0 0 / 0.32), 0 16px 34px -14px rgb(0 0 0 / 0.7);
+  --nav-glass: color-mix(in srgb, #181b22 70%, transparent);
+}
+html:not(.dark):not(.obra) {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --surface-2: #f0f2f5;
+  --border: #e2e5ea;
+  --hairline: rgb(15 23 42 / 0.07);
+  --surface-sunken: #f3f4f7;
+  --card-edge: 0 0 0 1px rgb(15 23 42 / 0.025);
+  --card-shadow: 0 2px 10px rgb(15 23 42 / 0.04), 0 1px 2px rgb(15 23 42 / 0.03);
+  --card-shadow-hover: 0 6px 18px rgb(15 23 42 / 0.07), 0 1px 3px rgb(15 23 42 / 0.04);
+  --nav-glass: color-mix(in srgb, #ffffff 72%, transparent);
+}
+
+/* ----------------------------------------------------------------- shell */
+html:not(.obra) body {
+  background: var(--bg);
+}
+html:not(.obra) .sidebar {
+  border-right-color: var(--hairline);
+  background: color-mix(in srgb, var(--surface) 55%, var(--bg));
+}
+html:not(.obra) .sidebar nav a.active {
+  border-left: 0;
+  box-shadow: none;
+  background: var(--accent-soft);
+}
+html:not(.obra) .sidebar-footer {
+  border-top-color: var(--hairline);
+}
+html:not(.obra) .header {
+  border-bottom-color: var(--hairline);
+}
+@media (max-width: 1023px) {
+  /* Room for the floating bar plus air, so it never covers the last card. */
+  html:not(.obra) .main-shell {
+    padding-bottom: calc(104px + env(safe-area-inset-bottom));
+  }
+  html:not(.obra) .bottom-nav {
+    border-top: 1px solid var(--hairline);
+    background: var(--nav-glass);
+    backdrop-filter: saturate(180%) blur(16px);
+    -webkit-backdrop-filter: saturate(180%) blur(16px);
+  }
+}
+
+/* ------------------------------------------------------------ typography */
+/* Labels read as words, not as technical stamps; codes and values stay mono. */
+html:not(.obra) .eyebrow,
+html:not(.obra) .matrix-controls legend {
+  font-family: inherit;
+  font-size: calc(12.5px * var(--font-scale));
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  text-transform: none;
+}
+html:not(.obra) .header-title .eyebrow {
+  font-size: calc(11px * var(--font-scale));
+  letter-spacing: 0.08em;
+}
+html:not(.obra) .source-link,
+html:not(.obra) .quick-chip,
+html:not(.obra) .calculator-tile small,
+html:not(.obra) .count-pill {
+  font-family: inherit;
+}
+
+/* --------------------------------------------------------------- surfaces */
+/* First-level cards: no border, a soft lift. */
+html:not(.obra)
+  :is(
+    .card,
+    .surface-card,
+    .calculator-tile,
+    .dashboard-panel,
+    .discipline-card,
+    .normative-card,
+    .plan-card,
+    .state-panel,
+    .sync-strip,
+    .takeoff-table-wrap,
+    .related-card,
+    .assistant-quota,
+    .notice-banner,
+    .payment-mode-banner,
+    .home-start-strip,
+    .matrix-controls,
+    .matrix-plate-scroll,
+    .loading-state,
+    .onboarding-note,
+    .diagram-plate,
+    .diagram-frame,
+    .message
+  ) {
+  border-color: transparent;
+  box-shadow: var(--card-edge), var(--card-shadow);
+}
+html:not(.obra) :is(.card, .surface-card, .normative-card, .plan-card, .dashboard-panel) {
+  border-radius: var(--radius-card);
+}
+html:not(.obra) .modal,
+html:not(.obra) .search-results {
+  border-color: transparent;
+}
+
+/* Second level, inside a card or a panel: tone, never another boxed card. */
+html:not(.obra)
+  :is(.card, .surface-card, .dashboard-panel, .matrix-controls)
+  :is(.card, .surface-card),
+html:not(.obra)
+  :is(
+    .project-row,
+    .featured-row,
+    .totals-grid > div,
+    .scope-option,
+    .saved-quote,
+    .project-hub-list li,
+    .suggested-prompts button,
+    .onboarding-roles button:not(.active),
+    .onboarding-tools button:not(.active),
+    .detail-reference span,
+    .norm-code-chip,
+    .result-value,
+    .diagram-result,
+    .brand-preview-strip,
+    .chat-bubble,
+    .panel-empty
+  ) {
+  border-color: transparent;
+  border-style: solid;
+  background: var(--fill-tonal);
+  box-shadow: none;
+}
+html:not(.obra) .chat-message.user .chat-bubble {
+  background: var(--accent-soft);
+}
+
+/* Lift on hover only where the pointer can hover. */
+@media (hover: hover) and (pointer: fine) {
+  html:not(.obra) :is(.calculator-tile, .discipline-card, .status-card, .normative-card):hover {
+    border-color: transparent;
+    box-shadow: var(--card-edge), var(--card-shadow-hover);
+  }
+}
+
+/* --------------------------------------------------------------- controls */
+html:not(.obra) .btn {
+  border-color: transparent;
+  border-radius: var(--radius-pill);
+  background: var(--fill-tonal);
+  padding-inline: 16px;
+}
+html:not(.obra) .btn-sm {
+  padding-inline: 12px;
+}
+html:not(.obra) .btn-primary {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+html:not(.obra) .btn-danger {
+  background: var(--danger);
+  color: var(--on-danger);
+}
+html:not(.obra) .btn-ghost {
+  background: transparent;
+}
+@media (hover: hover) and (pointer: fine) {
+  html:not(.obra) .btn:not(.btn-primary):not(:disabled):hover {
+    background: var(--fill-tonal-strong);
+  }
+}
+html:not(.obra) .icon-btn {
+  border-radius: 50%;
+}
+html:not(.obra) .account-avatar {
+  border-color: transparent;
+  background: var(--fill-tonal);
+}
+
+/* Filled fields (Material 3): tone instead of a frame, the accent on focus. */
+html:not(.obra) :is(.input, .select, textarea.input) {
+  border-color: transparent;
+  background: var(--fill-tonal);
+}
+html:not(.obra) :is(.input, .select):focus {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+/* Search: a pill that floats on the page like a card; in the header it is tonal. */
+html:not(.obra) .search-box {
+  border-color: transparent;
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  box-shadow: var(--card-edge), var(--card-shadow);
+}
+html:not(.obra) .header .search-box {
+  background: var(--fill-tonal);
+  box-shadow: none;
+}
+html:not(.obra) .search-box:focus-within {
+  border-color: var(--accent);
+}
+html:not(.obra) :is(.notice-banner, .payment-mode-banner, .sync-strip) {
+  border-radius: 16px;
+}
+html:not(.obra) .search-box kbd {
+  border-color: transparent;
+  border-radius: 8px;
+  background: var(--fill-tonal);
+}
+
+/* Pills: chips, tabs between sections, segmented choices. */
+html:not(.obra) :is(.chip, .quick-chip) {
+  border-color: transparent;
+  background: var(--fill-tonal);
+}
+html:not(.obra) :is(.chip.active, .quick-chip[aria-pressed="true"]) {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+html:not(.obra) :is(.segmented, .projects-switch, .relation-radio-group, .tax-toggle) {
+  border-color: transparent;
+  border-radius: var(--radius-pill);
+  background: var(--fill-tonal);
+}
+
+/* Badges: clean tinted pills, no outline. */
+html:not(.obra) .badge {
+  border-color: transparent;
+  background: var(--fill-tonal);
+}
+html:not(.obra) .badge-ok {
+  background: color-mix(in srgb, var(--ok) 12%, transparent);
+}
+/* On light tints the stock green and red fall under 4.5:1: one step darker. */
+html:not(.dark):not(.obra) .badge-ok {
+  color: #116b33;
+}
+html:not(.dark):not(.obra) .badge-danger {
+  color: #9a3412;
+}
+html:not(.obra) :is(.badge-pro, .badge-warn) {
+  background: var(--accent-soft);
+}
+html:not(.obra) .badge-norma {
+  background: color-mix(in srgb, var(--fam, var(--accent)) 14%, transparent);
+  color: var(--fam, var(--accent));
+}
+html:not(.obra) .badge-danger {
+  background: color-mix(in srgb, var(--danger) 13%, transparent);
+}
+
+/* ------------------------------------------------- notes without left rules */
+/* Disclaimers and highlighted values: a tinted rounded note. Warnings carry red
+   text, so they sit on the plain surface where red keeps 4.5:1. */
+html:not(.obra) :is(.warning, .calculator-disclaimer, .highlight-value) {
+  border-left: 0;
+  border-radius: 14px;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+}
+html:not(.obra) .warning {
+  background: var(--surface);
+  box-shadow: var(--card-edge), var(--card-shadow);
+}
+html:not(.obra) .toast {
+  border-color: transparent;
+  border-left-width: 1px;
+  border-radius: 16px;
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.22);
+}
+/* Matrix room groups: a zone dot before the group name instead of a side bar. */
+html:not(.obra) .matrix-room-group {
+  border-left: 0;
+  padding-left: 0;
+}
+html:not(.obra) .matrix-room-group h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-color: inherit;
+}
+html:not(.obra) .matrix-room-group h3::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border: 5px solid;
+  border-color: inherit;
+  border-radius: 50%;
+}
+
+/* ------------------------------------------------------------------- home */
+/* The hero is the page header, not a card: its states and search are the cards. */
+html:not(.obra) .home-hero {
+  padding: 4px 0 0;
+  border-color: transparent;
+  background: radial-gradient(
+    60% 90% at 100% 0%,
+    color-mix(in srgb, var(--accent) 8%, transparent),
+    transparent 70%
+  );
+  box-shadow: none;
+}
+html:not(.obra) .home-hero .status-card {
+  border-color: transparent;
+  background: var(--surface);
+  box-shadow: var(--card-edge), var(--card-shadow);
+}
+html:not(.obra) .tile-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+}
+html:not(.obra) .status-card-icon {
+  border-radius: 50%;
+}

@@ -5,6 +5,7 @@ import { PocketDiagram } from "@/components/svg-diagrams/PocketDiagram";
 import { SaveToProject } from "@/components/ui/SaveToProject";
 import { ShareResult } from "@/components/ui/ShareResult";
 import { measureResultSheet } from "@/lib/share/workspace-sheets";
+import { MEASURE_FAMILY, familyOf } from "@/lib/ui/families";
 export function MeasuresWorkspace() {
   const [query, setQuery] = useState("");
   useEffect(() => {
@@ -61,8 +62,13 @@ export function MeasuresWorkspace() {
         {matches.map((m) => (
           <article className="card measure-card" key={m.id}>
             <div className="measure-card-head">
+              <span
+                className="badge badge-norma"
+                data-family={familyOf(MEASURE_FAMILY, m.category)}
+              >
+                {m.category}
+              </span>
               <span className="badge badge-por-verificar">Por verificar</span>
-              <span className="mono muted small">{m.category}</span>
             </div>
             <h2>{m.title}</h2>
             <div className="measure-diagram">

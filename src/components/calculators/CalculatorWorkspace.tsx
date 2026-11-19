@@ -62,7 +62,7 @@ export function CalculatorWorkspace() {
 
   return (
     <div className="calculators-page">
-      <div className="eyebrow">HERRAMIENTAS / RNE</div>
+      <div className="eyebrow">Herramientas / RNE</div>
       <div className="page-heading-row">
         <div>
           <h1 className="page-title">Cotas para decidir</h1>
