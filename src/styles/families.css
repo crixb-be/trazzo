@@ -1,0 +1,274 @@
+/*
+ * Familias de color de TRAZO: acentos apagados y semánticos sobre la base grafito.
+ *   arena     → normativa, asistente, circulación (es el dorado de la marca)
+ *   salvia    → diseño: medidas, matriz, cabida; accesibilidad
+ *   pizarra   → cálculo: calculadoras; sanitarias y agua
+ *   terracota → obra y seguridad: metrados, honorarios, evacuación, aforo
+ *   piedra    → todo lo demás (estacionamientos, sin familia)
+ * Cada valor pasa 4.5:1 como texto sobre todas las superficies de su tema, también
+ * sobre su propio fondo suave al 14 %. El dorado (--accent) queda para la acción
+ * primaria y el estado activo; el rojo, solo para errores reales.
+ */
+:root {
+  --fam-arena: #d4a359;
+  --fam-salvia: #93ae8e;
+  --fam-pizarra: #8ea9c4;
+  --fam-terracota: #d58c70;
+  --fam-piedra: #aca393;
+}
+html:not(.dark) {
+  --fam-arena: #8a5a12;
+  --fam-salvia: #476943;
+  --fam-pizarra: #3b5c7c;
+  --fam-terracota: #9b4a30;
+  --fam-piedra: #625a4d;
+}
+/* Modo obra: las mismas familias, oscurecidas hasta 7:1 sobre blanco. */
+html.obra {
+  --fam-arena: #7a3d00;
+  --fam-salvia: #2d4d2a;
+  --fam-pizarra: #1d3b58;
+  --fam-terracota: #7a2c12;
+  --fam-piedra: #3b342a;
+}
+
+[data-family="arena"] {
+  --fam: var(--fam-arena);
+}
+[data-family="salvia"] {
+  --fam: var(--fam-salvia);
+}
+[data-family="pizarra"] {
+  --fam: var(--fam-pizarra);
+}
+[data-family="terracota"] {
+  --fam: var(--fam-terracota);
+}
+[data-family="piedra"] {
+  --fam: var(--fam-piedra);
+}
+
+/* ------------------------------------------------------- por verificar */
+/* Es un estado informativo, no una alarma: tono neutro con un punto ámbar. */
+.badge-por-verificar {
+  gap: 6px;
+  border-color: var(--border);
+  background: var(--surface-2);
+  color: var(--muted);
+}
+.badge-por-verificar::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--fam-arena);
+}
+
+/* --------------------------------------------------------------- tiles */
+.calculator-tile[data-family] {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--fam) 6%, transparent), transparent 62%),
+    var(--surface);
+}
+[data-family] > .tile-icon {
+  background: color-mix(in srgb, var(--fam) 14%, transparent);
+  color: var(--fam);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fam) 26%, transparent);
+}
+@media (hover: hover) and (pointer: fine) {
+  .calculator-tile[data-family]:hover {
+    border-color: color-mix(in srgb, var(--fam) 45%, var(--border));
+  }
+  .discipline-card[data-family]:hover {
+    border-color: color-mix(in srgb, var(--fam) 45%, var(--border));
+  }
+}
+
+/* Disciplinas: un filo interior con su familia (no resta ancho al nombre)
+   y la cuenta en su tono. */
+.discipline-card[data-family] {
+  box-shadow:
+    inset 3px 0 0 var(--fam),
+    var(--card-edge),
+    var(--card-shadow);
+}
+.discipline-card[data-family] .count-pill {
+  border-color: color-mix(in srgb, var(--fam) 32%, transparent);
+  background: color-mix(in srgb, var(--fam) 13%, transparent);
+  color: var(--fam);
+}
+
+/* Inicio: la grilla elige columnas y tarjetas anchas para no dejar huérfanas
+   (ver tileLayout en src/components/home/tool-visuals.tsx). */
+.home-dashboard .home-tiles {
+  grid-template-columns: repeat(var(--tile-columns, 4), minmax(0, 1fr));
+}
+.home-dashboard .home-tiles > [data-wide] {
+  grid-column: span 2;
+}
+@media (max-width: 1023px) {
+  .home-dashboard .home-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .home-dashboard .home-tiles > [data-wide] {
+    grid-column: auto;
+  }
+  .home-dashboard .home-tiles > [data-wide-mobile] {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ---------------------------------------------------------- home hero */
+/* Papel milimetrado: retícula menor de 24 px y mayor de 120 px, desvanecida
+   desde la esquina superior derecha para no competir con el texto. */
+.home-hero {
+  position: relative;
+  isolation: isolate;
+}
+.home-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--fam-arena) 11%, transparent) 1px, transparent 1px),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--fam-arena) 11%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(color-mix(in srgb, var(--fam-arena) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--fam-arena) 5%, transparent) 1px,
+      transparent 1px
+    );
+  background-size:
+    120px 120px,
+    120px 120px,
+    24px 24px,
+    24px 24px;
+  background-position: -1px -1px;
+  mask-image: radial-gradient(130% 120% at 100% 0%, #000 0%, transparent 72%);
+}
+html.obra .home-hero::before {
+  display: none;
+}
+
+/* Estados: en el teléfono van los tres en una fila compacta. */
+.status-short {
+  display: none;
+}
+@media (max-width: 640px) {
+  .home-hero .status-card-icon {
+    width: 28px;
+    height: 28px;
+  }
+  .home-hero .status-card-body strong {
+    font-size: calc(13px * var(--font-scale));
+  }
+  .status-full {
+    display: none;
+  }
+  .status-short {
+    display: inline;
+  }
+}
+
+/* ------------------------------------------------- empezar (sin datos) */
+.home-start-strip {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px 18px;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--fam-terracota) 8%, transparent),
+      transparent 62%
+    ),
+    var(--surface);
+  box-shadow: var(--card-edge), var(--card-shadow);
+}
+.home-start-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-control);
+  background: color-mix(in srgb, var(--fam-terracota) 14%, transparent);
+  color: var(--fam-terracota);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--fam-terracota) 26%, transparent);
+}
+.home-start-copy {
+  min-width: 0;
+}
+.home-start-copy h2 {
+  margin: 0;
+  font-size: calc(16px * var(--font-scale));
+}
+.home-start-copy p {
+  margin: 4px 0 0;
+  font-size: var(--text-sm);
+  line-height: 1.45;
+}
+.home-start-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+@media (max-width: 760px) {
+  .home-start-strip {
+    grid-template-columns: auto minmax(0, 1fr);
+    padding: 16px;
+  }
+  .home-start-actions {
+    grid-column: 1 / -1;
+  }
+  .home-start-actions .btn {
+    flex: 1 1 0;
+    justify-content: center;
+    white-space: nowrap;
+  }
+}
+@media (max-width: 420px) {
+  .home-start-actions {
+    flex-direction: column;
+  }
+}
+.panel-empty-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* ------------------------------------------------------------ marca */
+/* El logo reemplaza la «T»: llena su marco y conserva su propio fondo. */
+img.assistant-mark,
+.chat-avatar-mark,
+.avatar-mark {
+  display: block;
+  object-fit: cover;
+}
+.chat-message.assistant .chat-avatar {
+  overflow: hidden;
+  border-color: transparent;
+}
+.chat-avatar-mark {
+  width: 100%;
+  height: 100%;
+}
+/* The circle would clip the arms of the T: inset the mark on the logo's own ground. */
+.avatar-preview .avatar-mark {
+  padding: 16%;
+  background: #151920;
+  object-fit: contain;
+}

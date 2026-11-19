@@ -15,6 +15,7 @@ import { useCurrentPlan } from "@/lib/plans/use-current-plan";
 import { canUseProCards, type Plan } from "@/lib/plans/plans";
 import { useOnlineStatus } from "@/lib/offline/hooks";
 import { ChatMessage } from "./ChatMessage";
+import { BrandMark } from "@/components/brand/BrandMark";
 import { SuggestedPrompts } from "./SuggestedPrompts";
 import { AssistantQuota } from "./AssistantQuota";
 
@@ -127,7 +128,7 @@ export function AssistantWorkspace({ limits }: { limits: Record<Plan, number> })
           </Button>
           {chat.messages.length === 0 ? (
             <div className="chat-empty">
-              <div className="assistant-mark">T</div>
+              <BrandMark size={48} className="assistant-mark" />
               <h2>Un criterio técnico a la vez.</h2>
               <p className="muted">Pregunta por una cota, una tabla o un artículo del RNE.</p>
               <SuggestedPrompts onSelect={choosePrompt} />
@@ -137,7 +138,11 @@ export function AssistantWorkspace({ limits }: { limits: Record<Plan, number> })
               {chat.messages.map((message) => (
                 <ChatMessage key={message.id} message={message} />
               ))}
-              {chat.error && <p className="warning" role="alert">{chatErrorMessage(chat.error)}</p>}
+              {chat.error && (
+                <p className="warning" role="alert">
+                  {chatErrorMessage(chat.error)}
+                </p>
+              )}
             </div>
           )}
           <form className="chat-form chat-composer" onSubmit={(event) => void submit(event)}>

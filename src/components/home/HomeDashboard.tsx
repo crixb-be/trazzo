@@ -4,17 +4,18 @@ import Link from "next/link";
 import {
   ArrowUpRight,
   BookOpen,
-  Briefcase,
-  Calculator,
   Cloud,
   CloudOff,
+  Compass,
   FolderOpen,
   Library,
   Plus,
 } from "lucide-react";
+import type { CSSProperties } from "react";
+import { DISCIPLINE_FAMILY, tileLayout, toolVisual } from "./tool-visuals";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useState } from "react";
-import { GlobalSearch, Badge, EmptyState } from "@/components/ui";
+import { GlobalSearch, Badge } from "@/components/ui";
 import { RNE_CARDS, type RneCategory } from "@/data/seed-rne";
 import { db, type Project } from "@/lib/offline/db";
 import { useCards, useProjects, useSyncStatus } from "@/lib/offline/hooks";
@@ -73,6 +74,16 @@ export function HomeDashboard() {
   const allActive = projects.filter((project) => project.status === "activo");
   const activeProjects = allActive.slice(0, 3);
   const backedUp = Boolean(sync.signedIn && sync.lastSync && !sync.pending && !sync.error);
+  // Phones show the three states side by side: each needs a one-word value.
+  const syncShort = sync.syncing
+    ? "Sincronizando"
+    : sync.pending || sync.error
+      ? "Pendiente"
+      : backedUp
+        ? "En la nube"
+        : "Local";
+  const tiles = tileLayout(calculators.length);
+  const nothingYet = activeProjects.length === 0 && recentCards.length === 0;
 
   return (
     <div className="home-dashboard">
@@ -111,7 +122,10 @@ export function HomeDashboard() {
               <FolderOpen size={17} />
             </span>
             <span className="status-card-body">
-              <small>Proyectos activos</small>
+              <small>
+                <span className="status-full">Proyectos activos</span>
+                <span className="status-short">Proyectos</span>
+              </small>
               <strong className="mono">{allActive.length}</strong>
             </span>
           </Link>
@@ -124,7 +138,10 @@ export function HomeDashboard() {
             </span>
             <span className="status-card-body">
               <small>Respaldo</small>
-              <strong>{describeSyncStatus(sync)}</strong>
+              <strong>
+                <span className="status-full">{describeSyncStatus(sync)}</span>
+                <span className="status-short">{syncShort}</span>
+              </strong>
             </span>
           </Link>
           <Link className="status-card" href="/normativa">
@@ -132,8 +149,14 @@ export function HomeDashboard() {
               <Library size={17} />
             </span>
             <span className="status-card-body">
-              <small>Biblioteca offline</small>
-              <strong>{plural(library.length, "ficha", "fichas")}</strong>
+              <small>
+                <span className="status-full">Biblioteca offline</span>
+                <span className="status-short">Biblioteca</span>
+              </small>
+              <strong>
+                <span className="status-full">{plural(library.length, "ficha", "fichas")}</span>
+                <span className="status-short mono">{library.length}</span>
+              </strong>
             </span>
           </Link>
         </div>
@@ -149,22 +172,31 @@ export function HomeDashboard() {
             Ver todas
           </Link>
         </div>
-        <div className="calculator-tiles">
-          {calculators.map((calculator) => (
-            <Link className="calculator-tile" href={calculator.href} key={calculator.id}>
-              <span className="tile-icon" aria-hidden="true">
-                {calculator.href === "/honorarios" || calculator.href === "/metrados" ? (
-                  <Briefcase size={18} />
-                ) : (
-                  <Calculator size={18} />
-                )}
-              </span>
-              <span className="tile-copy">
-                <strong>{calculator.title}</strong>
-                <small className="mono">{calculator.detail}</small>
-              </span>
-            </Link>
-          ))}
+        <div
+          className="calculator-tiles home-tiles"
+          style={{ "--tile-columns": tiles.columns } as CSSProperties}
+        >
+          {calculators.map((calculator, index) => {
+            const { icon: Icon, family } = toolVisual(calculator.id);
+            return (
+              <Link
+                className="calculator-tile"
+                href={calculator.href}
+                key={calculator.id}
+                data-family={family}
+                data-wide={index < tiles.wide ? "" : undefined}
+                data-wide-mobile={index < tiles.wideMobile ? "" : undefined}
+              >
+                <span className="tile-icon" aria-hidden="true">
+                  <Icon size={18} />
+                </span>
+                <span className="tile-copy">
+                  <strong>{calculator.title}</strong>
+                  <small className="mono">{calculator.detail}</small>
+                </span>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
@@ -186,6 +218,7 @@ export function HomeDashboard() {
                 className="discipline-card"
                 href={"/normativa?cat=" + encodeURIComponent(category.name)}
                 key={category.name}
+                data-family={DISCIPLINE_FAMILY[category.name] ?? "piedra"}
               >
                 <span className="discipline-name">{category.label}</span>
                 <span className="count-pill mono">{plural(count, "ficha", "fichas")}</span>
@@ -195,80 +228,101 @@ export function HomeDashboard() {
         </div>
       </section>
 
-      <div className="dashboard-columns">
-        <section className="dashboard-section dashboard-panel">
-          <div className="section-heading">
-            <div>
-              <div className="eyebrow">Proyectos activos</div>
-              <h2>Tu trabajo local</h2>
-            </div>
-            <Link className="icon-btn" href="/metrados" aria-label="Abrir metrados">
-              <ArrowUpRight size={17} />
-            </Link>
-          </div>
-          {activeProjects.length === 0 ? (
-            <EmptyState
-              icon={<FolderOpen size={22} />}
-              title="Aún no hay proyectos"
-              description="Crea un proyecto de metrados. Se guarda primero en este dispositivo."
-              action={
-                <Link className="btn btn-primary" href="/metrados">
-                  <Plus size={15} /> Nuevo proyecto
-                </Link>
-              }
-            />
-          ) : (
-            <div className="project-list">
-              {activeProjects.map((project) => (
-                <Link
-                  href={`/metrados?project=${project.id}`}
-                  key={project.id}
-                  className="project-row"
-                >
-                  <FolderOpen size={18} className="text-accent" aria-hidden="true" />
-                  <span>
-                    <strong>{project.name}</strong>
-                    <small>
-                      {project.location || "Sin ubicación"} · {project.typology || "Sin tipología"}
-                    </small>
-                  </span>
-                  <span className="mono">S/ {projectTotal(project, takeoffs).toFixed(2)}</span>
-                </Link>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className="dashboard-section dashboard-panel">
-          <div className="section-heading">
-            <div>
-              <div className="eyebrow">Fichas recientes</div>
-              <h2>Para revisar hoy</h2>
-            </div>
-            <Link className="icon-btn" href="/normativa" aria-label="Abrir normativa">
-              <BookOpen size={17} aria-hidden="true" />
-            </Link>
-          </div>
-          {recentCards.length === 0 ? (
-            <p className="panel-empty muted small">
-              Las fichas que abras aparecerán aquí para retomarlas rápido.
+      {nothingYet ? (
+        <section className="dashboard-section home-start-strip" aria-labelledby="home-start-title">
+          <span className="home-start-icon" aria-hidden="true">
+            <Compass size={20} />
+          </span>
+          <div className="home-start-copy">
+            <h2 id="home-start-title">Empieza por un proyecto o una ficha</h2>
+            <p className="muted">
+              Tus proyectos activos y las fichas que abras aparecerán aquí para retomarlos rápido.
             </p>
-          ) : (
-            <div className="featured-list">
-              {recentCards.map((card) => (
-                <Link href={"/normativa/" + card.slug} key={card.slug} className="featured-row">
-                  <span className="mono norm-code">{card.norm_code}</span>
-                  <span>
-                    <strong>{card.title}</strong>
-                    <small>{card.article}</small>
-                  </span>
-                  {card.is_pro && <Badge variant="pro">PRO</Badge>}
-                </Link>
-              ))}
-            </div>
-          )}
+          </div>
+          <div className="home-start-actions">
+            <Link className="btn btn-primary" href="/metrados">
+              <Plus size={15} aria-hidden="true" /> Nuevo proyecto
+            </Link>
+            <Link className="btn" href="/normativa">
+              <BookOpen size={15} aria-hidden="true" /> Explorar normativa
+            </Link>
+          </div>
         </section>
-      </div>
+      ) : (
+        <div className="dashboard-columns">
+          <section className="dashboard-section dashboard-panel">
+            <div className="section-heading">
+              <div>
+                <div className="eyebrow">Proyectos activos</div>
+                <h2>Tu trabajo local</h2>
+              </div>
+              <Link className="icon-btn" href="/metrados" aria-label="Abrir metrados">
+                <ArrowUpRight size={17} />
+              </Link>
+            </div>
+            {activeProjects.length === 0 ? (
+              <div className="panel-empty panel-empty-action">
+                <span className="muted small">
+                  Aún no hay proyectos. Se guardan primero en este dispositivo.
+                </span>
+                <Link className="btn btn-sm" href="/metrados">
+                  <Plus size={14} aria-hidden="true" /> Nuevo proyecto
+                </Link>
+              </div>
+            ) : (
+              <div className="project-list">
+                {activeProjects.map((project) => (
+                  <Link
+                    href={`/metrados?project=${project.id}`}
+                    key={project.id}
+                    className="project-row"
+                  >
+                    <FolderOpen size={18} className="text-accent" aria-hidden="true" />
+                    <span>
+                      <strong>{project.name}</strong>
+                      <small>
+                        {project.location || "Sin ubicación"} ·{" "}
+                        {project.typology || "Sin tipología"}
+                      </small>
+                    </span>
+                    <span className="mono">S/ {projectTotal(project, takeoffs).toFixed(2)}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section className="dashboard-section dashboard-panel">
+            <div className="section-heading">
+              <div>
+                <div className="eyebrow">Fichas recientes</div>
+                <h2>Para revisar hoy</h2>
+              </div>
+              <Link className="icon-btn" href="/normativa" aria-label="Abrir normativa">
+                <BookOpen size={17} aria-hidden="true" />
+              </Link>
+            </div>
+            {recentCards.length === 0 ? (
+              <p className="panel-empty muted small">
+                Las fichas que abras aparecerán aquí para retomarlas rápido.
+              </p>
+            ) : (
+              <div className="featured-list">
+                {recentCards.map((card) => (
+                  <Link href={"/normativa/" + card.slug} key={card.slug} className="featured-row">
+                    <span className="mono norm-code">{card.norm_code}</span>
+                    <span>
+                      <strong>{card.title}</strong>
+                      <small>{card.article}</small>
+                    </span>
+                    {card.is_pro && <Badge variant="pro">PRO</Badge>}
+                  </Link>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+      )}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import type { UIMessage } from "ai";
 import { parseMarkdown, type InlineNode, type MarkdownBlock } from "@/lib/chat/markdown";
 import { calculatorForCard } from "@/lib/rag/device";
 import { parseCitations } from "@/lib/rag/citations";
+import { BrandMark } from "@/components/brand/BrandMark";
 
 function messageText(message: UIMessage): string {
   return message.parts
@@ -21,7 +22,9 @@ export function ChatMessage({ message }: { message: UIMessage }) {
 
   return (
     <article className={"chat-message " + (isUser ? "user" : "assistant")}>
-      <div className="chat-avatar">{isUser ? <UserRound size={15} /> : <span>T</span>}</div>
+      <div className="chat-avatar">
+        {isUser ? <UserRound size={15} /> : <BrandMark size={28} className="chat-avatar-mark" />}
+      </div>
       <div className="chat-bubble">
         <div className="chat-content">{parseMarkdown(text).map(renderBlock)}</div>
         {!isUser && (

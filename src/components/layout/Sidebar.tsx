@@ -8,6 +8,7 @@ import {
   ClipboardList,
   Home,
   MessageSquare,
+  Network,
   Ruler,
   UserRound,
 } from "lucide-react";
@@ -18,7 +19,7 @@ const items = [
   { href: "/", label: "Inicio", icon: Home },
   { href: "/normativa", label: "Normativa", icon: BookOpen },
   { href: "/medidas", label: "Medidas", icon: Ruler },
-  { href: "/matriz", label: "Matriz de relaciones", icon: ClipboardList },
+  { href: "/matriz", label: "Matriz de relaciones", icon: Network },
   { href: "/calculadoras", label: "Calculadoras", icon: Calculator },
   { href: "/metrados", label: "Metrados", icon: ClipboardList },
   { href: "/honorarios", label: "Honorarios", icon: Briefcase },

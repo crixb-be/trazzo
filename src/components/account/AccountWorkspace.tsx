@@ -51,6 +51,7 @@ import {
 } from "@/lib/payments/providers";
 import { createClient } from "@/lib/supabase/client";
 import { prepareAvatar } from "@/lib/ui/avatar";
+import { BrandMark } from "@/components/brand/BrandMark";
 import { prepareLogo } from "@/lib/ui/logo";
 import { isValidRuc } from "@/lib/validation";
 
@@ -82,7 +83,7 @@ function initials(source: string): string {
     .split(/[\s._-]+/)
     .filter(Boolean);
   const letters = words.slice(0, 2).map((word) => word[0]?.toUpperCase() ?? "");
-  return letters.join("") || "T";
+  return letters.join("");
 }
 
 export function AccountWorkspace() {
@@ -439,8 +440,11 @@ export function AccountWorkspace() {
                 // The avatar is already resized on the device and stored as a data URL.
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={avatarDataUrl} alt="Foto de perfil" />
-              ) : (
+              ) : initials(name || email) ? (
                 <span aria-hidden="true">{initials(name || email)}</span>
+              ) : (
+                // No photo and no name yet: show TRAZO's mark instead of a stray letter.
+                <BrandMark size={84} className="avatar-mark" />
               )}
             </div>
             <div className="avatar-picker-body">
