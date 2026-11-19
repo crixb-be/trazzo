@@ -1,4 +1,4 @@
-# TRAZO · La navaja suiza del arquitecto
+# TRAZO · Del estudio a la obra
 
 TRAZO es una herramienta técnica offline-first para arquitectura y obra en Perú. Reúne fichas navegables del Reglamento Nacional de Edificaciones, calculadoras paramétricas, metrados por proyecto y un asistente RAG con citas verificables.
 

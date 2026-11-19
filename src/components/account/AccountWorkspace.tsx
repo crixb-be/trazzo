@@ -780,7 +780,7 @@ export function AccountWorkspace() {
         <Card>
           <div className="eyebrow">APLICACIÓN</div>
           <h2>TRAZO</h2>
-          <p className="muted small">La navaja suiza del arquitecto</p>
+          <p className="muted small">Del estudio a la obra</p>
           <div className="app-info">
             <span>Versión</span>
             <span className="mono">0.1.0</span>

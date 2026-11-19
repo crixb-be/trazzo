@@ -12,6 +12,7 @@ import {
   UserRound,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { BrandMark } from "@/components/brand/BrandMark";
 
 const items = [
   { href: "/", label: "Inicio", icon: Home },
@@ -35,10 +36,10 @@ export function Sidebar() {
   return (
     <aside className="sidebar" aria-label="Navegación principal">
       <Link className="brand" href="/" aria-label="TRAZO, volver al inicio">
-        <span className="brand-mark">T</span>
+        <BrandMark />
         <span>
           <strong>TRAZO</strong>
-          <small>La navaja suiza del arquitecto</small>
+          <small>Del estudio a la obra</small>
         </span>
       </Link>
 

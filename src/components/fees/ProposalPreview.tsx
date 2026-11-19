@@ -73,7 +73,7 @@ export function ProposalPreview({
             </div>
             <div className="proposal-cover-brand">
               {studio.studioName || "TRAZO"}
-              <small>ARQUITECTURA · LA NAVAJA SUIZA DEL ARQUITECTO</small>
+              <small>ARQUITECTURA · DEL ESTUDIO A LA OBRA</small>
             </div>
             <div className="proposal-cover-title">
               <h2>{title}</h2>
@@ -90,7 +90,7 @@ export function ProposalPreview({
             </div>
             <small className="proposal-cover-footer">
               Elaborado por: {studio.fullName ? "Arq. " + studio.fullName : "TRAZO"} ·{" "}
-              {studio.studioName || "La navaja suiza del arquitecto"}
+              {studio.studioName || "Del estudio a la obra"}
             </small>
           </section>
           <section

@@ -4,6 +4,7 @@ import { Search, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { BrandMark } from "@/components/brand/BrandMark";
 import { GlobalSearch, OfflineBadge, ThemeToggle } from "@/components/ui";
 import { useStudioProfile } from "@/lib/offline/hooks";
 
@@ -38,7 +39,7 @@ export function Header() {
   return (
     <header className="header">
       <Link className="header-brand" href="/" aria-label="TRAZO, volver al inicio">
-        <span className="brand-mark">T</span>
+        <BrandMark />
       </Link>
       <div className="header-title">
         <span className="eyebrow">TRAZO</span>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight, KeyRound, Mail, UserRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { BrandMark } from "@/components/brand/BrandMark";
 import { Badge, Button, Card, Input } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
 
@@ -65,12 +66,10 @@ export function AuthCard({ mode }: { mode: "login" | "register" }) {
   return (
     <Card className="auth-card">
       <Link className="auth-brand" href="/" title="Volver al inicio">
-        <span className="brand-mark" aria-hidden="true">
-          T
-        </span>
+        <BrandMark />
         <span>
           <strong>TRAZO</strong>
-          <small>La navaja suiza del arquitecto</small>
+          <small>Del estudio a la obra</small>
         </span>
       </Link>
       <Badge variant={configured ? "ok" : "por-verificar"}>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { BrandMark } from "@/components/brand/BrandMark";
 
 export default function OfflinePage() {
   return (
@@ -6,10 +7,10 @@ export default function OfflinePage() {
       <div className="auth-grid-mark" aria-hidden="true" />
       <div className="card offline-card">
         <div className="brand">
-          <span className="brand-mark">T</span>
+          <BrandMark />
           <span>
             <strong>TRAZO</strong>
-            <small>La navaja suiza del arquitecto</small>
+            <small>Del estudio a la obra</small>
           </span>
         </div>
         <div className="eyebrow">SIN CONEXIÓN</div>

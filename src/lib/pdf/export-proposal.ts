@@ -251,7 +251,7 @@ function addCover(
   pdf.setFontSize(8);
   // Under the studio name: its address when known; TRAZO keeps its tagline.
   pdf.text(
-    studio.studioName ? studio.address || "Arquitectura y proyectos" : "La navaja suiza del arquitecto",
+    studio.studioName ? studio.address || "Arquitectura y proyectos" : "Del estudio a la obra",
     30,
     71,
   );
@@ -302,7 +302,7 @@ function addCover(
   pdf.text(
     [studio.studioName, studio.ruc ? "RUC " + studio.ruc : "", studio.address]
       .filter(Boolean)
-      .join(" · ") || "TRAZO · La navaja suiza del arquitecto",
+      .join(" · ") || "TRAZO · Del estudio a la obra",
     30,
     278,
   );

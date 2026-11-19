@@ -12,6 +12,7 @@
     "seed:supabase": "tsx --env-file-if-exists=.env.local scripts/seed-supabase.ts",
     "embed:rne": "tsx --env-file-if-exists=.env.local scripts/embed-rne.ts",
     "icons": "node scripts/generate-icons.mjs",
+    "icons:native": "capacitor-assets generate --assetPath assets --iconBackgroundColor \"#151920\" --iconBackgroundColorDark \"#151920\" --splashBackgroundColor \"#151920\" --splashBackgroundColorDark \"#151920\"",
     "cap:sync": "npx cap sync",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
@@ -43,6 +44,7 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.14.0",
+    "@capacitor/assets": "^3.0.5",
     "@playwright/test": "^1.65.1",
     "@tailwindcss/postcss": "^4.1.13",
     "@types/node": "^22.15.30",

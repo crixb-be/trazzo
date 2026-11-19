@@ -2,10 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "TRAZO · La navaja suiza del arquitecto",
+    name: "TRAZO · Del estudio a la obra",
     short_name: "TRAZO",
-    description:
-      "La navaja suiza del arquitecto: normativa RNE, calculadoras y metrados offline-first.",
+    description: "Del estudio a la obra: normativa RNE, calculadoras y metrados offline-first.",
     id: "/",
     lang: "es-PE",
     start_url: "/",
@@ -37,11 +36,6 @@ export default function manifest(): MetadataRoute.Manifest {
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",
-      },
-      {
-        src: "/icons/icon.svg",
-        sizes: "any",
-        type: "image/svg+xml",
       },
     ],
   };

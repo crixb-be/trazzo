@@ -49,6 +49,9 @@ jobs:
           fi
           npx cap sync android
 
+      - name: Generate native icons and splash from assets/logo.png
+        run: npm run icons:native -- --android
+
       - name: Build debug APK
         working-directory: android
         run: chmod +x ./gradlew && ./gradlew assembleDebug --no-daemon

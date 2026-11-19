@@ -36,6 +36,9 @@ jobs:
           fi
           npx cap sync ios
 
+      - name: Generate native icons and splash from assets/logo.png
+        run: npm run icons:native -- --ios
+
       # Capacitor 7 uses CocoaPods by default (App.xcworkspace); a Swift Package
       # Manager project only has App.xcodeproj. Build whichever one exists.
       - name: Build unsigned app
