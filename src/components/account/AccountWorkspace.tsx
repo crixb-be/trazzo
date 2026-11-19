@@ -54,6 +54,7 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import { prepareAvatar } from "@/lib/ui/avatar";
 import { BrandMark } from "@/components/brand/BrandMark";
+import { useAccountAvatar } from "@/lib/account/use-account-avatar";
 import { prepareLogo } from "@/lib/ui/logo";
 import { isValidRuc } from "@/lib/validation";
 
@@ -91,6 +92,7 @@ function initials(source: string): string {
 export function AccountWorkspace() {
   const sync = useSyncStatus();
   const studio = useStudioProfile();
+  const accountAvatar = useAccountAvatar();
   const [configured, setConfigured] = useState(Boolean(createClient()));
   const [email, setEmail] = useState("");
   const { plan: currentPlan, studentVerified } = useCurrentPlan();
@@ -172,7 +174,12 @@ export function AccountWorkspace() {
   /** Saves on the device first, then backs the profile up at once when signed in. */
   async function saveAndBackUp(patch: Partial<StudioProfile>): Promise<string> {
     await saveStudioProfile(patch);
-    return describeProfileSave((await syncNow()).status);
+    const result = await syncNow();
+    const notice = describeProfileSave(result.status);
+    // A failed backup names its cause (e.g. a missing migration) instead of hiding it.
+    return result.error && (result.status === "partial" || result.status === "error")
+      ? notice + " Motivo: " + result.error
+      : notice;
   }
 
   async function saveProfile(): Promise<void> {
@@ -349,6 +356,10 @@ export function AccountWorkspace() {
                 // The avatar is already resized on the device and stored as a data URL.
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={avatarDataUrl} alt="Foto de perfil" />
+              ) : accountAvatar.src ? (
+                // No own photo yet: the sign-in provider's photo stands in.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={accountAvatar.src} alt="Foto de tu cuenta" referrerPolicy="no-referrer" />
               ) : initials(name || email) ? (
                 <span aria-hidden="true">{initials(name || email)}</span>
               ) : (

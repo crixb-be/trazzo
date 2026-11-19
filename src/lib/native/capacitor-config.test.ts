@@ -11,6 +11,13 @@ describe("capacitor config", () => {
     expect(existsSync(NATIVE_WEB_DIR + "/offline.html")).toBe(true);
   });
 
+  it("deja espacio para la barra de estado en Android 15 (borde a borde)", () => {
+    expect(buildCapacitorConfig(undefined).android?.adjustMarginsForEdgeToEdge).toBe("auto");
+    expect(buildCapacitorConfig("https://trazzo.example").android?.adjustMarginsForEdgeToEdge).toBe(
+      "auto",
+    );
+  });
+
   it("loads the deployed site over https with an offline page", () => {
     const config = buildCapacitorConfig("https://trazzo.example/app?x=1 ");
     expect(config.server).toEqual({

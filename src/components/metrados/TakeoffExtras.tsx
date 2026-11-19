@@ -84,7 +84,7 @@ export function TakeoffExtras({
     }
   }
   return (
-    <section className="card">
+    <section className="card takeoff-extras">
       <h2>Planificar compras</h2>
       <button className="btn" disabled={!canDuplicate || busy} onClick={() => void duplicate()}>
         Duplicar proyecto

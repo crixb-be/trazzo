@@ -503,19 +503,64 @@ export function startOnlineSync(): () => void {
   const client = createClient();
   if (!client) return () => undefined;
   const stop = subscribeToSyncTriggers(window, document, () => scheduleSync(0));
+  let profileFeed: { userId: string; stop: () => void } | null = null;
   const auth = client.auth.onAuthStateChange((event, session) => {
-    if (!session) publish({ signedIn: false, accountMismatch: false });
+    if (!session) {
+      publish({ signedIn: false, accountMismatch: false });
+      profileFeed?.stop();
+      profileFeed = null;
+    }
     // Supabase auth callbacks run under an auth lock; schedule outside it.
     if (session && (event === "INITIAL_SESSION" || event === "SIGNED_IN")) {
       // Show a cloud confirmation only after this account has been checked.
       publish({ signedIn: false });
       scheduleSync(0);
+      if (profileFeed?.userId !== session.user.id) {
+        profileFeed?.stop();
+        profileFeed = {
+          userId: session.user.id,
+          stop: watchRemoteProfile(client, session.user.id),
+        };
+      }
     }
   });
   return () => {
     stop();
+    profileFeed?.stop();
     auth.data.subscription.unsubscribe();
     if (scheduled) clearTimeout(scheduled);
     scheduled = null;
+  };
+}
+
+/**
+ * Another device saved the profile, photo or logo: Supabase Realtime announces the
+ * change on this account's row and a sync pulls it at once, so an open phone shows
+ * a photo saved on the desktop without waiting for a reload or a tab switch.
+ * Our own push echoes back too; it is skipped when the version is already here.
+ */
+function watchRemoteProfile(
+  client: NonNullable<ReturnType<typeof createClient>>,
+  userId: string,
+): () => void {
+  // Realtime is an accelerator: without it the regular triggers still sync.
+  if (typeof client.channel !== "function") return () => undefined;
+  const channel = client
+    .channel("profile:" + userId)
+    .on(
+      "postgres_changes",
+      { event: "UPDATE", schema: "public", table: "profiles", filter: "id=eq." + userId },
+      (change) => {
+        const version = (change.new as { profile_updated_at?: string | null }).profile_updated_at;
+        void (async () => {
+          const local = await db?.studio_profile.get("default");
+          if (version && local?.updatedAt === version) return;
+          scheduleSync(300);
+        })();
+      },
+    )
+    .subscribe();
+  return () => {
+    void client.removeChannel(channel);
   };
 }

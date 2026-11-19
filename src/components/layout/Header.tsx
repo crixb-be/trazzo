@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { BrandMark } from "@/components/brand/BrandMark";
 import { GlobalSearch, OfflineBadge, ThemeToggle } from "@/components/ui";
-import { useStudioProfile } from "@/lib/offline/hooks";
+import { useAccountAvatar } from "@/lib/account/use-account-avatar";
 
 const titles: Record<string, string> = {
   "/medidas": "Medidas de bolsillo",
@@ -29,7 +29,8 @@ function pageTitle(pathname: string): string {
 export function Header() {
   const pathname = usePathname();
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const { avatarDataUrl } = useStudioProfile();
+  // Own photo (synced from profiles) first; the sign-in provider's photo as fallback.
+  const avatar = useAccountAvatar();
 
   // Close the mobile search sheet whenever the route changes.
   useEffect(() => {
@@ -59,10 +60,10 @@ export function Header() {
         <OfflineBadge />
         <ThemeToggle />
         <Link className="account-avatar" href="/cuenta" aria-label="Abrir cuenta">
-          {avatarDataUrl ? (
-            // The avatar is already resized on the device and stored as a data URL.
+          {avatar.src ? (
+            // Own photo: a resized data URL. Provider photo: Google's CDN, sent without referrer.
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatarDataUrl} alt="" />
+            <img src={avatar.src} alt="" referrerPolicy="no-referrer" />
           ) : (
             <UserRound size={17} aria-hidden="true" />
           )}

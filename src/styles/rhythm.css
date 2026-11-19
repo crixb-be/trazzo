@@ -1,0 +1,146 @@
+/*
+ * Ritmo y espaciado, en todos los temas (también Modo Obra: solo es distribución).
+ * Sin bordes, dos tarjetas a 0 px se funden en una: aquí cada pila de tarjetas,
+ * campos y acciones recibe su separación explícita.
+ */
+
+/* ---------------------------------------------------------------- shell */
+/* Under the sticky header: anchors and focused fields never land behind it. */
+html {
+  scroll-padding-top: calc(84px + env(safe-area-inset-top, 0px));
+}
+/* Notch / status bar (iOS standalone, Android edge to edge): the header grows by
+   the inset instead of letting the system bar cover the page title. */
+.header {
+  height: calc(64px + env(safe-area-inset-top, 0px));
+  padding-top: env(safe-area-inset-top, 0px);
+}
+@media (max-width: 640px) {
+  .header {
+    height: calc(60px + env(safe-area-inset-top, 0px));
+  }
+}
+
+/* --------------------------------------------------------------- buttons */
+/* A label never wraps inside a button: a two-line pill turned into an oval. */
+.btn {
+  min-height: 40px;
+  white-space: nowrap;
+}
+/* Action rows keep each button at its own height (no stretching to the tallest
+   neighbour) and move a button to the next line instead of squeezing it. */
+:is(.hero-actions, .inline-actions, .matrix-actions, .share-result) {
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ------------------------------------------------------------ calculators */
+/* Materials, aforo, sanitary fixtures, light, accessible parking, plot capacity
+   and field tools render one plain <section>: stack its pieces with a real gap. */
+.calculators-page > section:not(.card) {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.calculators-page > section:not(.card) > :is(h2, h3, p) {
+  margin: 0;
+}
+.calculators-page > section:not(.card) > :is(h3, .card:first-of-type) {
+  margin-top: 4px;
+}
+/* Links and buttons keep their natural width instead of spanning the column. */
+.calculators-page > section:not(.card) > :is(a, .btn) {
+  align-self: flex-start;
+}
+.calculators-page > section:not(.card) > .hero-actions {
+  margin: 4px 0 0;
+}
+@media (min-width: 1024px) {
+  .calculators-page > section:not(.card) {
+    gap: 16px;
+  }
+}
+
+/* --------------------------------------------------------------- metrados */
+/* Project summary, takeoff table and project hub: separate cards, not one slab. */
+.takeoff-main {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+}
+.takeoff-main > * {
+  min-width: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+@media (min-width: 1024px) {
+  .takeoff-main {
+    gap: 20px;
+  }
+}
+
+/* ---------------------------------------------------------------- account */
+/* Stacked fields inside a card (profile, studio brand) and the button after them. */
+:is(.card, .surface-card) > :is(.field, label) + :is(.field, label) {
+  margin-top: 12px;
+}
+:is(.card, .surface-card) > :is(.field, label, .field-grid) + :is(.btn, button, .inline-actions) {
+  margin-top: 16px;
+}
+/* The checkout notice above the plan cards. */
+.payment-mode-banner {
+  margin-bottom: 16px;
+}
+
+/* -------------------------------------------------------------- normativa */
+/* The placeholder fades out before the edge instead of being cut mid-word. */
+.catalog-search input {
+  min-width: 0;
+  padding-right: 16px;
+  text-overflow: ellipsis;
+}
+.catalog-search input::placeholder {
+  text-overflow: ellipsis;
+}
+
+/* ------------------------------------------------------ calculator result */
+/* The floating summary hides while the full result card is visible (it would only
+   repeat it on top of the inputs) and returns when the card scrolls away. */
+.calculator-result-bar {
+  transition:
+    opacity 200ms var(--ease-out, ease-out),
+    transform 200ms var(--ease-out, ease-out);
+}
+.calculator-result-bar[data-hidden] {
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+}
+.result-probe {
+  display: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .calculator-result-bar,
+  .calculator-result-bar[data-hidden] {
+    transform: none;
+    transition: opacity 160ms ease;
+  }
+}
+
+/* ------------------------------------------------------ planificar compras */
+/* Duplicate, area, recipe and shopping list: one stack with breathing room. */
+.takeoff-extras {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+.takeoff-extras > :is(h2, h3, p) {
+  margin: 0;
+}
+.takeoff-extras > h3 {
+  margin-top: 10px;
+}
+.takeoff-extras > .btn {
+  align-self: flex-start;
+}

@@ -8,6 +8,10 @@ const auth = vi.hoisted(() => ({
   session: null as TestSession,
   fetch: vi.fn<typeof fetch>(),
   compress: vi.fn<(dataUrl: string, maxBytes: number) => Promise<string | null>>(),
+  onAuth: undefined as ((event: string, session: TestSession) => void) | undefined,
+  /** Realtime handler for this account's profiles row, once subscribed. */
+  onProfileChange: undefined as ((change: { new: Record<string, unknown> }) => void) | undefined,
+  channelFilter: "",
 }));
 
 vi.mock("./db", async (load) => {
@@ -18,7 +22,24 @@ vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
     auth: {
       getSession: async () => ({ data: { session: auth.session }, error: null }),
-      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => undefined } } }),
+      onAuthStateChange: (callback: typeof auth.onAuth) => {
+        auth.onAuth = callback;
+        return { data: { subscription: { unsubscribe: () => (auth.onAuth = undefined) } } };
+      },
+    },
+    channel: () => {
+      const channel = {
+        on: (_type: string, filter: { filter: string }, handler: typeof auth.onProfileChange) => {
+          auth.channelFilter = filter.filter;
+          auth.onProfileChange = handler;
+          return channel;
+        },
+        subscribe: () => channel,
+      };
+      return channel;
+    },
+    removeChannel: async () => {
+      auth.onProfileChange = undefined;
     },
   }),
   createSyncClient: (accessToken: string) =>
@@ -44,7 +65,7 @@ import {
   rowToProfile,
   type ProfileRow,
 } from "./profile-sync";
-import { getSyncStatus, syncNow } from "./sync";
+import { getSyncStatus, startOnlineSync, syncNow } from "./sync";
 
 const database = db!;
 /** ~3 KB JPEG-like data URL. */
@@ -353,5 +374,41 @@ describe("sincronización del perfil con Supabase", () => {
     signIn();
     expect((await syncNow()).status).toBe("ok");
     expect(await getStudioProfile()).toMatchObject({ fullName: "Ana", avatarDataUrl: PHOTO });
+  });
+
+  it("con la app abierta, un cambio hecho en otro dispositivo llega solo por Realtime", async () => {
+    vi.stubGlobal("window", new EventTarget());
+    vi.stubGlobal("document", Object.assign(new EventTarget(), { visibilityState: "hidden" }));
+    const stop = startOnlineSync();
+    signIn();
+    auth.onAuth?.("SIGNED_IN", auth.session);
+    expect(auth.channelFilter).toBe("id=eq.owner");
+    await vi.runAllTimersAsync();
+    await vi.waitFor(async () => expect(await getSyncStatus()).toMatchObject({ pending: 0 }));
+
+    // The desktop saves a photo and a logo: Supabase announces the new row.
+    const desktop = row({
+      full_name: "Ana Pérez",
+      avatar_data_url: PHOTO,
+      logo_data_url: LOGO,
+      profile_updated_at: new Date(Date.now() + 5_000).toISOString(),
+    });
+    cloud.set("owner", desktop);
+    auth.onProfileChange?.({ new: { ...desktop } });
+    await vi.runAllTimersAsync();
+    await vi.waitFor(async () =>
+      expect(await getStudioProfile()).toMatchObject({
+        fullName: "Ana Pérez",
+        avatarDataUrl: PHOTO,
+        logoDataUrl: LOGO,
+      }),
+    );
+
+    // Our own push echoes back with the version we already have: no extra pass.
+    const requests = auth.fetch.mock.calls.length;
+    auth.onProfileChange?.({ new: { ...desktop } });
+    await vi.runAllTimersAsync();
+    expect(auth.fetch.mock.calls.length).toBe(requests);
+    stop();
   });
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { Button, CheckList, Card } from "@/components/ui";
 import { SaveToProject } from "@/components/ui/SaveToProject";
@@ -45,9 +45,28 @@ export function CalculatorResult({
   copyText: string;
 }) {
   const sheet = calculatorSheet({ eyebrow, main, details, checks, warnings });
+  // The floating bar repeats the result card: it steps aside while that card is on
+  // screen, so it never sits on top of the inputs next to the very same result.
+  const probe = useRef<HTMLSpanElement>(null);
+  const [cardVisible, setCardVisible] = useState(false);
+  useEffect(() => {
+    const card = probe.current?.parentElement;
+    if (!card || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setCardVisible(Boolean(entry?.isIntersecting)),
+      { threshold: 0.12 },
+    );
+    observer.observe(card);
+    return () => observer.disconnect();
+  }, []);
   return (
     <>
-      <div className="calculator-result-bar" role="status" aria-live="polite">
+      <div
+        className="calculator-result-bar"
+        role="status"
+        aria-live="polite"
+        data-hidden={cardVisible ? "" : undefined}
+      >
         <div>
           <span className="eyebrow">{eyebrow}</span>
           <strong>{main}</strong>
@@ -56,6 +75,7 @@ export function CalculatorResult({
         <span>{warnings.length ? "Revisar condiciones" : "Ver comprobaciones abajo"}</span>
       </div>
       <Card className="calculator-result">
+        <span ref={probe} className="result-probe" aria-hidden="true" />
         <div className="result-header">
           <div className="eyebrow">{eyebrow}</div>
           <CopyResultButton text={copyText} />

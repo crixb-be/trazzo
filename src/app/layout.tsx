@@ -66,6 +66,9 @@ export const viewport: Viewport = {
   ],
   width: "device-width",
   initialScale: 1,
+  // Lets env(safe-area-inset-*) report the notch and home bar: the header and the
+  // bottom navigation pad themselves with those values (iOS standalone, notches).
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
