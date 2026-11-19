@@ -67,21 +67,23 @@ export function AuthCard({ mode }: { mode: "login" | "register" }) {
     <Card className="auth-card">
       <Link className="auth-brand" href="/" title="Volver al inicio">
         <BrandMark />
-        <span>
+        <span className="auth-brand-text">
           <strong>TRAZO</strong>
           <small>Del estudio a la obra</small>
         </span>
       </Link>
-      <Badge variant={configured ? "ok" : "por-verificar"}>
-        {configured ? "Cuenta conectada" : "Modo local"}
-      </Badge>
-      <div className="eyebrow">{isLogin ? "CUENTA / INGRESO" : "CUENTA / REGISTRO"}</div>
-      <h1>{isLogin ? "Vuelve a tu criterio" : "Crea tu espacio técnico"}</h1>
-      <p className="muted">
-        {isLogin
-          ? "Sincroniza proyectos y activa tu plan."
-          : "Guarda tus proyectos y lleva tus fichas contigo."}
-      </p>
+      <header className="auth-heading">
+        <Badge variant={configured ? "ok" : "por-verificar"}>
+          {configured ? "Cuenta conectada" : "Modo local"}
+        </Badge>
+        <div className="eyebrow">{isLogin ? "CUENTA / INGRESO" : "CUENTA / REGISTRO"}</div>
+        <h1>{isLogin ? "Vuelve a tu criterio" : "Crea tu espacio técnico"}</h1>
+        <p className="muted">
+          {isLogin
+            ? "Sincroniza proyectos y activa tu plan."
+            : "Guarda tus proyectos y lleva tus fichas contigo."}
+        </p>
+      </header>
       {!configured && (
         <div className="notice-banner">
           <Mail size={16} /> Las cuentas aún no están activas. Puedes usar TRAZO sin cuenta.
@@ -126,17 +128,26 @@ export function AuthCard({ mode }: { mode: "login" | "register" }) {
       <div className="auth-divider">
         <span>o</span>
       </div>
-      <Button variant="secondary" disabled={!configured} onClick={() => void magicLink()}>
+      <Button
+        className="auth-magic"
+        variant="secondary"
+        disabled={!configured}
+        onClick={() => void magicLink()}
+      >
         <Mail size={15} /> Enviarme un magic link
       </Button>
-      {notice && <p className="warning">{notice}</p>}
-      <p className="auth-switch">
-        {isLogin ? "¿Aún no tienes cuenta?" : "¿Ya tienes una cuenta?"}{" "}
-        <Link href={isLogin ? "/register" : "/login"}>{isLogin ? "Registrarme" : "Ingresar"}</Link>
-      </p>
-      <Link className="muted small" href="/">
-        ← Continuar en modo local
-      </Link>
+      {notice && <p className="warning auth-notice">{notice}</p>}
+      <footer className="auth-links">
+        <p className="auth-switch">
+          {isLogin ? "¿Aún no tienes cuenta?" : "¿Ya tienes una cuenta?"}{" "}
+          <Link href={isLogin ? "/register" : "/login"}>
+            {isLogin ? "Registrarme" : "Ingresar"}
+          </Link>
+        </p>
+        <Link className="muted small" href="/">
+          ← Continuar en modo local
+        </Link>
+      </footer>
     </Card>
   );
 }

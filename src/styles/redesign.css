@@ -110,10 +110,12 @@ html:not(.dark) {
   padding: 0 10px 26px;
   gap: 12px;
 }
+/* The logo is a transparent mask: no radius or clipping may eat the T's corners. */
 .brand-mark {
   width: 34px;
   height: 34px;
-  border-radius: var(--radius-control);
+  border-radius: 0;
+  overflow: visible;
   flex: none;
 }
 .brand strong {

@@ -35,6 +35,10 @@ const args = [
   ground,
   "--splashBackgroundColorDark",
   ground,
+  // The logo file keeps a transparent margin around the T: at 0.30 of the splash width
+  // the T itself spans about 18 % of the screen and leads the launch screen.
+  "--logoSplashScale",
+  "0.30",
   ...process.argv.slice(2),
 ];
 

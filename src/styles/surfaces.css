@@ -647,19 +647,6 @@
     linear-gradient(90deg, rgba(212, 163, 89, 0.04) 1px, transparent 1px), var(--bg);
   background-size: 24px 24px;
 }
-.auth-card {
-  width: min(100%, 440px);
-  padding: 28px;
-  position: relative;
-  z-index: 1;
-}
-.auth-card .brand {
-  padding: 0 0 24px;
-}
-.auth-form {
-  display: grid;
-  gap: 14px;
-}
 .auth-footer {
   position: absolute;
   bottom: 18px;

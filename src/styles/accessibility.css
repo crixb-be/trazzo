@@ -97,7 +97,8 @@
     place-items: center;
   }
   .auth-switch a,
-  .auth-card > a,
+  .auth-brand,
+  .auth-links > a,
   .offline-card a {
     display: inline-flex;
     align-items: center;
