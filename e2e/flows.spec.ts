@@ -1,10 +1,8 @@
 import { expect, test } from "@playwright/test";
+import { createProject } from "./helpers";
 
 test("una cotización guardada se vincula a su proyecto", async ({ page }) => {
-  await page.goto("/metrados");
-  await page.getByRole("button", { name: "Nuevo proyecto" }).click();
-  await page.getByPlaceholder("Casa Miraflores").fill("Casa vinculada");
-  await page.getByRole("button", { name: "Crear proyecto", exact: true }).click();
+  await createProject(page, "Casa vinculada");
   await expect(page.getByRole("heading", { name: "Casa vinculada" })).toBeVisible();
 
   await page.goto("/honorarios");
@@ -53,10 +51,7 @@ test("todas las pantallas principales abren sin conexión", async ({ page, conte
 });
 
 test("las fotos de obra se guardan en el proyecto", async ({ page }) => {
-  await page.goto("/metrados");
-  await page.getByRole("button", { name: "Nuevo proyecto" }).click();
-  await page.getByPlaceholder("Casa Miraflores").fill("Obra con fotos");
-  await page.getByRole("button", { name: "Crear proyecto", exact: true }).click();
+  await createProject(page, "Obra con fotos");
   await expect(page.getByRole("heading", { name: "Fotos de obra" })).toBeVisible();
 
   // Una imagen grande generada en la página hace de foto de cámara.
@@ -81,11 +76,15 @@ test("las fotos de obra se guardan en el proyecto", async ({ page }) => {
   const photo = page.locator(".project-photos img");
   await expect(photo).toHaveCount(1);
   // Se guarda reducida a 1280 px y como JPEG.
-  const stored = await photo.evaluate((image: HTMLImageElement) => ({
-    width: image.naturalWidth,
-    height: image.naturalHeight,
-    jpeg: image.src.startsWith("data:image/jpeg"),
-  }));
+  // naturalWidth is 0 until the browser decodes the data URL: wait for it first.
+  const stored = await photo.evaluate(async (image: HTMLImageElement) => {
+    await image.decode();
+    return {
+      width: image.naturalWidth,
+      height: image.naturalHeight,
+      jpeg: image.src.startsWith("data:image/jpeg"),
+    };
+  });
   expect(stored).toEqual({ width: 1280, height: 960, jpeg: true });
 
   await page.getByLabel("Nota de la foto 1").fill("Encofrado eje A");

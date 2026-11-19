@@ -29,6 +29,11 @@ export function useMaterials() {
   return useLiveQuery(async () => (db ? db.materials.toArray() : []), [], []) ?? [];
 }
 
+/** Projects, or `undefined` while IndexedDB is still being read (not the same as none). */
+export function useProjectList(): Project[] | undefined {
+  return useLiveQuery(async () => (db ? db.projects.orderBy("updatedAt").reverse().toArray() : []));
+}
+
 export function useProjects(): Project[] {
   return (
     useLiveQuery(

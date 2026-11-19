@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { createProject } from "./helpers";
 
 test("medidas filtra y las nuevas calculadoras responden", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -17,10 +18,7 @@ test("medidas filtra y las nuevas calculadoras responden", async ({ page }) => {
 });
 
 test("materiales envía cantidades con merma una sola vez a un proyecto", async ({ page }) => {
-  await page.goto("/metrados");
-  await page.getByRole("button", { name: "Nuevo proyecto" }).click();
-  await page.getByPlaceholder("Casa Miraflores").fill("Prueba materiales");
-  await page.getByRole("button", { name: "Crear proyecto", exact: true }).click();
+  await createProject(page, "Prueba materiales");
   await expect(page.getByRole("button", { name: /Prueba materiales Lima/ })).toBeVisible();
   await page.goto("/calculadoras?tab=materiales");
   await page

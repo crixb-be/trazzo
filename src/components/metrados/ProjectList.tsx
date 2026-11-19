@@ -3,19 +3,21 @@
 import { useState } from "react";
 import { Check, Edit3, FolderOpen, Plus, Trash2 } from "lucide-react";
 import { Button, Card, EmptyState, Input, Select } from "@/components/ui";
+import { toast } from "@/components/ui/Feedback";
 import type { Project, ProjectStatus } from "@/lib/offline/db";
 
 export interface ProjectListProps {
   projects: Project[];
   selectedId: string | null;
   onSelect: (id: string) => void;
+  /** Resolves once the project is stored on the device; the dialog waits for it. */
   onCreate: (input: {
     name: string;
     location: string;
     typology: string;
     status: ProjectStatus;
-  }) => void;
-  onEdit: (project: Project) => void;
+  }) => void | Promise<void>;
+  onEdit: (project: Project) => void | Promise<void>;
   onDelete: (project: Project) => void;
 }
 
@@ -47,6 +49,7 @@ export function ProjectList({
   const [location, setLocation] = useState("Lima, Perú");
   const [typology, setTypology] = useState("vivienda");
   const [status, setStatus] = useState<ProjectStatus>("activo");
+  const [saving, setSaving] = useState(false);
 
   function openCreate(): void {
     setEditing(null);
@@ -71,23 +74,30 @@ export function ProjectList({
     setEditing(null);
   }
 
-  function submit(event: React.FormEvent<HTMLFormElement>): void {
+  // The dialog closes only after IndexedDB confirms the write: leaving the page
+  // right after a tap must not abort a project that was never stored.
+  async function submit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
-    if (!name.trim()) return;
-
-    if (editing) {
-      onEdit({
-        ...editing,
-        name: name.trim(),
-        location,
-        typology,
-        status,
-      });
-    } else {
-      onCreate({ name: name.trim(), location, typology, status });
+    if (!name.trim() || saving) return;
+    setSaving(true);
+    try {
+      if (editing) {
+        await onEdit({
+          ...editing,
+          name: name.trim(),
+          location,
+          typology,
+          status,
+        });
+      } else {
+        await onCreate({ name: name.trim(), location, typology, status });
+      }
+      closeDialog();
+    } catch {
+      toast("No se pudo guardar el proyecto en este dispositivo. Inténtalo de nuevo.", "error");
+    } finally {
+      setSaving(false);
     }
-
-    closeDialog();
   }
 
   return (
@@ -151,7 +161,7 @@ export function ProjectList({
       )}
       {open && (
         <div className="modal-backdrop" role="presentation">
-          <form className="modal project-dialog" onSubmit={submit}>
+          <form className="modal project-dialog" onSubmit={(event) => void submit(event)}>
             <div className="eyebrow">{editing ? "EDITAR PROYECTO" : "NUEVO PROYECTO"}</div>
             <h2>{editing ? "Actualiza la obra" : "Organiza una obra"}</h2>
             <div className="field">
@@ -188,7 +198,7 @@ export function ProjectList({
               <Button type="button" variant="ghost" onClick={closeDialog}>
                 Cancelar
               </Button>
-              <Button type="submit" variant="primary">
+              <Button type="submit" variant="primary" disabled={saving}>
                 <Check size={15} /> {editing ? "Guardar cambios" : "Crear proyecto"}
               </Button>
             </div>

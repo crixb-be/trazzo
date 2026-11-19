@@ -330,8 +330,8 @@ export function MetradosWorkspace() {
           projects={projects}
           selectedId={activeProject?.id ?? null}
           onSelect={setSelectedId}
-          onCreate={(input) => void createProject(input)}
-          onEdit={(project) => void updateProject(project)}
+          onCreate={createProject}
+          onEdit={updateProject}
           onDelete={(project) => void removeProject(project)}
         />
         <main className="takeoff-main">

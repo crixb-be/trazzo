@@ -1,10 +1,8 @@
 import { test, expect } from "@playwright/test";
+import { createProject } from "./helpers";
 
 test("receta de muro crea compras y capítulos", async ({ page }) => {
-  await page.goto("/metrados");
-  await page.getByRole("button", { name: "Nuevo proyecto" }).click();
-  await page.getByPlaceholder("Casa Miraflores").fill("Recetas");
-  await page.getByRole("button", { name: "Crear proyecto", exact: true }).click();
+  await createProject(page, "Recetas");
   await page.getByRole("button", { name: "Agregar receta al proyecto" }).click();
   await expect(page.getByText("Receta agregada.", { exact: false })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Lista de compras" })).toBeVisible();
@@ -47,10 +45,7 @@ test("buscador abre medidas y honorarios conserva datos entre pasos", async ({ p
 });
 
 test("editar precio de material importado en m² conserva cantidad", async ({ page }) => {
-  await page.goto("/metrados");
-  await page.getByRole("button", { name: "Nuevo proyecto" }).click();
-  await page.getByPlaceholder("Casa Miraflores").fill("Pisos");
-  await page.getByRole("button", { name: "Crear proyecto", exact: true }).click();
+  await createProject(page, "Pisos");
   await page.goto("/calculadoras?tab=materiales");
   await page.getByRole("combobox", { name: "Trabajo", exact: true }).selectOption("ceramico");
   await page

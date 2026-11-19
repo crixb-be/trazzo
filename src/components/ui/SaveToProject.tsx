@@ -3,14 +3,15 @@
 import { FolderPlus } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { useProjects } from "@/lib/offline/hooks";
+import { useProjectList } from "@/lib/offline/hooks";
 import { saveProjectNote } from "@/lib/offline/project-hub";
 import type { ResultSheet } from "@/lib/share/result-sheet";
 import { toast } from "./Feedback";
 
 /** Files the current calculator result under one of the user's projects. */
 export function SaveToProject({ sheet }: { sheet: ResultSheet }) {
-  const projects = useProjects();
+  const loaded = useProjectList();
+  const projects = loaded ?? [];
   const [open, setOpen] = useState(false);
   const [projectId, setProjectId] = useState("");
   const chosen = projects.find((project) => project.id === projectId) ?? projects[0];
@@ -34,6 +35,15 @@ export function SaveToProject({ sheet }: { sheet: ResultSheet }) {
       <button type="button" className="btn btn-sm" onClick={() => setOpen(true)}>
         <FolderPlus size={14} aria-hidden="true" /> Guardar en proyecto
       </button>
+    );
+  }
+
+  // Still reading IndexedDB: never claim "no projects" before knowing.
+  if (loaded === undefined) {
+    return (
+      <p className="save-to-project muted small" role="status" aria-busy="true">
+        Cargando proyectos…
+      </p>
     );
   }
 

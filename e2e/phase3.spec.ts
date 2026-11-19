@@ -1,5 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
+import { createProject } from "./helpers";
 
 test("modo obra y tamaño de letra se aplican y se conservan", async ({ page }) => {
   await page.goto("/cuenta");
@@ -118,10 +119,7 @@ test("resultado y ficha se comparten como imagen y PDF", async ({ page }, testIn
 test("el proyecto reúne cálculos y la copia de seguridad los restaura", async ({
   page,
 }, testInfo) => {
-  await page.goto("/metrados");
-  await page.getByRole("button", { name: "Nuevo proyecto" }).click();
-  await page.getByPlaceholder("Casa Miraflores").fill("Casa eje");
-  await page.getByRole("button", { name: "Crear proyecto", exact: true }).click();
+  await createProject(page, "Casa eje");
   await expect(page.getByRole("heading", { name: "Cálculos guardados" })).toBeVisible();
 
   await page.goto("/calculadoras?tab=escaleras");

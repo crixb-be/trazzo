@@ -1,14 +1,12 @@
 import { expect, test } from "@playwright/test";
+import { createProject } from "./helpers";
 
 test("comparte y guarda materiales, campo, matriz y medidas", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/cuenta");
   await page.getByRole("radio", { name: "Obra" }).click();
   await expect(page.locator("html")).toHaveClass(/obra/);
-  await page.goto("/metrados");
-  await page.getByRole("button", { name: "Nuevo proyecto" }).click();
-  await page.getByPlaceholder("Casa Miraflores").fill("Acciones de obra");
-  await page.getByRole("button", { name: "Crear proyecto", exact: true }).click();
+  await createProject(page, "Acciones de obra");
 
   async function shareAndSave(url: string, scope = "body") {
     await page.goto(url);
@@ -20,6 +18,9 @@ test("comparte y guarda materiales, campo, matriz y medidas", async ({ page }) =
 
     await area.getByRole("button", { name: "Guardar en proyecto", exact: true }).click();
     const saver = area.locator(".save-to-project");
+    // The project list loads from IndexedDB: wait for it to offer our project.
+    await expect(saver.getByRole("combobox")).toHaveValue(/.+/);
+    await expect(saver.getByRole("option", { name: "Acciones de obra" })).toHaveCount(1);
     await saver.getByRole("button", { name: "Guardar", exact: true }).click();
     await expect(page.getByText("Cálculo guardado en Acciones de obra.")).toBeVisible();
     expect(
