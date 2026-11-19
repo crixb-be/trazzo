@@ -11,3 +11,6 @@ public/sw.js
 
 playwright-report
 test-results
+
+# Proyecto iOS nativo: lo genera CI con `npx cap add ios`
+ios/

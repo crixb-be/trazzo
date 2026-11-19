@@ -1,0 +1,76 @@
+name: iOS unsigned IPA
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CAPACITOR_SERVER_URL: https://trazzo-jade.vercel.app
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      # ios/ is generated here and never committed (see .gitignore).
+      - name: Create and sync iOS project
+        run: |
+          if [ ! -d ios ]; then
+            npx cap add ios
+          fi
+          npx cap sync ios
+
+      # Capacitor 7 uses CocoaPods by default (App.xcworkspace); a Swift Package
+      # Manager project only has App.xcodeproj. Build whichever one exists.
+      - name: Build unsigned app
+        working-directory: ios/App
+        run: |
+          if [ -d App.xcworkspace ]; then
+            container=(-workspace App.xcworkspace)
+          else
+            container=(-project App.xcodeproj)
+          fi
+          xcodebuild "${container[@]}" \
+            -scheme App \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination "generic/platform=iOS" \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build
+
+      - name: Package unsigned IPA
+        working-directory: ios/App
+        run: |
+          app=build/Build/Products/Release-iphoneos/App.app
+          test -d "$app" || { echo "No se encontró $app"; exit 1; }
+          rm -rf Payload TRAZO-unsigned.ipa
+          mkdir Payload
+          cp -R "$app" Payload/
+          zip -qry TRAZO-unsigned.ipa Payload
+
+      - name: Upload unsigned IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: trazzo-ios-unsigned-ipa
+          path: ios/App/TRAZO-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 14

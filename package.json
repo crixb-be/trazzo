@@ -25,6 +25,7 @@
     "@capacitor/camera": "^7.0.5",
     "@capacitor/cli": "^7.4.3",
     "@capacitor/core": "^7.4.3",
+    "@capacitor/ios": "^7.6.10",
     "@serwist/next": "^9.0.14",
     "@supabase/ssr": "^0.7.0",
     "@supabase/supabase-js": "^2.57.0",
