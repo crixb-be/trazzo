@@ -260,12 +260,6 @@ html.obra .home-hero::before {
 
 /* ------------------------------------------------------------ marca */
 /* El logo reemplaza la «T»: llena su marco y conserva su propio fondo. */
-img.assistant-mark,
-.chat-avatar-mark,
-.avatar-mark {
-  display: block;
-  object-fit: cover;
-}
 .chat-message.assistant .chat-avatar {
   overflow: hidden;
   border-color: transparent;
@@ -274,9 +268,8 @@ img.assistant-mark,
   width: 100%;
   height: 100%;
 }
-/* The circle would clip the arms of the T: inset the mark on the logo's own ground. */
+/* The circle would clip the arms of the T: inset the mark inside the avatar. */
 .avatar-preview .avatar-mark {
-  padding: 16%;
-  background: #151920;
-  object-fit: contain;
+  width: 60%;
+  height: 60%;
 }

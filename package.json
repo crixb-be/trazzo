@@ -13,7 +13,7 @@
     "embed:rne": "tsx --env-file-if-exists=.env.local scripts/embed-rne.ts",
     "icons": "node scripts/generate-icons.mjs && node scripts/generate-og.mjs",
     "og": "node scripts/generate-og.mjs",
-    "icons:native": "capacitor-assets generate --assetPath assets --iconBackgroundColor \"#151920\" --iconBackgroundColorDark \"#151920\" --splashBackgroundColor \"#151920\" --splashBackgroundColorDark \"#151920\"",
+    "icons:native": "node scripts/generate-native-icons.mjs",
     "cap:sync": "npx cap sync",
     "format": "prettier --write .",
     "format:check": "prettier --check .",

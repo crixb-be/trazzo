@@ -1,15 +1,16 @@
 import path from "node:path";
 import sharp from "sharp";
+import { BRAND_GOLD, BRAND_GROUND, mark } from "./brand.mjs";
 
 /**
- * Link previews (WhatsApp, Telegram, social networks) from assets/logo.png:
+ * Link previews (WhatsApp, Telegram, social networks) from assets/logo.png. The logo is
+ * transparent, so both previews lay it on the brand ground (#0f1115):
  *   public/og-image.png  1200×630  logo, name and tagline on drafting paper
  *   public/og-square.png  512×512  compact thumbnail for chat apps
  */
 const root = process.cwd();
-const logo = path.join(root, "assets", "logo.png");
-const ground = "#151920";
-const gold = "#d4a359";
+const ground = BRAND_GROUND;
+const gold = BRAND_GOLD;
 const ink = "#ece9e3";
 const font = "Inter, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif";
 
@@ -40,38 +41,6 @@ function paper(width, height) {
     <rect width="${width}" height="${height}" fill="url(#glow)"/>`;
 }
 
-async function mark(size) {
-  return sharp(logo).resize(size, size).png().toBuffer();
-}
-
-/**
- * The gold T alone, on transparency: alpha grows with each pixel's distance from the
- * logo's ground colour, so antialiased edges stay smooth over the drafting grid.
- */
-async function goldT(size) {
-  const { data, info } = await sharp(logo)
-    .resize(size, size)
-    .removeAlpha()
-    .raw()
-    .toBuffer({ resolveWithObject: true });
-  const [gr, gg, gb] = [0x15, 0x19, 0x20];
-  const out = Buffer.alloc(info.width * info.height * 4);
-  for (let i = 0, j = 0; i < data.length; i += 3, j += 4) {
-    const distance = Math.max(
-      Math.abs(data[i] - gr),
-      Math.abs(data[i + 1] - gg),
-      Math.abs(data[i + 2] - gb),
-    );
-    out[j] = 0xd4;
-    out[j + 1] = 0xa3;
-    out[j + 2] = 0x59;
-    out[j + 3] = Math.min(255, Math.max(0, (distance - 12) * 2.4));
-  }
-  return sharp(out, { raw: { width: info.width, height: info.height, channels: 4 } })
-    .png()
-    .toBuffer();
-}
-
 // 1200 × 630: logo centred, wordmark and tagline below.
 const wide = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630">
   ${paper(1200, 630)}
@@ -80,16 +49,18 @@ const wide = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630">
   <text x="600" y="582" text-anchor="middle" font-family="${font}" font-size="18" fill="${ink}" fill-opacity="0.55">Normativa RNE · calculadoras · metrados · honorarios</text>
 </svg>`;
 await sharp(Buffer.from(wide))
-  .composite([{ input: await goldT(420), left: 390, top: 30 }])
+  .composite([{ input: await mark(320), left: 440, top: 84 }])
   .png({ compressionLevel: 9 })
   .toFile(path.join(root, "public", "og-image.png"));
 
-// 512 × 512: the logo fills the tile; the tagline sits in its lower margin.
+// 512 × 512: the logo centred on the drafting paper; the tagline sits in its lower margin.
 const square = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512">
-  <text x="256" y="462" text-anchor="middle" font-family="${font}" font-size="30" font-weight="600" fill="${gold}">Del estudio a la obra</text>
+  ${paper(512, 512)}
+  <text x="256" y="452" text-anchor="middle" font-family="${font}" font-size="30" font-weight="600" fill="${gold}">Del estudio a la obra</text>
 </svg>`;
-await sharp(await mark(512))
-  .composite([{ input: Buffer.from(square), left: 0, top: 0 }])
+await sharp(Buffer.from(square))
+  .composite([{ input: await mark(300), left: 106, top: 62 }])
+  .flatten({ background: ground })
   .png({ compressionLevel: 9 })
   .toFile(path.join(root, "public", "og-square.png"));
 

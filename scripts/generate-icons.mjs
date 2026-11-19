@@ -1,55 +1,50 @@
-import { mkdir } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
+import { BRAND_GROUND, LOGO, mark, tile } from "./brand.mjs";
 
 /**
- * Every TRAZO icon comes from one source: assets/logo.png (square, 1024 px).
- * The same file feeds the native icons through `npx capacitor-assets generate`.
+ * Every TRAZO icon comes from one source: assets/logo.png, the gold T on transparency.
+ * The same file feeds the native icons through `npm run icons:native`, which lays it on
+ * the same BRAND_GROUND (#0f1115).
+ *
+ *   public/brand/trazo-mark.png   transparent; the in-app mark (sidebar, header, login,
+ *                                 avatars), tinted per theme through a CSS mask
+ *   public/icons/*                opaque tiles on BRAND_GROUND for the OS and browsers
  */
 const root = process.cwd();
-const source = path.join(root, "assets", "logo.png");
 const icons = path.join(root, "public", "icons");
 const brand = path.join(root, "public", "brand");
-/** Background of the logo artwork; pads the maskable icons. */
-const background = "#151920";
 
 await mkdir(icons, { recursive: true });
 await mkdir(brand, { recursive: true });
 
-const { width = 1024 } = await sharp(source).metadata();
-
-async function square(name, size, directory = icons) {
-  await sharp(source)
-    .resize(size, size, { fit: "cover" })
-    .png({ compressionLevel: 9 })
-    .toFile(path.join(directory, name));
+const { width, height, hasAlpha } = await sharp(LOGO).metadata();
+if (!hasAlpha) {
+  console.warn("Aviso: assets/logo.png no tiene transparencia; se esperaba el logo sin fondo.");
 }
 
-// Maskable icons are cropped to a circle by Android: shrink the artwork to 80 %
-// so the corners of the T stay inside the safe zone.
-async function maskable(name, size) {
-  const inner = Math.round(size * 0.8);
-  const artwork = await sharp(source).resize(inner, inner).png().toBuffer();
-  await sharp({ create: { width: size, height: size, channels: 3, background } })
-    .composite([{ input: artwork, gravity: "center" }])
-    .png({ compressionLevel: 9 })
-    .toFile(path.join(icons, name));
+async function save(directory, name, buffer) {
+  await writeFile(path.join(directory, name), buffer);
 }
 
-await square("icon-192.png", 192);
-await square("icon-512.png", 512);
-await maskable("icon-192-maskable.png", 192);
-await maskable("icon-512-maskable.png", 512);
-await square("apple-touch-icon.png", 180);
-await square("favicon-32.png", 32);
+// "any" icons and the Apple touch icon: the T takes 62 % of the tile, like the native
+// iOS icon, and the platform rounds the corners itself.
+await save(icons, "icon-192.png", await tile(192, 0.62));
+await save(icons, "icon-512.png", await tile(512, 0.62));
+await save(icons, "apple-touch-icon.png", await tile(180, 0.62));
 
-// The UI mark is shown at ~34 px: crop the margin so the T reads at that size.
-const crop = Math.round(width * 0.72);
-const offset = Math.round((width - crop) / 2);
-await sharp(source)
-  .extract({ left: offset, top: offset - Math.round(width * 0.02), width: crop, height: crop })
-  .resize(136, 136)
+// Maskable icons are cropped by Android to a circle of 80 % of the tile: at 54 % the
+// corners of the T stay inside that safe zone.
+await save(icons, "icon-192-maskable.png", await tile(192, 0.54));
+await save(icons, "icon-512-maskable.png", await tile(512, 0.54));
+
+// Browser tab: a small rounded tile so the T reads on light and dark tab strips.
+await save(icons, "favicon-32.png", await tile(32, 0.74, 7));
+
+// In-app mark: shown at up to 84 px, so 256 px keeps it sharp on 3× screens.
+await sharp(await mark(256, 0.94))
   .png({ compressionLevel: 9 })
   .toFile(path.join(brand, "trazo-mark.png"));
 
-console.log("Iconos generados desde assets/logo.png");
+console.log(`Iconos generados desde assets/logo.png (${width}×${height}) sobre ${BRAND_GROUND}`);
