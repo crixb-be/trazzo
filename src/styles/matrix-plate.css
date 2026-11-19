@@ -1,0 +1,312 @@
+/* Weighted relationship plate: the SVG keeps its own intrinsic scale. */
+.matrix-workspace-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+  align-items: start;
+  gap: 24px;
+}
+.matrix-controls {
+  position: sticky;
+  top: 18px;
+  min-width: 0;
+}
+.matrix-add-room,
+.matrix-pair-selectors {
+  display: grid;
+  gap: 10px;
+}
+.matrix-add-room .btn {
+  width: 100%;
+}
+.matrix-room-groups {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+.matrix-room-group {
+  display: grid;
+  gap: 8px;
+  padding-left: 10px;
+  border-left: 4px solid;
+}
+.matrix-room-group h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-weight: 650;
+}
+.matrix-room {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px auto;
+  align-items: end;
+  gap: 6px;
+}
+.matrix-room label,
+.matrix-add-room label,
+.matrix-pair-selectors label {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+/* Each row already sits under its zone heading: its labels are for screen readers only. */
+.matrix-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.matrix-room {
+  align-items: center;
+}
+.matrix-room .icon-btn {
+  width: 34px;
+  height: 34px;
+}
+.matrix-control-actions,
+.relation-radio-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+.relation-radio-fieldset {
+  margin: 16px 0 0;
+  padding: 0;
+  border: 0;
+}
+.relation-radio-fieldset legend {
+  margin-bottom: 7px;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+.relation-radio-group {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 0;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+}
+.relation-radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  justify-content: center;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 4px;
+  white-space: nowrap;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: var(--text-xs);
+}
+.relation-radio-group label + label {
+  border-left: 1px solid var(--border);
+}
+.relation-radio-group input {
+  accent-color: var(--accent);
+}
+.matrix-plate-panel {
+  min-width: 0;
+}
+.matrix-plate-hint {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font-size: var(--text-xs);
+}
+.matrix-plate-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-panel);
+  background: #fff;
+  box-shadow: var(--card-edge), var(--card-shadow);
+}
+/* Width comes from the inline style (100 %, clamped between 72 % and 100 % of the plate). */
+.relation-plate.diagram-svg {
+  display: block;
+  max-height: none;
+  height: auto;
+  background: #fff;
+}
+.plate-cell {
+  cursor: pointer;
+  outline: none;
+}
+.plate-cell polygon {
+  /* Empty rhombi have no fill: still catch taps anywhere inside them. */
+  pointer-events: all;
+  transition:
+    fill 160ms var(--ease-out),
+    transform 160ms var(--ease-out);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.plate-cell text {
+  opacity: 0;
+  transform: scale(0.9);
+  transform-box: fill-box;
+  transform-origin: center;
+  transition:
+    opacity 160ms var(--ease-out),
+    transform 160ms var(--ease-out);
+}
+.plate-cell[data-relation="necesaria"] text,
+.plate-cell[data-relation="deseable"] text {
+  opacity: 1;
+  transform: scale(1);
+}
+.plate-cell.is-trace polygon {
+  fill: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+@media (hover: hover) and (pointer: fine) {
+  .plate-cell:hover polygon {
+    fill: color-mix(in srgb, var(--accent) 22%, transparent);
+  }
+}
+.plate-cell:active polygon {
+  transform: scale(0.94);
+  transition-duration: 100ms;
+}
+.plate-cell:focus-visible polygon {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.plate-row.is-trace text {
+  font-weight: 700;
+}
+.plate-functional-cell.is-trace polygon {
+  fill: color-mix(in srgb, var(--accent) 14%, #fff);
+}
+.matrix-ranking-table {
+  margin-top: 20px;
+}
+.matrix-ranking-table .matrix-subtitle {
+  margin-top: 0;
+}
+.matrix-table-scroll {
+  overflow-x: auto;
+}
+.matrix-ranking-table table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  font-size: var(--text-sm);
+}
+.matrix-ranking-table th,
+.matrix-ranking-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.matrix-ranking-table th:last-child,
+.matrix-ranking-table td:last-child {
+  text-align: right;
+}
+.matrix-ranking-table tbody tr[data-rank="1"] {
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  font-weight: 650;
+}
+.matrix-ranking-table caption {
+  padding: 8px 0;
+  color: var(--muted);
+  font-size: var(--text-xs);
+  text-align: left;
+}
+.zone-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+.matrix-actions {
+  margin-top: 18px;
+}
+@media (max-width: 1099px) {
+  .matrix-workspace-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .matrix-controls {
+    position: static;
+  }
+}
+@media (max-width: 640px) {
+  .matrix-room {
+    grid-template-columns: minmax(0, 1fr) 98px auto;
+  }
+  .matrix-plate-scroll {
+    border-radius: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .plate-cell polygon,
+  .plate-cell text {
+    transition:
+      opacity 160ms ease,
+      fill 160ms ease;
+    transform: none;
+  }
+  .plate-cell:active polygon {
+    transform: none;
+  }
+}
+@media print {
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+  .sidebar,
+  .header,
+  .bottom-nav,
+  .matrix-controls,
+  .matrix-actions,
+  .matrix-plate-hint,
+  .matrix-ranking-table,
+  .matrix-notice,
+  .matrix-workspace > .eyebrow,
+  .matrix-workspace > .page-title,
+  .matrix-workspace > .lead {
+    display: none !important;
+  }
+  .main-shell {
+    margin: 0 !important;
+  }
+  .page-content {
+    max-width: none !important;
+    padding: 0 !important;
+  }
+  .matrix-workspace-layout {
+    display: block;
+  }
+  .matrix-plate-scroll {
+    overflow: visible;
+    border: 0;
+    box-shadow: none;
+  }
+  .relation-plate {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto;
+  }
+  html,
+  body,
+  .app-shell,
+  .main-shell,
+  .page-content {
+    background: #fff !important;
+    color: #1d1d1f !important;
+  }
+  .relation-plate,
+  .relation-plate * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

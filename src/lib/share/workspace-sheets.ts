@@ -1,5 +1,10 @@
 import type { PocketMeasure } from "@/data/medidas";
-import { getRelation, type RelationMatrix, type Relation } from "@/lib/matrix/relations";
+import {
+  getRelation,
+  type Relation,
+  type RelationMatrix,
+  type RankingRoom,
+} from "@/lib/matrix/relations";
 import type { SheetRow, ResultSheet } from "./result-sheet";
 
 const WORKSPACE_DISCLAIMER =
@@ -68,19 +73,28 @@ const relationLabels: Record<Relation, string> = {
   innecesaria: "Innecesarias",
 };
 
-export function matrixResultSheet(
-  matrix: RelationMatrix,
-  ranking: Array<{ id: string; name: string; score: number }>,
-): ResultSheet {
+function joinNames(names: string[]): string {
+  if (names.length < 2) return names[0] ?? "—";
+  return `${names.slice(0, -1).join(", ")} y ${names[names.length - 1]}`;
+}
+
+export function matrixResultSheet(matrix: RelationMatrix, ranking: RankingRoom[]): ResultSheet {
   const relationCounts = matrix.rooms.flatMap((room, index) =>
     matrix.rooms.slice(index + 1).map((other) => getRelation(matrix, room.id, other.id)),
   );
   const rows: SheetRow[] = [
     { label: "Ambientes", value: String(matrix.rooms.length) },
-    ...ranking.slice(0, 3).map((room, index) => ({
-      label: `Prioridad ${index + 1}`,
-      value: `${room.name || "Sin nombre"} · ${room.score} puntos`,
-    })),
+    ...[1, 2, 3].flatMap((rank) => {
+      const rooms = ranking.filter((room) => room.rank === rank);
+      return rooms.length
+        ? [
+            {
+              label: `Rango ${rank}`,
+              value: `${joinNames(rooms.map((room) => room.name || "Sin nombre"))} · ${rooms[0].sum} pts`,
+            },
+          ]
+        : [];
+    }),
     ...Object.keys(relationLabels).map((relation) => ({
       label: relationLabels[relation as Relation],
       value: String(relationCounts.filter((item) => item === relation).length),
@@ -92,8 +106,8 @@ export function matrixResultSheet(
     subtitle: `${matrix.rooms.length} ambientes · ${relationCounts.length} pares evaluados`,
     rows,
     notes: [
-      "La ponderación orienta prioridades de diseño; no reemplaza la distribución de planta.",
-      `Pesos: necesaria ${matrix.weights.necesaria}, deseable ${matrix.weights.deseable}, innecesaria ${matrix.weights.innecesaria}.`,
+      "La sumatoria y el rango orientan la diagramación; no reemplazan la distribución de planta.",
+      "Ponderación del método: necesaria 4, deseable 2, innecesaria 0.",
     ],
   });
 }

@@ -748,50 +748,6 @@ textarea.input {
   font-weight: 620;
   letter-spacing: -0.02em;
 }
-.relation-table {
-  border-collapse: separate;
-  border-spacing: 0;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-card);
-}
-.relation-table th,
-.relation-table td {
-  border: 0;
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  font-size: var(--text-sm);
-}
-.relation-table tbody th {
-  text-align: left;
-  font-weight: 560;
-}
-.relation-table thead th {
-  background: var(--surface-2);
-  font-weight: 600;
-  text-align: left;
-}
-.relation-table caption {
-  caption-side: bottom;
-  padding-top: 8px;
-  color: var(--muted);
-  font-size: var(--text-xs);
-  text-align: left;
-}
-.matrix-ranking {
-  display: grid;
-  gap: 6px;
-  margin: 0;
-  padding: 14px 18px 14px 36px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-card);
-  background: var(--surface);
-  font-size: var(--text-sm);
-}
-.matrix-ranking li::marker {
-  color: var(--accent);
-  font-family: "JetBrains Mono", monospace;
-}
 .matrix-actions {
   display: flex;
   flex-wrap: wrap;
@@ -802,9 +758,6 @@ textarea.input {
 .matrix-actions .share-result,
 .matrix-actions .save-to-project {
   margin-top: 0;
-}
-.relation-diagram {
-  border: 1px solid var(--border);
 }
 @media (max-width: 640px) {
   .matrix-controls {

@@ -1,87 +1,128 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { db } from "@/lib/offline/db";
-import {
-  DEFAULT_WEIGHTS,
-  diagramNodes,
-  getRelation,
-  pairKey,
-  rankRooms,
-  removeRoom,
-  type Relation,
-  type RelationMatrix,
-} from "@/lib/matrix/relations";
+import { Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { RelationPlate } from "@/components/matrix/RelationPlate";
 import { SaveToProject } from "@/components/ui/SaveToProject";
 import { ShareResult } from "@/components/ui/ShareResult";
+import { db } from "@/lib/offline/db";
 import { matrixResultSheet } from "@/lib/share/workspace-sheets";
+import {
+  computeRanking,
+  cycleRelation,
+  getRelation,
+  METHOD_EXAMPLE,
+  METHOD_WEIGHTS,
+  normalizeMatrix,
+  orderedRooms,
+  pairKey,
+  rankGroups,
+  removeRoom,
+  setRelation,
+  setRoomZone,
+  type Relation,
+  type RelationMatrix,
+  type Zone,
+  ZONES,
+} from "@/lib/matrix/relations";
 
-const kinds: Relation[] = ["necesaria", "deseable", "innecesaria"];
+const relationOptions: Array<{ value: Relation; label: string }> = [
+  { value: "necesaria", label: "Necesaria (4)" },
+  { value: "deseable", label: "Deseable (2)" },
+  { value: "innecesaria", label: "Vacía (0)" },
+];
+
 const initial: RelationMatrix = {
   rooms: [
-    { id: "sala", name: "Sala" },
-    { id: "cocina", name: "Cocina" },
-    { id: "comedor", name: "Comedor" },
+    { id: "sala", name: "Sala", zone: "social" },
+    { id: "comedor", name: "Comedor", zone: "semisocial" },
+    { id: "cocina", name: "Cocina", zone: "servicio" },
+    { id: "dormitorio", name: "Dormitorio", zone: "privada" },
   ],
   relations: {},
-  weights: DEFAULT_WEIGHTS,
+  weights: { ...METHOD_WEIGHTS },
 };
-const colors = { necesaria: "#b5822f", deseable: "#4479a7", innecesaria: "#999" };
 
-function download(blob: Blob, name: string) {
+function download(blob: Blob, name: string): void {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
   link.download = name;
   link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function orderedPairs(matrix: RelationMatrix): Array<[string, string, Relation]> {
+  const rooms = orderedRooms(matrix);
+  return rooms.flatMap((room, index) =>
+    rooms
+      .slice(index + 1)
+      .map(
+        (other) =>
+          [room.id, other.id, getRelation(matrix, room.id, other.id)] as [string, string, Relation],
+      ),
+  );
 }
 
 export function MatrixWorkspace() {
   const [matrix, setMatrix] = useState<RelationMatrix>(initial);
   const [ready, setReady] = useState(false);
   const [name, setName] = useState("");
+  const [zone, setZone] = useState<Zone>("social");
+  const [selectedA, setSelectedA] = useState("sala");
+  const [selectedB, setSelectedB] = useState("comedor");
   const [notice, setNotice] = useState("");
   const svg = useRef<SVGSVGElement>(null);
   const saveQueue = useRef(Promise.resolve());
+  const rooms = useMemo(() => orderedRooms(matrix), [matrix]);
+  const ranking = useMemo(() => computeRanking(matrix), [matrix]);
+  const groups = useMemo(() => rankGroups(ranking), [ranking]);
+  const sheet = useMemo(() => matrixResultSheet(matrix, ranking), [matrix, ranking]);
+
   useEffect(() => {
     let active = true;
     void (async () => {
       try {
         const saved = await db?.meta.get("relation-matrix");
-        if (saved && active) {
-          const parsed = JSON.parse(saved.value) as RelationMatrix;
-          if (!Array.isArray(parsed.rooms) || !parsed.weights || !parsed.relations)
-            throw new Error();
-          setMatrix(parsed);
-        }
+        if (saved && active) setMatrix(normalizeMatrix(JSON.parse(saved.value)));
         if (active) setReady(true);
       } catch {
-        if (active) setNotice("No se pudo leer la matriz guardada. Recarga para reintentar.");
+        if (active) {
+          setNotice("No se pudo leer la matriz guardada. Recarga para reintentar.");
+          setReady(true);
+        }
       }
     })();
     return () => {
       active = false;
     };
   }, []);
+
   useEffect(() => {
     if (!ready || !db) return;
     setNotice("Guardando…");
     saveQueue.current = saveQueue.current
       .catch(() => {})
       .then(async () => {
-        await db!.meta.put({ key: "relation-matrix", value: JSON.stringify(matrix) });
+        await db!.meta.put({
+          key: "relation-matrix",
+          value: JSON.stringify(normalizeMatrix(matrix)),
+        });
         setNotice("Guardado en este dispositivo");
       })
-      .catch(() => {
-        setNotice("No se pudo guardar. Conserva una exportación e inténtalo de nuevo.");
-      });
+      .catch(() => setNotice("No se pudo guardar. Conserva una exportación e inténtalo de nuevo."));
   }, [matrix, ready]);
 
-  const nodes = diagramNodes(matrix.rooms);
-  const ranking = rankRooms(matrix);
-  const sheet = matrixResultSheet(matrix, ranking);
-  function addRoom(event: React.FormEvent) {
+  useEffect(() => {
+    const a = rooms.some((room) => room.id === selectedA) ? selectedA : (rooms[0]?.id ?? "");
+    const b = rooms.some((room) => room.id === selectedB && room.id !== a)
+      ? selectedB
+      : (rooms.find((room) => room.id !== a)?.id ?? "");
+    if (a !== selectedA) setSelectedA(a);
+    if (b !== selectedB) setSelectedB(b);
+  }, [rooms, selectedA, selectedB]);
+
+  function addRoom(event: React.FormEvent): void {
     event.preventDefault();
     const value = name.trim();
     if (!value || matrix.rooms.length >= 20) return;
@@ -91,265 +132,380 @@ export function MatrixWorkspace() {
     }
     setMatrix((current) => ({
       ...current,
-      rooms: [...current.rooms, { id: crypto.randomUUID(), name: value }],
+      rooms: [...current.rooms, { id: crypto.randomUUID(), name: value, zone }],
     }));
     setName("");
   }
-  async function exportMatrix(format: "svg" | "pdf") {
+
+  function changeRelation(aId: string, bId: string, relation: Relation): void {
+    setSelectedA(aId);
+    setSelectedB(bId);
+    setMatrix((current) => setRelation(current, aId, bId, relation));
+  }
+
+  function cyclePair(aId: string, bId: string): void {
+    changeRelation(aId, bId, cycleRelation(getRelation(matrix, aId, bId)));
+  }
+
+  function loadExample(): void {
+    if (
+      Object.keys(matrix.relations).length &&
+      !window.confirm("¿Reemplazar la matriz actual con el ejemplo?")
+    )
+      return;
+    setMatrix({
+      rooms: METHOD_EXAMPLE.rooms.map((room) => ({ ...room })),
+      relations: { ...METHOD_EXAMPLE.relations },
+      weights: { ...METHOD_WEIGHTS },
+    });
+  }
+
+  /** The plate as a self-contained drawing: no UI state, no on-screen sizing. */
+  function standaloneMarkup(plate: SVGSVGElement): string {
+    const clone = plate.cloneNode(true) as SVGSVGElement;
+    for (const element of [clone, ...Array.from(clone.querySelectorAll("*"))]) {
+      for (const name of ["tabindex", "role", "class", "style", "aria-label", "data-fit-width"])
+        element.removeAttribute(name);
+    }
+    return new XMLSerializer().serializeToString(clone);
+  }
+
+  function exportSvg(): void {
+    if (!svg.current) return;
+    download(
+      new Blob([standaloneMarkup(svg.current)], { type: "image/svg+xml" }),
+      "trazo-relaciones.svg",
+    );
+  }
+
+  async function exportPdf(): Promise<void> {
     if (!svg.current) return;
     try {
-      const markup = new XMLSerializer().serializeToString(svg.current);
-      if (format === "svg") {
-        download(new Blob([markup], { type: "image/svg+xml" }), "trazo-relaciones.svg");
-        return;
-      }
-      const url = URL.createObjectURL(new Blob([markup], { type: "image/svg+xml" }));
-      try {
-        const image = new Image();
-        await new Promise<void>((resolve, reject) => {
-          image.onload = () => resolve();
-          image.onerror = reject;
-          image.src = url;
-        });
-        const canvas = document.createElement("canvas");
-        canvas.width = 1600;
-        canvas.height = 1400;
-        const context = canvas.getContext("2d");
-        if (!context) throw new Error();
-        context.drawImage(image, 0, 0, 1600, 1400);
-        const [{ jsPDF }, { autoTable }] = await Promise.all([
-          import("jspdf"),
-          import("jspdf-autotable"),
-        ]);
-        const pdf = new jsPDF();
-        pdf.text("TRAZO · Matriz de relaciones", 14, 18);
-        pdf.addImage(canvas.toDataURL("image/png"), "PNG", 10, 25, 190, 166);
-        autoTable(pdf, {
-          startY: 198,
-          head: [["Ambiente", "Ponderación"]],
-          body: ranking.map((room) => [room.name, room.score]),
-        });
-        pdf.addPage();
-        autoTable(pdf, {
-          head: [["Ambiente 1", "Ambiente 2", "Relación", "Peso"]],
-          body: matrix.rooms.flatMap((room, i) =>
-            matrix.rooms.slice(i + 1).map((other) => {
-              const relation = getRelation(matrix, room.id, other.id);
-              return [room.name, other.name, relation, matrix.weights[relation]];
-            }),
-          ),
-        });
-        pdf.save("trazo-relaciones.pdf");
-      } finally {
-        URL.revokeObjectURL(url);
-      }
+      const plate = svg.current;
+      const viewBox = plate.viewBox.baseVal;
+      const markup = standaloneMarkup(plate);
+      const image = new Image();
+      const imageUrl = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(markup);
+      await new Promise<void>((resolve, reject) => {
+        image.onload = () => resolve();
+        image.onerror = reject;
+        image.src = imageUrl;
+      });
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(viewBox.width * 2);
+      canvas.height = Math.round(viewBox.height * 2);
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("canvas");
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.drawImage(image, 0, 0, canvas.width, canvas.height);
+      const [{ jsPDF }, { autoTable }] = await Promise.all([
+        import("jspdf"),
+        import("jspdf-autotable"),
+      ]);
+      const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(14);
+      pdf.text("TRAZO · Matriz de relaciones ponderadas", margin, 15);
+      const maxWidth = pageWidth - margin * 2;
+      const maxHeight = pageHeight - 25;
+      const scale = Math.min(maxWidth / viewBox.width, maxHeight / viewBox.height);
+      const width = viewBox.width * scale;
+      const height = viewBox.height * scale;
+      pdf.addImage(
+        canvas.toDataURL("image/png"),
+        "PNG",
+        margin + (maxWidth - width) / 2,
+        20,
+        width,
+        height,
+      );
+      pdf.addPage();
+      autoTable(pdf, {
+        head: [["Rango", "Ambiente", "Zona", "Sumatoria"]],
+        body: ranking.map((room) => [
+          `R${room.rank}`,
+          room.name,
+          ZONES.find((item) => item.id === room.zone)?.label ?? room.zone,
+          room.sum,
+        ]),
+      });
+      const finalY =
+        (pdf as typeof pdf & { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? 30;
+      autoTable(pdf, {
+        startY: finalY + 10,
+        head: [["Ambiente A", "Ambiente B", "Relación", "Valor"]],
+        body: orderedPairs(matrix)
+          .filter(([, , relation]) => relation !== "innecesaria")
+          .map(([aId, bId, relation]) => {
+            const a = matrix.rooms.find((room) => room.id === aId)!;
+            const b = matrix.rooms.find((room) => room.id === bId)!;
+            return [a.name, b.name, relation, METHOD_WEIGHTS[relation]];
+          }),
+      });
+      pdf.save("trazo-relaciones.pdf");
     } catch {
       setNotice("No se pudo exportar. Inténtalo de nuevo.");
     }
   }
+
   return (
     <div className="matrix-workspace">
       <div className="eyebrow">Programa / Anteproyecto</div>
       <h1 className="page-title">Matriz de relaciones</h1>
       <p className="lead">
-        Organiza los ambientes y define qué espacios deben estar cerca. La ponderación orienta
-        prioridades; el diagrama no es una distribución de planta.
+        Necesaria vale 4, Deseable vale 2 y vacío vale 0; la sumatoria y el rango orientan la
+        diagramación, no son una planta.
       </p>
       <p className="matrix-notice muted small" role="status">
         {notice}
       </p>
-      <fieldset disabled={!ready} className="matrix-controls">
-        <legend>Ambientes y ponderaciones</legend>
-        <form onSubmit={addRoom} className="hero-actions">
-          <label>
-            Nuevo ambiente
-            <input
-              className="input"
-              value={name}
-              maxLength={40}
-              onChange={(event) => setName(event.target.value)}
-            />
-          </label>
-          <button className="btn btn-primary" disabled={!name.trim() || matrix.rooms.length >= 20}>
-            Añadir ambiente
-          </button>
-        </form>
-        <p className="muted">
-          Hasta 20 ambientes. Edita los nombres o elimina un ambiente; se quitarán sus relaciones.
-        </p>
-        <div className="field-grid">
-          {matrix.rooms.map((room) => (
-            <div className="matrix-room" key={room.id}>
-              <label>
-                Nombre de {room.name}
-                <input
-                  className="input"
-                  maxLength={40}
-                  value={room.name}
-                  onChange={(event) =>
-                    setMatrix((current) => ({
-                      ...current,
-                      rooms: current.rooms.map((item) =>
-                        item.id === room.id ? { ...item, name: event.target.value } : item,
-                      ),
-                    }))
-                  }
-                />
-              </label>
-              <button
-                className="btn"
-                onClick={() => setMatrix((current) => removeRoom(current, room.id))}
-                aria-label={"Eliminar " + room.name}
-              >
-                Eliminar
-              </button>
-            </div>
-          ))}
-        </div>
-        <div className="field-grid">
-          {kinds.map((kind) => (
-            <label key={kind}>
-              Peso: {kind}
+
+      <div className="matrix-workspace-layout">
+        <fieldset disabled={!ready} className="matrix-controls">
+          <legend>Ambientes y zonas</legend>
+          <form onSubmit={addRoom} className="matrix-add-room">
+            <label>
+              Nuevo ambiente
               <input
                 className="input"
-                type="number"
-                min={0}
-                max={100}
-                step={1}
-                value={matrix.weights[kind]}
-                onChange={(event) => {
-                  const value = event.target.valueAsNumber;
-                  if (Number.isFinite(value))
-                    setMatrix((current) => ({
-                      ...current,
-                      weights: {
-                        ...current.weights,
-                        [kind]: Math.max(0, Math.min(100, Math.round(value))),
-                      },
-                    }));
-                }}
+                value={name}
+                maxLength={40}
+                onChange={(event) => setName(event.target.value)}
               />
             </label>
-          ))}
-        </div>
-        <h2 className="matrix-subtitle">Relaciones entre ambientes</h2>
-        {matrix.rooms.length < 2 ? (
-          <p>Añade al menos dos ambientes para relacionarlos.</p>
-        ) : (
-          <div className="matrix-scroll">
-            <table className="relation-table">
-              <caption>Triángulo superior · cada par se define una sola vez</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Ambiente</th>
-                  {matrix.rooms.map((room) => (
-                    <th scope="col" key={room.id}>
-                      {room.name}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {matrix.rooms.map((room, i) => (
-                  <tr key={room.id}>
-                    <th scope="row">{room.name}</th>
-                    {matrix.rooms.map((other, j) => (
-                      <td key={other.id}>
-                        {j > i ? (
-                          <select
-                            className="input"
-                            aria-label={room.name + " con " + other.name}
-                            value={getRelation(matrix, room.id, other.id)}
-                            onChange={(event) =>
-                              setMatrix((current) => ({
-                                ...current,
-                                relations: {
-                                  ...current.relations,
-                                  [pairKey(room.id, other.id)]: event.target.value as Relation,
-                                },
-                              }))
-                            }
-                          >
-                            {kinds.map((kind) => (
-                              <option key={kind}>{kind}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                    ))}
-                  </tr>
+            <label>
+              Zona
+              <select
+                className="select"
+                aria-label="Zona"
+                value={zone}
+                onChange={(event) => setZone(event.target.value as Zone)}
+              >
+                {ZONES.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.label}
+                  </option>
                 ))}
-              </tbody>
-            </table>
+              </select>
+            </label>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={!name.trim() || matrix.rooms.length >= 20}
+            >
+              Añadir ambiente
+            </button>
+          </form>
+          <p className="muted">
+            Hasta 20 ambientes. Cambia la zona para ordenar la lámina por áreas.
+          </p>
+          <div className="matrix-room-groups">
+            {ZONES.map((item) => {
+              const zoneRooms = matrix.rooms.filter((room) => room.zone === item.id);
+              if (!zoneRooms.length) return null;
+              return (
+                <section
+                  key={item.id}
+                  className="matrix-room-group"
+                  style={{ borderLeftColor: item.color }}
+                >
+                  <h3>{item.label}</h3>
+                  {zoneRooms.map((room) => (
+                    <div className="matrix-room" key={room.id}>
+                      <label>
+                        <span className="matrix-sr-only">Nombre de {room.name}</span>
+                        <input
+                          className="input"
+                          maxLength={40}
+                          aria-label={`Nombre de ${room.name}`}
+                          value={room.name}
+                          onChange={(event) =>
+                            setMatrix((current) => ({
+                              ...current,
+                              rooms: current.rooms.map((candidate) =>
+                                candidate.id === room.id
+                                  ? { ...candidate, name: event.target.value }
+                                  : candidate,
+                              ),
+                            }))
+                          }
+                        />
+                      </label>
+                      <label>
+                        <span className="matrix-sr-only">Zona de {room.name}</span>
+                        <select
+                          className="select"
+                          aria-label={`Zona de ${room.name}`}
+                          value={room.zone}
+                          onChange={(event) =>
+                            setMatrix((current) =>
+                              setRoomZone(current, room.id, event.target.value as Zone),
+                            )
+                          }
+                        >
+                          {ZONES.map((option) => (
+                            <option key={option.id} value={option.id}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <button
+                        type="button"
+                        className="icon-btn"
+                        aria-label={`Eliminar ${room.name}`}
+                        onClick={() => setMatrix((current) => removeRoom(current, room.id))}
+                      >
+                        <Trash2 size={16} aria-hidden="true" />
+                      </button>
+                    </div>
+                  ))}
+                </section>
+              );
+            })}
           </div>
-        )}
-      </fieldset>
-      <h2 className="matrix-subtitle">Prioridad de conexión</h2>
-      <ol className="matrix-ranking">
-        {ranking.map((room) => (
-          <li key={room.id}>
-            {room.name || "Sin nombre"}: <strong>{room.score}</strong>
-          </li>
-        ))}
-      </ol>
+          <div className="matrix-control-actions">
+            <button type="button" className="btn btn-sm" onClick={loadExample}>
+              Cargar ejemplo
+            </button>
+            <button
+              type="button"
+              className="btn btn-sm"
+              onClick={() => setMatrix((current) => ({ ...current, relations: {} }))}
+            >
+              Limpiar relaciones
+            </button>
+          </div>
+          <h2 className="matrix-subtitle">Seleccionar un par</h2>
+          <div className="matrix-pair-selectors">
+            <label>
+              Ambiente A
+              <select
+                className="select"
+                value={selectedA}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setSelectedA(value);
+                  if (value === selectedB)
+                    setSelectedB(rooms.find((room) => room.id !== value)?.id ?? "");
+                }}
+              >
+                {rooms.map((room) => (
+                  <option key={room.id} value={room.id}>
+                    {room.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Ambiente B
+              <select
+                className="select"
+                value={selectedB}
+                onChange={(event) => setSelectedB(event.target.value)}
+              >
+                {rooms
+                  .filter((room) => room.id !== selectedA)
+                  .map((room) => (
+                    <option key={room.id} value={room.id}>
+                      {room.name}
+                    </option>
+                  ))}
+              </select>
+            </label>
+          </div>
+          {selectedA && selectedB ? (
+            <fieldset className="relation-radio-fieldset">
+              <legend>Relación</legend>
+              <div className="relation-radio-group" role="radiogroup" aria-label="Relación">
+                {relationOptions.map((option) => (
+                  <label key={option.value}>
+                    <input
+                      type="radio"
+                      name="relation"
+                      value={option.value}
+                      checked={getRelation(matrix, selectedA, selectedB) === option.value}
+                      onChange={() => changeRelation(selectedA, selectedB, option.value)}
+                    />
+                    {option.label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          ) : null}
+        </fieldset>
+
+        <section className="matrix-plate-panel" aria-label="Lámina de relaciones">
+          <p className="matrix-plate-hint">Toca un rombo para alternar 4 → 2 → vacío</p>
+          <div className="matrix-plate-scroll diagram-scope matrix-workspace">
+            <RelationPlate
+              matrix={matrix}
+              interactive={ready}
+              onCycle={cyclePair}
+              onSelectPair={(aId, bId) => {
+                setSelectedA(aId);
+                setSelectedB(bId);
+              }}
+              svgRef={svg}
+            />
+          </div>
+          <section className="matrix-ranking-table">
+            <h2 className="matrix-subtitle">Rango de conexión</h2>
+            <div className="matrix-table-scroll">
+              <table>
+                <caption>Ordenado por rango; sumatorias iguales comparten rango</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Rango</th>
+                    <th scope="col">Ambiente</th>
+                    <th scope="col">Zona</th>
+                    <th scope="col">Sumatoria</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {/* Stable sort: ties keep the plate's zone order. */}
+                  {[...ranking]
+                    .sort((a, b) => a.rank - b.rank)
+                    .map((room) => (
+                      <tr key={room.id} data-rank={room.rank}>
+                        <td>R{room.rank}</td>
+                        <td>{room.name}</td>
+                        <td>
+                          <span
+                            className="zone-dot"
+                            style={{
+                              backgroundColor: ZONES.find((item) => item.id === room.zone)?.color,
+                            }}
+                          />
+                          {ZONES.find((item) => item.id === room.zone)?.label}
+                        </td>
+                        <td>{room.sum}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+      </div>
+
       <div className="hero-actions matrix-actions">
         <ShareResult sheet={sheet} diagramScope=".matrix-workspace" />
         <SaveToProject sheet={sheet} />
-        <button className="btn" disabled={!ready} onClick={() => void exportMatrix("svg")}>
+        <button type="button" className="btn" disabled={!ready} onClick={exportSvg}>
           Exportar imagen SVG
         </button>
-        <button className="btn" disabled={!ready} onClick={() => void exportMatrix("pdf")}>
+        <button type="button" className="btn" disabled={!ready} onClick={() => void exportPdf()}>
           Exportar PDF
         </button>
+        <button type="button" className="btn" onClick={() => window.print()}>
+          Imprimir lámina
+        </button>
       </div>
-      <svg
-        ref={svg}
-        xmlns="http://www.w3.org/2000/svg"
-        width="800"
-        height="700"
-        viewBox="0 0 800 700"
-        className="relation-diagram"
-        role="img"
-        aria-label="Diagrama de relaciones: línea continua necesaria, discontinua deseable"
-      >
-        <rect width="800" height="700" fill="#fff" />
-        <text x="20" y="25" fontSize="16" fill="#222">
-          TRAZO · Relaciones entre ambientes
-        </text>
-        <text x="20" y="50" fontSize="13" fill="#444">
-          Continua: necesaria · Discontinua: deseable · Sin línea: innecesaria
-        </text>
-        {nodes.flatMap((node, i) =>
-          nodes.slice(i + 1).map((other) => {
-            const relation = getRelation(matrix, node.id, other.id);
-            return relation === "innecesaria" ? null : (
-              <line
-                key={pairKey(node.id, other.id)}
-                x1={node.x}
-                y1={node.y}
-                x2={other.x}
-                y2={other.y}
-                stroke={colors[relation]}
-                strokeWidth={relation === "necesaria" ? 4 : 2}
-                strokeDasharray={relation === "deseable" ? "8 6" : undefined}
-              />
-            );
-          }),
-        )}
-        {nodes.map((node) => (
-          <g key={node.id}>
-            <circle cx={node.x} cy={node.y} r="24" fill="#f6f5f2" stroke="#333" />
-            <text x={node.x} y={node.y + 5} textAnchor="middle" fill="#222" fontSize="13">
-              {matrix.rooms.findIndex((room) => room.id === node.id) + 1}
-            </text>
-            <text x={node.x} y={node.y + 42} textAnchor="middle" fill="#222" fontSize="13">
-              {node.name}
-            </text>
-          </g>
-        ))}
-      </svg>
     </div>
   );
 }

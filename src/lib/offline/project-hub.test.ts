@@ -27,8 +27,8 @@ describe("project hub result notes", () => {
   it("stores all four workspace results in the existing ProjectNote shape", async () => {
     const matrix = {
       rooms: [
-        { id: "sala", name: "Sala" },
-        { id: "cocina", name: "Cocina" },
+        { id: "sala", name: "Sala", zone: "social" as const },
+        { id: "cocina", name: "Cocina", zone: "servicio" as const },
       ],
       relations: { '["cocina","sala"]': "necesaria" as const },
       weights: DEFAULT_WEIGHTS,
@@ -39,7 +39,7 @@ describe("project hub result notes", () => {
         lines: [{ name: "Cemento", quantity: 9, unit: "bls", pricePen: 28 }],
       }),
       fieldToolResultSheet({ toolLabel: "Pendientes", result: "12 %" }),
-      matrixResultSheet(matrix, [{ id: "sala", name: "Sala", score: 3 }]),
+      matrixResultSheet(matrix, [{ id: "sala", name: "Sala", zone: "social", sum: 4, rank: 1 }]),
       measureResultSheet(MEASURES[0]),
     ];
 
