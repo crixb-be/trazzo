@@ -14,3 +14,9 @@ test-results
 
 # Proyecto iOS nativo: lo genera CI con `npx cap add ios`
 ios/
+
+# Archivos locales que no van al repositorio
+/APPS/
+/LIBROS/
+/LOGO.png
+/android/
