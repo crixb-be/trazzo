@@ -1,5 +1,13 @@
 "use client";
 
+import { MAX_SYNC_IMAGE_BYTES } from "@/lib/offline/profile-sync";
+import { loadImage, shrinkToBudget } from "./image-budget";
+
+/**
+ * Turns the picked studio logo into a data URL under 150 KB: small enough for the
+ * proposal PDF, IndexedDB and the Supabase profile row. Transparency is kept (PNG)
+ * whenever a size fits.
+ */
 export async function prepareLogo(file: File): Promise<string> {
   if (!["image/png", "image/jpeg", "image/webp", "image/svg+xml"].includes(file.type)) {
     throw new Error("El logo debe ser PNG, JPG, WebP o SVG.");
@@ -10,21 +18,12 @@ export async function prepareLogo(file: File): Promise<string> {
 
   const source = URL.createObjectURL(file);
   try {
-    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const element = new Image();
-      element.onload = () => resolve(element);
-      element.onerror = () => reject(new Error("No se pudo leer el logo."));
-      element.src = source;
+    const image = await loadImage(source).catch(() => {
+      throw new Error("No se pudo leer el logo.");
     });
-    const longest = Math.max(image.naturalWidth || 512, image.naturalHeight || 512);
-    const scale = Math.min(1, 512 / longest);
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.round((image.naturalWidth || 512) * scale));
-    canvas.height = Math.max(1, Math.round((image.naturalHeight || 512) * scale));
-    const context = canvas.getContext("2d");
-    if (!context) throw new Error("No se pudo preparar el logo.");
-    context.drawImage(image, 0, 0, canvas.width, canvas.height);
-    return canvas.toDataURL("image/png");
+    const fitted = shrinkToBudget(image, MAX_SYNC_IMAGE_BYTES, file.type !== "image/jpeg");
+    if (!fitted) throw new Error("No se pudo reducir el logo. Prueba con una imagen más simple.");
+    return fitted;
   } finally {
     URL.revokeObjectURL(source);
   }

@@ -29,8 +29,10 @@ import { FavoriteToolsEditor } from "@/components/onboarding/FavoriteToolsEditor
 import { WelcomeGuideButton } from "@/components/onboarding/WelcomeGuide";
 import { InstallGuide } from "@/components/onboarding/InstallGuide";
 import { SEED_VERSION } from "@/data/seed-rne";
-import { db } from "@/lib/offline/db";
+import { db, type StudioProfile } from "@/lib/offline/db";
 import { getStudioProfile, saveStudioProfile } from "@/lib/offline/profile";
+import { describeProfileSave } from "@/lib/offline/profile-sync";
+import { syncNow } from "@/lib/offline/sync";
 import { useStudioProfile, useSyncStatus } from "@/lib/offline/hooks";
 import {
   formatPlanPrice,
@@ -160,81 +162,31 @@ export function AccountWorkspace() {
     setConfigured(Boolean(createClient()));
   }, []);
 
-  // AccountAccess owns the session; here it only fills the profile fields.
-  // Token refreshes repeat the same session: load the profile once per account.
-  const loadedAccount = useRef<string | null>(null);
+  // AccountAccess owns the session. The profile itself arrives through the sync pass
+  // (sign-in, reload with a session, "Sincronizar ahora"): it writes IndexedDB and the
+  // useStudioProfile live query refreshes these fields without a reload.
   const handleSessionChange = useCallback((sessionEmail: string | null): void => {
     setEmail(sessionEmail ?? "");
-    if (sessionEmail === loadedAccount.current) return;
-    loadedAccount.current = sessionEmail;
-    if (sessionEmail === null) return;
-    const client = createClient();
-    if (!client) return;
-    void client.auth.getUser().then(async ({ data }) => {
-      if (!data.user) return;
-      const profile = await client
-        .from("profiles")
-        .select("full_name,cap_number")
-        .eq("id", data.user.id)
-        .maybeSingle();
-      if (typeof profile.data?.full_name === "string") setName(profile.data.full_name);
-      if (typeof profile.data?.cap_number === "string") setCapNumber(profile.data.cap_number);
-    });
   }, []);
 
+  /** Saves on the device first, then backs the profile up at once when signed in. */
+  async function saveAndBackUp(patch: Partial<StudioProfile>): Promise<string> {
+    await saveStudioProfile(patch);
+    return describeProfileSave((await syncNow()).status);
+  }
+
   async function saveProfile(): Promise<void> {
-    await saveStudioProfile({
-      fullName: name,
-      capNumber,
-      studioName,
-      ruc,
-      address,
-      brandPrimary,
-      brandSecondary,
-      logoDataUrl,
-    });
-    let remoteFailed = false;
-    try {
-      const client = createClient();
-      if (client) {
-        const { data } = await client.auth.getUser();
-        if (data.user) {
-          let logoUrl: string | null = null;
-          if (logoDataUrl) {
-            const response = await fetch(logoDataUrl);
-            const blob = await response.blob();
-            const upload = await client.storage
-              .from("studio-logos")
-              .upload(data.user.id + "/logo.png", blob, { upsert: true, contentType: "image/png" });
-            if (upload.error) throw upload.error;
-            const signed = await client.storage
-              .from("studio-logos")
-              .createSignedUrl(data.user.id + "/logo.png", 60 * 60 * 24 * 365);
-            logoUrl = signed.data?.signedUrl ?? data.user.id + "/logo.png";
-          }
-          const update = await client
-            .from("profiles")
-            .update({
-              full_name: name,
-              cap_number: capNumber,
-              studio_name: studioName,
-              ruc,
-              studio_address: address,
-              brand_primary: brandPrimary,
-              brand_secondary: brandSecondary,
-              logo_url: logoUrl,
-            })
-            .eq("id", data.user.id);
-          if (update.error) throw update.error;
-        }
-      }
-    } catch {
-      remoteFailed = true;
-    }
     setNotice(
-      remoteFailed
-        ? "Perfil guardado en este dispositivo. No se pudo respaldar en tu cuenta."
-        : "Perfil guardado.",
+      await saveAndBackUp({
+        fullName: name,
+        capNumber,
+        studioName,
+        ruc,
+        address,
+        brandPrimary,
+        brandSecondary,
+        logoDataUrl,
+      }),
     );
   }
 
@@ -244,44 +196,10 @@ export function AccountWorkspace() {
     try {
       const dataUrl = await prepareLogo(file);
       setLogoDataUrl(dataUrl);
-      await saveStudioProfile({ logoDataUrl: dataUrl });
-      setNotice("Logo guardado. Aparecerá en la portada de tus propuestas.");
+      const notice = await saveAndBackUp({ logoDataUrl: dataUrl });
+      setNotice("Logo listo para tus propuestas. " + notice);
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "No se pudo preparar el logo.");
-    }
-  }
-
-  // Like the logo, the photo is saved locally right away; the Supabase copy is
-  // best effort so the feature keeps working offline or in local mode.
-  async function syncAvatarRemote(dataUrl: string | null): Promise<boolean> {
-    try {
-      const client = createClient();
-      if (!client) return true;
-      const { data } = await client.auth.getUser();
-      if (!data.user) return true;
-      const path = data.user.id + "/avatar.jpg";
-      let avatarUrl: string | null = null;
-      if (dataUrl) {
-        const blob = await (await fetch(dataUrl)).blob();
-        const upload = await client.storage
-          .from("avatars")
-          .upload(path, blob, { upsert: true, contentType: "image/jpeg" });
-        if (upload.error) throw upload.error;
-        const signed = await client.storage
-          .from("avatars")
-          .createSignedUrl(path, 60 * 60 * 24 * 365);
-        avatarUrl = signed.data?.signedUrl ?? path;
-      } else {
-        await client.storage.from("avatars").remove([path]);
-      }
-      const update = await client
-        .from("profiles")
-        .update({ avatar_url: avatarUrl })
-        .eq("id", data.user.id);
-      if (update.error) throw update.error;
-      return true;
-    } catch {
-      return false;
     }
   }
 
@@ -290,13 +208,7 @@ export function AccountWorkspace() {
     try {
       const dataUrl = await prepareAvatar(file);
       setAvatarDataUrl(dataUrl);
-      await saveStudioProfile({ avatarDataUrl: dataUrl });
-      const synced = await syncAvatarRemote(dataUrl);
-      setNotice(
-        synced
-          ? "Foto de perfil actualizada."
-          : "Foto guardada en este dispositivo. No se pudo sincronizar con tu cuenta.",
-      );
+      setNotice("Foto actualizada. " + (await saveAndBackUp({ avatarDataUrl: dataUrl })));
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "No se pudo preparar la foto.");
     } finally {
@@ -306,9 +218,7 @@ export function AccountWorkspace() {
 
   async function removeAvatar(): Promise<void> {
     setAvatarDataUrl(null);
-    await saveStudioProfile({ avatarDataUrl: null });
-    await syncAvatarRemote(null);
-    setNotice("Foto de perfil quitada.");
+    setNotice("Foto quitada. " + (await saveAndBackUp({ avatarDataUrl: null })));
   }
 
   function handleAvatarInput(event: ChangeEvent<HTMLInputElement>): void {
@@ -320,8 +230,7 @@ export function AccountWorkspace() {
 
   async function removeLogo(): Promise<void> {
     setLogoDataUrl(null);
-    await saveStudioProfile({ logoDataUrl: null });
-    setNotice("Logo quitado.");
+    setNotice("Logo quitado. " + (await saveAndBackUp({ logoDataUrl: null })));
   }
 
   async function choosePlan(plan: Plan, provider: PaymentProvider): Promise<void> {

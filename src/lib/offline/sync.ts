@@ -30,6 +30,9 @@ import {
   type SyncResult,
 } from "./sync-mappers";
 import { retryDelay, subscribeToSyncTriggers } from "./sync-lifecycle";
+import { PROFILE_DIRTY, syncProfile } from "./profile-sync";
+import { DEFAULT_STUDIO_PROFILE } from "./profile";
+import { compressImageForSync } from "@/lib/ui/image-budget";
 
 export { describeSyncResult };
 export type { SyncResult };
@@ -428,6 +431,21 @@ export async function syncNow(): Promise<SyncResult> {
       const client = createSyncClient(session.access_token);
       outcome = await flush(local, client, userId);
       outcome.pulled = await pullPrivate(local, client);
+      // Profile, photo and studio brand: reconciled by newest updatedAt.
+      const profile = await syncProfile(
+        local,
+        client,
+        userId,
+        compressImageForSync,
+        DEFAULT_STUDIO_PROFILE,
+      ).catch((cause: unknown) => ({ action: "none" as const, error: errorMessage(cause) }));
+      if (profile.action === "pull") outcome.pulled += 1;
+      if (profile.action === "push" && !profile.error) outcome.sent += 1;
+      if (profile.error) {
+        outcome.failed += 1;
+        outcome.error = outcome.error ? outcome.error + " · " + profile.error : profile.error;
+        if (outcome.status === "ok") outcome.status = "partial";
+      }
       if (outcome.error) await local.meta.put({ key: LAST_ERROR, value: outcome.error });
       else {
         await local.meta.delete(LAST_ERROR);
@@ -465,7 +483,8 @@ export function scheduleSync(delayMs = 2500): void {
 export async function getSyncStatus(): Promise<Omit<SyncStatus, keyof SyncActivity | "online">> {
   return {
     configured: Boolean(createClient()),
-    pending: (await db?.outbox.count()) ?? 0,
+    // Queued rows plus the profile, when it has an edit the cloud has not confirmed.
+    pending: ((await db?.outbox.count()) ?? 0) + ((await db?.meta.get(PROFILE_DIRTY)) ? 1 : 0),
     lastSync: (await db?.meta.get(LAST_SYNC))?.value ?? null,
     error: (await db?.meta.get(LAST_ERROR))?.value ?? null,
   };

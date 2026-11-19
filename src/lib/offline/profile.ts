@@ -1,4 +1,5 @@
 import { db, type StudioProfile } from "./db";
+import { PROFILE_DIRTY } from "./profile-sync";
 
 export interface ProfessionalProfile {
   fullName: string;
@@ -44,11 +45,19 @@ export async function saveStudioProfile(patch: Partial<StudioProfile>): Promise<
     id: "default",
     updatedAt: new Date().toISOString(),
   };
-  await db.studio_profile.put(next);
-  await db.meta.bulkPut([
-    { key: "professional:fullName", value: next.fullName.trim() },
-    { key: "professional:capNumber", value: next.capNumber.trim() },
-  ]);
+  const local = db;
+  await local.transaction("rw", local.studio_profile, local.meta, async () => {
+    await local.studio_profile.put(next);
+    await local.meta.bulkPut([
+      { key: "professional:fullName", value: next.fullName.trim() },
+      { key: "professional:capNumber", value: next.capNumber.trim() },
+      // Queued for the cloud until a sync confirms this exact version.
+      { key: PROFILE_DIRTY, value: next.updatedAt },
+    ]);
+  });
+  // Signed in and online: back it up right away. Offline or signed out, the mark
+  // stays and the next pass (reconnect, sign-in, "Sincronizar ahora") sends it.
+  void import("./sync").then(({ scheduleSync }) => scheduleSync(800)).catch(() => undefined);
   return next;
 }
 
