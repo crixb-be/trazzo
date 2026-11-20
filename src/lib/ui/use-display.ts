@@ -10,14 +10,17 @@ import {
   type ThemeMode,
 } from "./display";
 
-/** Theme and text size shared by the header button and the account screen. */
+/** La cabecera y la pantalla de cuenta comparten estas preferencias. */
 export function useDisplay() {
   const [theme, setThemeState] = useState<ThemeMode>("dark");
   const [textSize, setTextSizeState] = useState<TextSize>("normal");
 
   useEffect(() => {
-    const sync = (): void => {
-      const current = readDisplay();
+    const sync = (event?: Event): void => {
+      const current =
+        event instanceof CustomEvent
+          ? (event.detail as ReturnType<typeof readDisplay>)
+          : readDisplay();
       setThemeState(current.theme);
       setTextSizeState(current.textSize);
       applyDisplay(current.theme, current.textSize);

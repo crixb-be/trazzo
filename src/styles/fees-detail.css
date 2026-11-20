@@ -123,6 +123,7 @@
     display: none;
   }
   .bottom-nav a span {
+    font-size: calc(0.65rem * var(--font-scale));
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

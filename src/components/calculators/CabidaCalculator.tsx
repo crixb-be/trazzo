@@ -66,7 +66,7 @@ export function CabidaCalculator() {
           warnings={[
             "Estimación geométrica; verifica certificado de parámetros, norma de uso y factibilidad del proyecto.",
           ]}
-          copyText={`TRAZO · Cabida: ${r.gross.toFixed(2)} m² techados; ${r.saleable.toFixed(2)} m² vendibles estimados.`}
+          copyText={`TRAZZO · Cabida: ${r.gross.toFixed(2)} m² techados; ${r.saleable.toFixed(2)} m² vendibles estimados.`}
         />
       )}
     </section>

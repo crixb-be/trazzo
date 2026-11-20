@@ -4,8 +4,8 @@ import { createProject } from "./helpers";
 test("comparte y guarda materiales, campo, matriz y medidas", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/cuenta");
-  await page.getByRole("radio", { name: "Obra" }).click();
-  await expect(page.locator("html")).toHaveClass(/obra/);
+  await page.getByRole("radio", { name: "Claro" }).click();
+  await expect(page.locator("html")).not.toHaveClass(/dark/);
   await createProject(page, "Acciones de obra");
 
   async function shareAndSave(url: string, scope = "body") {
@@ -14,7 +14,7 @@ test("comparte y guarda materiales, campo, matriz y medidas", async ({ page }) =
     const downloadPromise = page.waitForEvent("download");
     await area.getByRole("button", { name: "Compartir imagen", exact: true }).click();
     const download = await downloadPromise;
-    expect(download.suggestedFilename()).toMatch(/^trazo-.+\.png$/);
+    expect(download.suggestedFilename()).toMatch(/^trazzo-.+\.png$/);
 
     await area.getByRole("button", { name: "Guardar en proyecto", exact: true }).click();
     const saver = area.locator(".save-to-project");

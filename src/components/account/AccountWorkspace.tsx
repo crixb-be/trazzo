@@ -324,7 +324,7 @@ export function AccountWorkspace() {
       <div className="eyebrow">Cuenta / Configuración</div>
       <div className="page-heading-row">
         <div>
-          <h1 className="page-title">Tu espacio TRAZO</h1>
+          <h1 className="page-title">Tu espacio TRAZZO</h1>
           <p className="lead">
             Planes, identidad y sincronización para continuar tu trabajo en obra.
           </p>
@@ -363,7 +363,7 @@ export function AccountWorkspace() {
               ) : initials(name || email) ? (
                 <span aria-hidden="true">{initials(name || email)}</span>
               ) : (
-                // No photo and no name yet: show TRAZO's mark instead of a stray letter.
+                // No photo and no name yet: show TRAZZO's mark instead of a stray letter.
                 <BrandMark size={84} className="avatar-mark" />
               )}
             </div>
@@ -465,7 +465,7 @@ export function AccountWorkspace() {
           </p>
         </Card>
 
-        <Card className="studio-brand-card">
+        <Card className="studio-brand-card" id="datos-estudio">
           <div className="eyebrow">Estudio / Marca</div>
           <div className="logo-dropzone">
             <div className="logo-tile">
@@ -575,7 +575,7 @@ export function AccountWorkspace() {
           <div className="brand-preview-strip">
             <span style={{ background: brandPrimary }} />
             <span style={{ background: brandSecondary }} />
-            <strong>{studioName || "TRAZO"}</strong>
+            <strong>{studioName || "TRAZZO"}</strong>
           </div>
         </Card>
         <Card>
@@ -703,7 +703,7 @@ export function AccountWorkspace() {
         </Card>
         <Card>
           <div className="eyebrow">Aplicación</div>
-          <h2>TRAZO</h2>
+          <h2>TRAZZO</h2>
           <p className="muted small">Del estudio a la obra</p>
           <div className="app-info">
             <span>Versión</span>
@@ -726,7 +726,7 @@ export function AccountWorkspace() {
         </Card>
         <Card>
           <div className="eyebrow">Instalación</div>
-          <h2>TRAZO en tu pantalla de inicio</h2>
+          <h2>TRAZZO en tu pantalla de inicio</h2>
           <InstallGuide />
         </Card>
       </section>

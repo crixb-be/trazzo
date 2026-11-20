@@ -1,5 +1,5 @@
 /**
- * Colour families of TRAZO (tokens in src/styles/families.css):
+ * Colour families of TRAZZO (tokens in src/styles/families.css):
  * arena = normativa and circulation, salvia = design and accessibility,
  * pizarra = calculation and sanitary, terracota = safety and site work,
  * piedra = everything else.

@@ -3,7 +3,7 @@
 import { TEXT_SIZE_OPTIONS, THEME_OPTIONS } from "@/lib/ui/display";
 import { useDisplay } from "@/lib/ui/use-display";
 
-/** Theme and text size controls; the choice stays on this device. */
+/** El tema y el tama?o de letra se guardan en este dispositivo. */
 export function DisplaySettings() {
   const { theme, textSize, setTheme, setTextSize } = useDisplay();
 

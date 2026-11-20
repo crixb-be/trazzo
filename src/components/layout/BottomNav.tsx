@@ -1,16 +1,28 @@
 "use client";
 
-import { BookOpen, Calculator, FolderOpen, Home, MessageSquare } from "lucide-react";
+import {
+  BookOpen,
+  Calculator,
+  DraftingCompass,
+  FolderOpen,
+  Home,
+  MessageSquare,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// Five destinations fit a 360 px screen with readable labels. "Proyectos" covers
-// metrados and honorarios; the account lives in the header avatar.
+// Estudio agrupa la matriz y los honorarios. La cuenta se abre desde la cabecera.
 const items = [
   { href: "/", label: "Inicio", icon: Home, match: ["/"] },
   { href: "/normativa", label: "Normas", icon: BookOpen, match: ["/normativa"] },
   { href: "/calculadoras", label: "Calcular", icon: Calculator, match: ["/calculadoras"] },
-  { href: "/metrados", label: "Proyectos", icon: FolderOpen, match: ["/metrados", "/honorarios"] },
+  { href: "/metrados", label: "Proyectos", icon: FolderOpen, match: ["/metrados"] },
+  {
+    href: "/estudio",
+    label: "Estudio",
+    icon: DraftingCompass,
+    match: ["/estudio", "/matriz", "/honorarios"],
+  },
   { href: "/asistente", label: "Asistente", icon: MessageSquare, match: ["/asistente"] },
 ] as const;
 

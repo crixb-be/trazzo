@@ -125,7 +125,7 @@ export function RelationPlate({
         letterSpacing=".06em"
         data-fit-width={layout.viewWidth - 48}
       >
-        {`TRAZO · ${ordered.length} ambientes · ${Object.keys(matrix.relations).length} relaciones`}
+        {`TRAZZO · ${ordered.length} ambientes · ${Object.keys(matrix.relations).length} relaciones`}
       </text>
       <text
         x={24 + 17}

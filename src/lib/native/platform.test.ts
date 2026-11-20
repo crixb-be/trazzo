@@ -10,4 +10,3 @@ describe("native platform detection", () => {
     expect(detectNativePlatform({ isNativePlatform: () => true })).toBe(true);
   });
 });
-

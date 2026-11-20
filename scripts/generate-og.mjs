@@ -44,7 +44,7 @@ function paper(width, height) {
 // 1200 × 630: logo centred, wordmark and tagline below.
 const wide = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630">
   ${paper(1200, 630)}
-  <text x="600" y="468" text-anchor="middle" font-family="${font}" font-size="68" font-weight="700" letter-spacing="10" fill="${ink}">TRAZO</text>
+  <text x="600" y="468" text-anchor="middle" font-family="${font}" font-size="68" font-weight="700" letter-spacing="8" fill="${ink}">TRAZZO</text>
   <text x="600" y="522" text-anchor="middle" font-family="${font}" font-size="30" font-weight="500" fill="${gold}">Del estudio a la obra</text>
   <text x="600" y="582" text-anchor="middle" font-family="${font}" font-size="18" fill="${ink}" fill-opacity="0.55">Normativa RNE · calculadoras · metrados · honorarios</text>
 </svg>`;

@@ -173,7 +173,7 @@ function drawFooter(
   const identity = [studio.studioName, studio.ruc ? "RUC " + studio.ruc : "", studio.address]
     .filter(Boolean)
     .join(" · ");
-  pdf.text(identity || "Propuesta generada con TRAZO", 18, height - 11);
+  pdf.text(identity || "Propuesta generada con TRAZZO", 18, height - 11);
   pdf.text("Página " + page + " de " + total, 192, height - 11, { align: "right" });
   if (watermark)
     pdf.text("Descarga sin marca de agua con los planes Estudiante o PRO.", 18, height - 6);
@@ -190,7 +190,7 @@ function drawWatermark(pdf: jsPDF): void {
   pdf.setTextColor(130, 130, 130);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(25);
-  pdf.text("VISTA PREVIA · TRAZO GRATIS", width / 2, height / 2, { angle: 35, align: "center" });
+  pdf.text("VISTA PREVIA · TRAZZO GRATIS", width / 2, height / 2, { angle: 35, align: "center" });
   pdf.restoreGraphicsState();
 }
 
@@ -205,7 +205,7 @@ function addContentHeader(
   pdf.setTextColor(...primary);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(9);
-  pdf.text(studio.studioName || "TRAZO", 192, 13, { align: "right" });
+  pdf.text(studio.studioName || "TRAZZO", 192, 13, { align: "right" });
   pdf.setTextColor(...MUTED);
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(8);
@@ -246,10 +246,10 @@ function addCover(
   pdf.setTextColor(...primary);
   pdf.setFont("helvetica", "bold");
   pdf.setFontSize(9);
-  pdf.text((studio.studioName || "TRAZO").toUpperCase(), 30, 65);
+  pdf.text((studio.studioName || "TRAZZO").toUpperCase(), 30, 65);
   pdf.setFont("helvetica", "normal");
   pdf.setFontSize(8);
-  // Under the studio name: its address when known; TRAZO keeps its tagline.
+  // Under the studio name: its address when known; TRAZZO keeps its tagline.
   pdf.text(
     studio.studioName ? studio.address || "Arquitectura y proyectos" : "Del estudio a la obra",
     30,
@@ -298,11 +298,11 @@ function addCover(
   ]
     .filter(Boolean)
     .join(" · ");
-  pdf.text("Elaborado por: " + (author || "TRAZO"), 30, 270);
+  pdf.text("Elaborado por: " + (author || "TRAZZO"), 30, 270);
   pdf.text(
     [studio.studioName, studio.ruc ? "RUC " + studio.ruc : "", studio.address]
       .filter(Boolean)
-      .join(" · ") || "TRAZO · Del estudio a la obra",
+      .join(" · ") || "TRAZZO · Del estudio a la obra",
     30,
     278,
   );

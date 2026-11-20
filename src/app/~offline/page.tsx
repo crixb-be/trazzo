@@ -9,7 +9,7 @@ export default function OfflinePage() {
         <div className="brand">
           <BrandMark />
           <span>
-            <strong>TRAZO</strong>
+            <strong>TRAZZO</strong>
             <small>Del estudio a la obra</small>
           </span>
         </div>

@@ -31,12 +31,12 @@ test("matriz ponderada móvil, persistencia y exportaciones", async ({ page }) =
   const svgDownload = page.waitForEvent("download");
   await page.getByRole("button", { name: "Exportar imagen SVG", exact: true }).click();
   const svg = await svgDownload;
-  expect(svg.suggestedFilename()).toBe("trazo-relaciones.svg");
+  expect(svg.suggestedFilename()).toBe("trazzo-relaciones.svg");
   expect(await svg.failure()).toBeNull();
   const pdfDownload = page.waitForEvent("download");
   await page.getByRole("button", { name: "Exportar PDF", exact: true }).click();
   const pdf = await pdfDownload;
-  expect(pdf.suggestedFilename()).toBe("trazo-relaciones.pdf");
+  expect(pdf.suggestedFilename()).toBe("trazzo-relaciones.pdf");
   expect(await pdf.failure()).toBeNull();
 
   page.once("dialog", (dialog) => dialog.accept());

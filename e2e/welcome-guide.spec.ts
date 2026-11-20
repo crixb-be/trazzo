@@ -20,7 +20,7 @@ test("la guía sigue tres pasos y solo se vuelve a abrir desde Cuenta", async ({
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await card.getByRole("button", { name: "Siguiente" }).click();
   await expect(card).toContainText("Paso 2 de 3");
-  await expect(card).toContainText("Modo Obra");
+  await expect(card).toContainText("Trabajo offline y modo Claro/Oscuro");
   await card.getByRole("button", { name: "Atrás" }).click();
   await expect(card).toContainText("Paso 1 de 3");
   await card.getByRole("button", { name: "Siguiente" }).click();

@@ -181,7 +181,7 @@ export async function renderSheetImage(
   text(sheet.disclaimer, "400 24px " + SANS, "#555555", 34);
   y += 14;
   text(
-    sheetDate() + (brand.watermark ? " · " + WATERMARK_TEXT : " · trazo"),
+    sheetDate() + (brand.watermark ? " · " + WATERMARK_TEXT : " · trazzo"),
     "500 24px " + MONO,
     "#555555",
     34,

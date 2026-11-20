@@ -168,9 +168,14 @@ export function HomeDashboard() {
             <div className="eyebrow">Acceso rápido</div>
             <h2>{personalised ? "Tus herramientas" : "Herramientas de proyecto"}</h2>
           </div>
-          <Link className="source-link" href="/calculadoras">
-            Ver todas
-          </Link>
+          <div className="inline-actions">
+            <Link className="source-link" href="/estudio">
+              Estudio
+            </Link>
+            <Link className="source-link" href="/calculadoras">
+              Ver todas
+            </Link>
+          </div>
         </div>
         <div
           className="calculator-tiles home-tiles"

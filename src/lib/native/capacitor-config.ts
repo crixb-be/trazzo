@@ -4,7 +4,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 export const NATIVE_WEB_DIR = "capacitor/www";
 
 /**
- * TRAZO needs its server (assistant, payments, account), so the native app is
+ * TRAZZO needs its server (assistant, payments, account), so the native app is
  * a shell that loads the deployed site. `webDir` holds only a setup notice and
  * the page shown when the site cannot be reached on first launch; after that
  * the service worker keeps the app working without signal.
@@ -12,11 +12,11 @@ export const NATIVE_WEB_DIR = "capacitor/www";
 export function buildCapacitorConfig(serverUrl: string | undefined): CapacitorConfig {
   const base: CapacitorConfig = {
     appId: "pe.trazzo.app",
-    appName: "TRAZO",
+    appName: "TRAZZO",
     webDir: NATIVE_WEB_DIR,
     backgroundColor: "#121316",
     // Android 15 draws apps edge to edge (targetSdk 35): without this margin the
-    // status bar sits on top of TRAZO's header and cuts the page titles.
+    // status bar sits on top of TRAZZO's header and cuts the page titles.
     android: { adjustMarginsForEdgeToEdge: "auto" },
   };
   const url = serverUrl?.trim();

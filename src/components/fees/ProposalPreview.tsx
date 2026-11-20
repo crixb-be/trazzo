@@ -72,7 +72,7 @@ export function ProposalPreview({
               )}
             </div>
             <div className="proposal-cover-brand">
-              {studio.studioName || "TRAZO"}
+              {studio.studioName || "TRAZZO"}
               <small>ARQUITECTURA · DEL ESTUDIO A LA OBRA</small>
             </div>
             <div className="proposal-cover-title">
@@ -89,7 +89,7 @@ export function ProposalPreview({
               <span>Ubicación: {quote.location || "—"}</span>
             </div>
             <small className="proposal-cover-footer">
-              Elaborado por: {studio.fullName ? "Arq. " + studio.fullName : "TRAZO"} ·{" "}
+              Elaborado por: {studio.fullName ? "Arq. " + studio.fullName : "TRAZZO"} ·{" "}
               {studio.studioName || "Del estudio a la obra"}
             </small>
           </section>
@@ -113,7 +113,7 @@ export function ProposalPreview({
                 )}
               </div>
               <div>
-                <strong>{studio.studioName || "TRAZO"}</strong>
+                <strong>{studio.studioName || "TRAZZO"}</strong>
                 <small>{quote.code}</small>
               </div>
             </header>
@@ -267,7 +267,7 @@ export function ProposalPreview({
               ))}
             </div>
           </section>
-          {watermark && <div className="preview-watermark">VISTA PREVIA · TRAZO GRATIS</div>}
+          {watermark && <div className="preview-watermark">VISTA PREVIA · TRAZZO GRATIS</div>}
         </div>
       </div>
     </div>

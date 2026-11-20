@@ -11,4 +11,3 @@ export interface NativePlatformApi {
 export function detectNativePlatform(api: NativePlatformApi = Capacitor): boolean {
   return api.isNativePlatform();
 }
-

@@ -4,7 +4,7 @@ import sharp from "sharp";
 import { BRAND_GROUND, LOGO, mark, tile } from "./brand.mjs";
 
 /**
- * Every TRAZO icon comes from one source: assets/logo.png, the gold T on transparency.
+ * Every TRAZZO icon comes from one source: assets/logo.png, the gold T on transparency.
  * The same file feeds the native icons through `npm run icons:native`, which lays it on
  * the same BRAND_GROUND (#0f1115).
  *

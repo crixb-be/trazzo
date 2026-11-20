@@ -1,7 +1,6 @@
 /*
- * Rediseño TRAZO: superficies, jerarquía y microinteracciones comunes.
- * Va después de los módulos anteriores y antes de display.css, para que el
- * modo obra siga mandando. Todo sale de los tokens: los tres temas lo heredan.
+ * Rediseño TRAZZO: superficies, jerarquía y microinteracciones comunes.
+ * Los dos temas comparten la jerarquía y toman sus colores de los tokens.
  */
 
 /* ---------------------------------------------------------------- tokens */
@@ -794,9 +793,6 @@ textarea.input {
     width: 100%;
   }
 }
-html.obra .quote-total-fixed {
-  box-shadow: none;
-}
 
 /* -------------------------------------------------------------- assistant */
 .suggested-prompts button {
@@ -926,10 +922,10 @@ html.obra .quote-total-fixed {
     content: "";
     position: absolute;
     top: 3px;
-    left: 50%;
-    width: 52px;
+    inset-inline: 0;
+    width: min(52px, 100%);
     height: 28px;
-    margin-left: -26px;
+    margin-inline: auto;
     border-radius: var(--radius-pill);
     background: var(--accent-soft);
     opacity: 0;
@@ -1067,64 +1063,4 @@ html.obra .quote-total-fixed {
   .bottom-nav a::before {
     transform: none;
   }
-}
-
-/* ------------------------------------------------------------ modo obra */
-/* Sun-readable: flat white, black 2px edges, no glass, no soft tints. */
-html.obra {
-  --accent-soft: transparent;
-  --accent-line: #111;
-  --ok-soft: transparent;
-  --surface-sunken: #fff;
-  --card-edge: 0 0 0 0 transparent;
-  --card-shadow: 0 0 0 0 transparent;
-  --nav-glass: #fff;
-}
-html.obra .home-hero {
-  background: var(--surface);
-}
-html.obra .header,
-html.obra .bottom-nav {
-  background: #fff;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-}
-html.obra .surface-card,
-html.obra .home-hero,
-html.obra .calculator-tile,
-html.obra .discipline-card,
-html.obra .status-card,
-html.obra .dashboard-panel,
-html.obra .quick-chip,
-html.obra .count-pill,
-html.obra .logo-tile {
-  border-width: 2px;
-  border-color: var(--border);
-}
-html.obra .logo-tile {
-  border-style: dashed;
-}
-html.obra .tile-icon,
-html.obra .status-card-icon {
-  box-shadow: inset 0 0 0 2px var(--border);
-}
-html.obra .quick-chip[aria-pressed="true"],
-html.obra .chip.active,
-html.obra .bottom-nav a.active::before {
-  background: var(--text);
-  color: #fff;
-}
-html.obra .bottom-nav a.active {
-  color: var(--text);
-}
-html.obra .bottom-nav a.active::before {
-  opacity: 1;
-  height: 30px;
-}
-html.obra .bottom-nav a.active svg {
-  color: #fff;
-}
-html.obra .sidebar nav a.active {
-  background: var(--surface-2);
-  box-shadow: inset 4px 0 0 var(--text);
 }

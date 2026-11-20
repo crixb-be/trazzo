@@ -3,8 +3,7 @@
  *   marca → encabezado (píldora, eyebrow, título, subtítulo) → formulario →
  *   acción secundaria → enlaces del pie
  * Va al final de globals.css para no competir con .card, .btn, .eyebrow ni h1 de los
- * módulos anteriores. Solo distribuye: los colores siguen los tokens de cada tema,
- * también en Modo Obra.
+ * módulos anteriores. Solo distribuye: los colores siguen los tokens de cada tema.
  */
 .auth-card {
   display: flex;
@@ -25,14 +24,14 @@
   align-items: center;
   align-self: flex-start;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 28px;
   color: var(--text);
   text-decoration: none;
 }
 .auth-brand-text {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 5px;
   line-height: 1.15;
 }
 .auth-brand-text strong {
@@ -49,17 +48,17 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 .auth-heading > * {
   margin: 0;
 }
 /* La píldora es un estado, no parte del eyebrow: va sola en su línea. */
 .auth-heading .badge {
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 .auth-heading h1 {
-  margin: 6px 0;
+  margin: 8px 0;
   font-size: calc(1.5rem * var(--font-scale));
   font-weight: 700;
   line-height: 1.2;
@@ -75,10 +74,10 @@
 /* ------------------------------------------------------------- formulario */
 .auth-form {
   display: grid;
-  gap: 16px;
+  gap: 18px;
 }
 .auth-form .btn,
-.auth-magic {
+.auth-card .auth-magic {
   width: 100%;
   justify-content: center;
 }
@@ -86,7 +85,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 16px 0;
+  margin: 20px 0;
   color: var(--muted);
   font-size: var(--text-xs);
 }

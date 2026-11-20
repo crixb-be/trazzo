@@ -21,4 +21,3 @@ export function paymentProviderAvailability(
 export function isPaymentProvider(value: unknown): value is PaymentProvider {
   return value === "mercadopago" || value === "culqi";
 }
-

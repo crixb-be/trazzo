@@ -13,6 +13,7 @@ const routes = [
   "/calculadoras?tab=utilidades",
   "/calculadoras?tab=cabida",
   "/calculadoras?tab=aforo",
+  "/estudio",
   "/matriz",
   "/medidas",
   "/metrados",
@@ -27,7 +28,7 @@ const routes = [
   const browser = await chromium.launch({
     executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH,
   });
-  for (const theme of ["dark", "light", "obra"]) {
+  for (const theme of ["dark", "light"]) {
     const context = await browser.newContext({ ...devices["Pixel 7"] });
     await context.addInitScript((value) => {
       localStorage.setItem("trazzo-theme", value);

@@ -65,15 +65,15 @@ jobs:
         run: |
           app=build/Build/Products/Release-iphoneos/App.app
           test -d "$app" || { echo "No se encontró $app"; exit 1; }
-          rm -rf Payload TRAZO-unsigned.ipa
+          rm -rf Payload TRAZZO-unsigned.ipa
           mkdir Payload
           cp -R "$app" Payload/
-          zip -qry TRAZO-unsigned.ipa Payload
+          zip -qry TRAZZO-unsigned.ipa Payload
 
       - name: Upload unsigned IPA
         uses: actions/upload-artifact@v4
         with:
           name: trazzo-ios-unsigned-ipa
-          path: ios/App/TRAZO-unsigned.ipa
+          path: ios/App/TRAZZO-unsigned.ipa
           if-no-files-found: error
           retention-days: 14

@@ -18,7 +18,7 @@ export function AppBootstrap() {
     const hadController = Boolean(worker?.controller);
     const onControllerChange = (): void => {
       if (!hadController) return;
-      toast("Hay una versión nueva de TRAZO.", "info", {
+      toast("Hay una versión nueva de TRAZZO.", "info", {
         label: "Actualizar",
         run: () => window.location.reload(),
       });

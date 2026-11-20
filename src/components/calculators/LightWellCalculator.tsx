@@ -63,7 +63,7 @@ export function LightWellCalculator() {
           checks={result.checks}
           warnings={result.warnings}
           copyText={
-            "TRAZO · Pozo de luz A.010\nLado mínimo " +
+            "TRAZZO · Pozo de luz A.010\nLado mínimo " +
             result.values.minSide.toFixed(2) +
             " m\nRegla H/" +
             result.values.ratio

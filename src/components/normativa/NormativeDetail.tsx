@@ -202,7 +202,7 @@ export function NormativeDetail({ slug }: { slug: string }) {
         <div className="pro-overlay">
           <div className="pro-overlay-card">
             <Lock size={20} className="text-accent" />
-            <strong>Esta ficha es parte de TRAZO Pro</strong>
+            <strong>Esta ficha es parte de TRAZZO Pro</strong>
             <p>Activa Estudiante o Pro para consultar el criterio completo.</p>
             <Button variant="primary" onClick={() => setPaywall(true)}>
               Ver planes

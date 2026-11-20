@@ -1,0 +1,142 @@
+.studio-page,
+.studio-grid {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.studio-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.studio-card {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  min-width: 0;
+}
+
+/* El título manda sobre la descripción: más grande y con más peso. */
+.studio-page .studio-card h2 {
+  margin: 0;
+  font-size: calc(1.05rem * var(--font-scale));
+  font-weight: 650;
+  line-height: 1.3;
+}
+
+.studio-page .studio-tool p {
+  font-size: calc(0.9rem * var(--font-scale));
+  line-height: 1.45;
+}
+
+.studio-card p {
+  margin: 0;
+}
+
+.studio-card-heading,
+.studio-tool {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.studio-card .tile-icon {
+  flex-shrink: 0;
+}
+
+.studio-tool {
+  align-self: stretch;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.studio-tool p {
+  margin-top: 4px;
+}
+
+.studio-tool > svg {
+  margin-inline-start: auto;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+
+.studio-tool:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .studio-tool:hover {
+    background: var(--surface-2);
+  }
+}
+
+.studio-checklist-summary {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.studio-checklist progress {
+  width: 100%;
+  height: 8px;
+  accent-color: var(--accent);
+}
+
+.studio-checklist-group {
+  min-width: 0;
+  margin: 0;
+  padding: 8px 0 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
+.studio-checklist-group legend {
+  padding-inline-end: 8px;
+  font-weight: 650;
+}
+
+.studio-checklist-item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-height: 40px;
+  padding: 8px 0;
+  cursor: pointer;
+}
+
+.studio-checklist-item input {
+  width: 17px;
+  height: 17px;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+}
+
+/* Casillas nativas en tono oscuro: sin cuadros blancos sobre la tarjeta. */
+html.dark .studio-checklist-item input {
+  color-scheme: dark;
+}
+
+.studio-details {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px 16px;
+  margin: 0;
+}
+
+.studio-details dt {
+  color: var(--muted);
+}
+
+.studio-details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 680px) {
+  .studio-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

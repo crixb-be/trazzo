@@ -1,6 +1,6 @@
-# TRAZO · Del estudio a la obra
+# TRAZZO · Del estudio a la obra
 
-TRAZO es una herramienta técnica offline-first para arquitectura y obra en Perú. Reúne fichas navegables del Reglamento Nacional de Edificaciones, calculadoras paramétricas, metrados por proyecto y un asistente RAG con citas verificables.
+TRAZZO es una herramienta técnica offline-first para arquitectura y obra en Perú. Reúne fichas navegables del Reglamento Nacional de Edificaciones, calculadoras paramétricas, metrados por proyecto y un asistente RAG con citas verificables.
 
 ## Funciones
 
@@ -23,7 +23,7 @@ Las siguientes ubicaciones están reservadas para capturas del producto:
 
 ## Modo local
 
-Sin variables de entorno, TRAZO funciona en modo local:
+Sin variables de entorno, TRAZZO funciona en modo local:
 
 - El seed de fichas y materiales se carga en Dexie al abrir la aplicación.
 - El asistente recupera fichas locales y devuelve una respuesta extractiva con citas.
@@ -69,7 +69,7 @@ Copia las variables a .env.local. El repositorio no incluye secretos ni un archi
 
 ## Despliegue en Vercel y Compilación Nativa
 
-TRAZO se despliega como una aplicación Next.js con rutas API y service worker de Serwist. No uses `output: export`: Supabase, pagos y el asistente necesitan el runtime del servidor.
+TRAZZO se despliega como una aplicación Next.js con rutas API y service worker de Serwist. No uses `output: export`: Supabase, pagos y el asistente necesitan el runtime del servidor.
 
 ### Vercel
 
@@ -142,7 +142,7 @@ Se generan iconos de 192 y 512 px, variantes maskable y apple-touch-icon.png den
 
 ## App nativa con Capacitor (iOS y Android)
 
-TRAZO necesita su servidor (asistente, pagos, cuenta), así que la app nativa es un contenedor que carga el sitio desplegado. `capacitor.config.ts` toma la dirección de `CAPACITOR_SERVER_URL` y `capacitor/www` contiene solo dos páginas propias: un aviso de configuración y la pantalla «sin conexión» del primer arranque. Después de la primera carga, el service worker hace que la app abra sin señal igual que en el navegador.
+TRAZZO necesita su servidor (asistente, pagos, cuenta), así que la app nativa es un contenedor que carga el sitio desplegado. `capacitor.config.ts` toma la dirección de `CAPACITOR_SERVER_URL` y `capacitor/www` contiene solo dos páginas propias: un aviso de configuración y la pantalla «sin conexión» del primer arranque. Después de la primera carga, el service worker hace que la app abra sin señal igual que en el navegador.
 
 Requisitos en tu computadora (no están en el repositorio): Android Studio para Android; una Mac con Xcode para iOS.
 
@@ -162,7 +162,7 @@ Reglas de la dirección: debe ser `https`. Solo se acepta `http` para `localhost
 
 Permisos que debes declarar después de `cap add`:
 
-- iOS, en `ios/App/App/Info.plist`: `NSCameraUsageDescription` («TRAZO usa la cámara para registrar fotos de obra en tus proyectos») y `NSPhotoLibraryUsageDescription` / `NSPhotoLibraryAddUsageDescription` si permites elegir de la galería.
+- iOS, en `ios/App/App/Info.plist`: `NSCameraUsageDescription` («TRAZZO usa la cámara para registrar fotos de obra en tus proyectos») y `NSPhotoLibraryUsageDescription` / `NSPhotoLibraryAddUsageDescription` si permites elegir de la galería.
 - Android: el plugin no exige permisos adicionales para tomar fotos con la cámara del sistema. Si tu `AndroidManifest.xml` declara `android.permission.CAMERA`, Android obliga a pedirlo en tiempo de ejecución.
 
 ### Antes de publicar en las tiendas
@@ -188,7 +188,7 @@ El checkout crea una preferencia con `external_reference` en formato `userId:pla
 
 ## Aviso normativo
 
-TRAZO es una herramienta de consulta y predimensionamiento. Sus valores son referenciales y corresponden a la edición indicada en cada ficha. Verifica siempre la versión vigente publicada por el MVCS y el criterio de la autoridad competente antes de usar un resultado en un expediente, licencia, obra o decisión de seguridad.
+TRAZZO es una herramienta de consulta y predimensionamiento. Sus valores son referenciales y corresponden a la edición indicada en cada ficha. Verifica siempre la versión vigente publicada por el MVCS y el criterio de la autoridad competente antes de usar un resultado en un expediente, licencia, obra o decisión de seguridad.
 
 ## Estructura
 

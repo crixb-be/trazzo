@@ -50,7 +50,7 @@ export function buildBackup(contents: BackupContents, now: Date = new Date()): B
 }
 
 export function backupFileName(now: Date = new Date()): string {
-  return "trazo-copia-" + now.toISOString().slice(0, 10) + ".json";
+  return "trazzo-copia-" + now.toISOString().slice(0, 10) + ".json";
 }
 
 export type ParsedBackup = { ok: true; backup: BackupFile } | { ok: false; error: string };
@@ -75,15 +75,15 @@ export function parseBackup(text: string): ParsedBackup {
   try {
     data = JSON.parse(text);
   } catch {
-    return { ok: false, error: "El archivo no es una copia de TRAZO (no se pudo leer)." };
+    return { ok: false, error: "El archivo no es una copia de TRAZZO (no se pudo leer)." };
   }
   if (!isRecord(data) || data.format !== BACKUP_FORMAT) {
-    return { ok: false, error: "El archivo no es una copia de TRAZO." };
+    return { ok: false, error: "El archivo no es una copia de TRAZZO." };
   }
   if (typeof data.version !== "number" || data.version > BACKUP_VERSION) {
     return {
       ok: false,
-      error: "La copia viene de una versión más nueva de TRAZO. Actualiza la app.",
+      error: "La copia viene de una versión más nueva de TRAZZO. Actualiza la app.",
     };
   }
   const projects = rowsWith(data.projects, ["id", "name"]);

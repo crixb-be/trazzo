@@ -170,7 +170,7 @@ export function buildResultPdf(
     pdf.text(disclaimer, margin, pageHeight - 18);
     pdf.setFont("courier", "normal");
     pdf.text(
-      sheetDate() + (brand.watermark ? " · " + WATERMARK_TEXT : " · trazo"),
+      sheetDate() + (brand.watermark ? " · " + WATERMARK_TEXT : " · trazzo"),
       margin,
       pageHeight - 8,
     );

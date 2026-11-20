@@ -1,16 +1,18 @@
 /** Screen preferences kept on the device: theme and text size. */
 
-export type ThemeMode = "dark" | "light" | "obra";
+export type ThemeMode = "dark" | "light";
 export type TextSize = "normal" | "grande" | "muy-grande";
 
 export const THEME_KEY = "trazzo-theme";
 export const TEXT_SIZE_KEY = "trazzo-text";
 export const DISPLAY_EVENT = "trazzo:display";
 
+const LEGACY_LIGHT_THEME = "obra";
+let transitionTimeout: number | undefined;
+
 export const THEME_OPTIONS: ReadonlyArray<{ value: ThemeMode; label: string; hint: string }> = [
   { value: "dark", label: "Oscuro", hint: "Interiores y poca luz" },
   { value: "light", label: "Claro", hint: "Oficina y luz normal" },
-  { value: "obra", label: "Obra", hint: "Alto contraste para sol directo" },
 ];
 
 export const TEXT_SIZE_OPTIONS: ReadonlyArray<{ value: TextSize; label: string; scale: number }> = [
@@ -20,7 +22,7 @@ export const TEXT_SIZE_OPTIONS: ReadonlyArray<{ value: TextSize; label: string; 
 ];
 
 export function parseTheme(value: string | null | undefined): ThemeMode {
-  return value === "light" || value === "obra" ? value : "dark";
+  return value === "light" || value === LEGACY_LIGHT_THEME ? "light" : "dark";
 }
 
 export function parseTextSize(value: string | null | undefined): TextSize {
@@ -28,8 +30,7 @@ export function parseTextSize(value: string | null | undefined): TextSize {
 }
 
 export function nextTheme(current: ThemeMode): ThemeMode {
-  const order: ThemeMode[] = ["dark", "light", "obra"];
-  return order[(order.indexOf(current) + 1) % order.length];
+  return current === "dark" ? "light" : "dark";
 }
 
 export function themeLabel(theme: ThemeMode): string {
@@ -40,17 +41,24 @@ export function themeLabel(theme: ThemeMode): string {
 export function applyDisplay(theme: ThemeMode, textSize: TextSize): void {
   const root = document.documentElement;
   root.classList.toggle("dark", theme === "dark");
-  root.classList.toggle("obra", theme === "obra");
+  root.classList.remove(LEGACY_LIGHT_THEME);
   if (textSize === "normal") delete root.dataset.text;
   else root.dataset.text = textSize;
 }
 
 export function readDisplay(): { theme: ThemeMode; textSize: TextSize } {
   try {
-    return {
-      theme: parseTheme(localStorage.getItem(THEME_KEY)),
-      textSize: parseTextSize(localStorage.getItem(TEXT_SIZE_KEY)),
-    };
+    const storedTheme = localStorage.getItem(THEME_KEY);
+    const theme = parseTheme(storedTheme);
+    const textSize = parseTextSize(localStorage.getItem(TEXT_SIZE_KEY));
+    if (storedTheme === LEGACY_LIGHT_THEME) {
+      try {
+        localStorage.setItem(THEME_KEY, theme);
+      } catch {
+        // El tema claro sigue disponible aunque falle la escritura.
+      }
+    }
+    return { theme, textSize };
   } catch {
     return { theme: "dark", textSize: "normal" };
   }
@@ -64,7 +72,13 @@ export function saveDisplay(next: { theme?: ThemeMode; textSize?: TextSize }): v
     localStorage.setItem(THEME_KEY, theme);
     localStorage.setItem(TEXT_SIZE_KEY, textSize);
   } catch {
-    // Private mode: the choice still applies until the page closes.
+    // La selección se aplica durante la visita aunque falle el almacenamiento.
+  }
+  const root = document.documentElement;
+  if (root.classList.contains("dark") !== (theme === "dark")) {
+    root.classList.add("theme-transition");
+    window.clearTimeout(transitionTimeout);
+    transitionTimeout = window.setTimeout(() => root.classList.remove("theme-transition"), 250);
   }
   applyDisplay(theme, textSize);
   window.dispatchEvent(new CustomEvent(DISPLAY_EVENT, { detail: { theme, textSize } }));
@@ -75,12 +89,12 @@ export function saveDisplay(next: { theme?: ThemeMode; textSize?: TextSize }): v
  * Kept as a string because it is inlined in <head>.
  */
 export const NO_FLASH_DISPLAY_SCRIPT = [
+  "var root = document.documentElement;",
+  `root.classList.remove("${LEGACY_LIGHT_THEME}");`,
   "try {",
   `  var theme = localStorage.getItem("${THEME_KEY}");`,
   `  var text = localStorage.getItem("${TEXT_SIZE_KEY}");`,
-  "  var root = document.documentElement;",
-  '  root.classList.toggle("dark", theme !== "light" && theme !== "obra");',
-  '  root.classList.toggle("obra", theme === "obra");',
+  `  root.classList.toggle("dark", theme !== "light" && theme !== "${LEGACY_LIGHT_THEME}");`,
   '  if (text === "grande" || text === "muy-grande") root.dataset.text = text;',
   "} catch (_) {}",
 ].join("\n");

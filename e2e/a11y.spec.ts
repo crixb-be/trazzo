@@ -10,6 +10,7 @@ const routes = [
   "/calculadoras?tab=utilidades",
   "/calculadoras?tab=cabida",
   "/calculadoras?tab=aforo",
+  "/estudio",
   "/matriz",
   "/medidas",
   "/metrados",
@@ -20,7 +21,7 @@ const routes = [
   "/register",
 ];
 
-for (const theme of ["dark", "light", "obra"]) {
+for (const theme of ["dark", "light"]) {
   test("accesibilidad AA en todas las pantallas, tema " + theme, async ({ page }) => {
     test.setTimeout(120_000);
     await page.addInitScript((value) => localStorage.setItem("trazzo-theme", value), theme);
@@ -68,7 +69,7 @@ test.describe("estados interactivos", () => {
     await expect(page.getByRole("dialog")).toHaveCount(0);
 
     await page.goto("/");
-    await page.getByRole("combobox", { name: "Buscar en TRAZO" }).last().fill("rampa");
+    await page.getByRole("combobox", { name: "Buscar en TRAZZO" }).last().fill("rampa");
     await expect(page.getByRole("option").first()).toBeVisible();
     expect(await scan()).toEqual([]);
   });

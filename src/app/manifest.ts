@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "TRAZO · Del estudio a la obra",
-    short_name: "TRAZO",
+    name: "TRAZZO · Del estudio a la obra",
+    short_name: "TRAZZO",
     description: "Del estudio a la obra: normativa RNE, calculadoras y metrados offline-first.",
     id: "/",
     lang: "es-PE",

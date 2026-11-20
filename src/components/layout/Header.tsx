@@ -14,6 +14,7 @@ const titles: Record<string, string> = {
   "/normativa": "Biblioteca RNE",
   "/matriz": "Matriz de relaciones",
   "/calculadoras": "Calculadoras técnicas",
+  "/estudio": "Estudio profesional",
   "/metrados": "Proyectos y metrados",
   "/honorarios": "Honorarios y propuestas",
   "/asistente": "Asistente RNE",
@@ -23,11 +24,12 @@ const titles: Record<string, string> = {
 function pageTitle(pathname: string): string {
   if (titles[pathname]) return titles[pathname];
   if (pathname.startsWith("/normativa/")) return "Ficha normativa";
-  return "TRAZO";
+  return "TRAZZO";
 }
 
 export function Header() {
   const pathname = usePathname();
+  const accountActive = pathname.startsWith("/cuenta");
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   // Own photo (synced from profiles) first; the sign-in provider's photo as fallback.
   const avatar = useAccountAvatar();
@@ -39,11 +41,11 @@ export function Header() {
 
   return (
     <header className="header">
-      <Link className="header-brand" href="/" aria-label="TRAZO, volver al inicio">
+      <Link className="header-brand" href="/" aria-label="TRAZZO, volver al inicio">
         <BrandMark />
       </Link>
       <div className="header-title">
-        <span className="eyebrow">TRAZO</span>
+        <span className="eyebrow">TRAZZO</span>
         <strong>{pageTitle(pathname)}</strong>
       </div>
       <div className="header-actions">
@@ -59,7 +61,13 @@ export function Header() {
         </button>
         <OfflineBadge />
         <ThemeToggle />
-        <Link className="account-avatar" href="/cuenta" aria-label="Abrir cuenta">
+        <Link
+          className={accountActive ? "account-avatar active" : "account-avatar"}
+          href="/cuenta"
+          aria-label="Abrir cuenta y planes"
+          title="Cuenta"
+          aria-current={accountActive ? "page" : undefined}
+        >
           {avatar.src ? (
             // Own photo: a resized data URL. Provider photo: Google's CDN, sent without referrer.
             // eslint-disable-next-line @next/next/no-img-element

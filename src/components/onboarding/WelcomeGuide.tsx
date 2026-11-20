@@ -15,9 +15,9 @@ const steps = [
       "Abre Calculadoras, elige un módulo e ingresa las medidas de tu caso. Revisa las referencias del RNE para arquitectura (A.010 y A.120) e instalaciones sanitarias (IS.010). Para estructuras, consulta la norma de diseño sismorresistente E.030.",
   },
   {
-    title: "Trabajo offline y Modo Obra",
+    title: "Trabajo offline y modo Claro/Oscuro",
     description:
-      "En Cuenta → Pantalla, elige Obra para leer con alto contraste bajo el sol. Tu trabajo se guarda en el dispositivo y puedes seguir calculando y consultando las fichas locales sin señal.",
+      "Alterna entre Claro y Oscuro desde la cabecera o elige tu tema en Cuenta → Pantalla. Tu trabajo se guarda en el dispositivo y puedes seguir calculando y consultando las fichas locales sin señal.",
   },
   {
     title: "Proyectos, respaldo y sincronización",

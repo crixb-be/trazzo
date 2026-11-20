@@ -160,7 +160,7 @@ export function AccountAccess({ onSessionChange }: AccountAccessProps) {
           </h2>
           <p className="muted small">
             Proyectos, metrados, cotizaciones y tu perfil se guardan aquí y funcionan sin conexión.
-            No necesitas una cuenta para usar TRAZO.
+            No necesitas una cuenta para usar TRAZZO.
           </p>
           <div className="sync-details">
             <span>

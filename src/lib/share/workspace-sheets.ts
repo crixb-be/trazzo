@@ -8,7 +8,7 @@ import {
 import type { SheetRow, ResultSheet } from "./result-sheet";
 
 const WORKSPACE_DISCLAIMER =
-  "Resultado referencial generado por TRAZO. Revisa los datos y supuestos antes de usarlo en obra o expediente.";
+  "Resultado referencial generado por TRAZZO. Revisa los datos y supuestos antes de usarlo en obra o expediente.";
 
 function workspaceSheet(input: {
   eyebrow: string;

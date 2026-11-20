@@ -1,23 +1,10 @@
-/* Modo obra, tamaño de letra y estados de carga y vacíos. */
-html.obra body {
-  font-weight: 500;
-}
-html.obra .card,
-html.obra .input,
-html.obra .select,
-html.obra .btn,
-html.obra .chip {
-  border-width: 2px;
-}
-html.obra .muted,
-html.obra .eyebrow {
-  font-weight: 600;
-}
-html.obra .bottom-nav,
-html.obra .header,
-html.obra .calculator-result-bar {
-  border-color: var(--border);
-  box-shadow: none;
+/* Preferencias de pantalla y estados de carga y vacíos. */
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-transition,
+  html.theme-transition :where(*, *::before, *::after) {
+    transition-property: background-color, color, border-color, fill;
+    transition-duration: 250ms;
+  }
 }
 
 .display-settings {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, KeyRound, Mail, UserRound } from "lucide-react";
+import { ArrowRight, KeyRound, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { BrandMark } from "@/components/brand/BrandMark";
@@ -22,7 +22,7 @@ export function AuthCard({ mode }: { mode: "login" | "register" }) {
     const client = createClient();
     if (!client) {
       setNotice(
-        "Las cuentas aún no están activas en esta instalación. Puedes usar TRAZO sin cuenta.",
+        "Las cuentas aún no están activas en esta instalación. Puedes usar TRAZZO sin cuenta.",
       );
       return;
     }
@@ -68,7 +68,7 @@ export function AuthCard({ mode }: { mode: "login" | "register" }) {
       <Link className="auth-brand" href="/" title="Volver al inicio">
         <BrandMark />
         <span className="auth-brand-text">
-          <strong>TRAZO</strong>
+          <strong>TRAZZO</strong>
           <small>Del estudio a la obra</small>
         </span>
       </Link>
@@ -86,7 +86,7 @@ export function AuthCard({ mode }: { mode: "login" | "register" }) {
       </header>
       {!configured && (
         <div className="notice-banner">
-          <Mail size={16} /> Las cuentas aún no están activas. Puedes usar TRAZO sin cuenta.
+          <Mail size={16} /> Las cuentas aún no están activas. Puedes usar TRAZZO sin cuenta.
         </div>
       )}
       <form className="auth-form" onSubmit={(event) => void submit(event)}>

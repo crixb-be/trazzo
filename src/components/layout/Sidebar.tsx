@@ -6,11 +6,11 @@ import {
   Calculator,
   Briefcase,
   ClipboardList,
+  DraftingCompass,
   Home,
   MessageSquare,
   Network,
   Ruler,
-  UserRound,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { BrandMark } from "@/components/brand/BrandMark";
@@ -22,9 +22,9 @@ const items = [
   { href: "/matriz", label: "Matriz de relaciones", icon: Network },
   { href: "/calculadoras", label: "Calculadoras", icon: Calculator },
   { href: "/metrados", label: "Metrados", icon: ClipboardList },
+  { href: "/estudio", label: "Estudio", icon: DraftingCompass },
   { href: "/honorarios", label: "Honorarios", icon: Briefcase },
   { href: "/asistente", label: "Asistente", icon: MessageSquare },
-  { href: "/cuenta", label: "Cuenta", icon: UserRound },
 ] as const;
 
 function isActive(pathname: string, href: string): boolean {
@@ -36,10 +36,10 @@ export function Sidebar() {
 
   return (
     <aside className="sidebar" aria-label="Navegación principal">
-      <Link className="brand" href="/" aria-label="TRAZO, volver al inicio">
+      <Link className="brand" href="/" aria-label="TRAZZO, volver al inicio">
         <BrandMark />
         <span>
-          <strong>TRAZO</strong>
+          <strong>TRAZZO</strong>
           <small>Del estudio a la obra</small>
         </span>
       </Link>

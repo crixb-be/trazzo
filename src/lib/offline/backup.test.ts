@@ -70,10 +70,10 @@ describe("backup file", () => {
     expect(legacy.ok && legacy.backup.projectPhotos).toEqual([]);
     expect(parsed.backup.meta.map((row) => row.key)).toEqual(["relation-matrix"]);
     expect(describeBackup(parsed.backup)).toContain("1 proyecto(s)");
-    expect(backupFileName(new Date("2026-11-16T12:00:00Z"))).toBe("trazo-copia-2026-11-16.json");
+    expect(backupFileName(new Date("2026-11-16T12:00:00Z"))).toBe("trazzo-copia-2026-11-16.json");
   });
 
-  it("refuses files that are not a TRAZO backup", () => {
+  it("refuses files that are not a TRAZZO backup", () => {
     expect(parseBackup("no es json").ok).toBe(false);
     expect(parseBackup(JSON.stringify({ format: "otro" })).ok).toBe(false);
     expect(parseBackup(JSON.stringify([1, 2])).ok).toBe(false);

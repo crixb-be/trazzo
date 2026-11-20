@@ -36,10 +36,11 @@ test("todas las pantallas principales abren sin conexión", async ({ page, conte
     ["/calculadoras", "Cotas para decidir"],
     ["/medidas", "Medidas"],
     ["/matriz", "Matriz"],
+    ["/estudio", "Estudio profesional"],
     ["/metrados", "Metrados"],
     ["/honorarios", "Honorarios"],
     ["/asistente", "Consulta el RNE"],
-    ["/cuenta", "Tu espacio TRAZO"],
+    ["/cuenta", "Tu espacio TRAZZO"],
   ];
   for (const [route, heading] of screens) {
     await page.goto(route);

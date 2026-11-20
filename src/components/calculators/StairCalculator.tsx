@@ -99,7 +99,7 @@ export function StairCalculator() {
           checks={result.checks}
           warnings={result.warnings}
           copyText={
-            "TRAZO · Escalera A.010\n" +
+            "TRAZZO · Escalera A.010\n" +
             result.values.risers +
             " contrapasos · cp " +
             result.values.riserHeight.toFixed(3) +

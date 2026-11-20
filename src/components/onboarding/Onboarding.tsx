@@ -74,7 +74,7 @@ export function Onboarding() {
         {step === 0 && (
           <>
             <h2 id="onboarding-title" ref={heading} tabIndex={-1}>
-              Bienvenido a TRAZO
+              Bienvenido a TRAZZO
             </h2>
             <p className="onboarding-note">
               <WifiOff size={16} aria-hidden="true" />

@@ -174,7 +174,7 @@ export function MatrixWorkspace() {
     if (!svg.current) return;
     download(
       new Blob([standaloneMarkup(svg.current)], { type: "image/svg+xml" }),
-      "trazo-relaciones.svg",
+      "trazzo-relaciones.svg",
     );
   }
 
@@ -209,7 +209,7 @@ export function MatrixWorkspace() {
       const margin = 10;
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(14);
-      pdf.text("TRAZO · Matriz de relaciones ponderadas", margin, 15);
+      pdf.text("TRAZZO · Matriz de relaciones ponderadas", margin, 15);
       const maxWidth = pageWidth - margin * 2;
       const maxHeight = pageHeight - 25;
       const scale = Math.min(maxWidth / viewBox.width, maxHeight / viewBox.height);
@@ -246,7 +246,7 @@ export function MatrixWorkspace() {
             return [a.name, b.name, relation, METHOD_WEIGHTS[relation]];
           }),
       });
-      pdf.save("trazo-relaciones.pdf");
+      pdf.save("trazzo-relaciones.pdf");
     } catch {
       setNotice("No se pudo exportar. Inténtalo de nuevo.");
     }

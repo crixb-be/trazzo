@@ -51,11 +51,7 @@ button {
   gap: 10px;
   padding: 0 12px 32px;
 }
-/*
- * TRAZO's mark (BrandMark): the transparent logo used as a mask and painted with the
- * theme's brand gold. --accent is #d4a359 in Modo Oscuro (the logo's own gold), a
- * darker gold that reads on white in Modo Claro, and the 7:1 gold of Modo Obra.
- */
+/* La m?scara transparente de TRAZZO toma el color de acento del tema activo. */
 .trazo-mark {
   display: block;
   flex: none;
