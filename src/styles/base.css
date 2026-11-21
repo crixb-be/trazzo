@@ -128,6 +128,11 @@ button {
   align-items: center;
   gap: var(--space-3);
 }
+.header-assistant[aria-current="page"] {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
 .global-search {
   max-width: 520px;
   flex: 1;

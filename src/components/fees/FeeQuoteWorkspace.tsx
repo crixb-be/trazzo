@@ -4,7 +4,6 @@ import { Copy, Plus, Trash2 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, Card, confirmDialog, PaywallModal } from "@/components/ui";
-import { ProjectsSwitch } from "@/components/layout/ProjectsSwitch";
 import {
   calculateFeeQuote,
   createDefaultFeeInput,
@@ -229,7 +228,6 @@ export function FeeQuoteWorkspace() {
 
   return (
     <div className="fees-page">
-      <ProjectsSwitch />
       <div className="page-heading-row">
         <div>
           <div className="eyebrow">Proyectos / Honorarios</div>

@@ -15,14 +15,14 @@ export function OfflineBadge({ lastSync }: OfflineBadgeProps) {
   return (
     <span
       className={"status " + (status.online ? "online" : "offline")}
-      title={displaySync ?? undefined}
+      title={displaySync ? label + " · " + displaySync : label}
     >
       {status.online ? (
         <Wifi size={13} aria-hidden="true" />
       ) : (
         <WifiOff size={13} aria-hidden="true" />
       )}
-      {label}
+      <span className="status-label">{label}</span>
     </span>
   );
 }

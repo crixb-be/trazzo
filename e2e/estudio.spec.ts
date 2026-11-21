@@ -10,8 +10,8 @@ test("Estudio abre desde la barra móvil y conserva las marcas del expediente", 
     "Normas",
     "Calcular",
     "Proyectos",
+    "Bitácora",
     "Estudio",
-    "Asistente",
   ]);
   expect(await nav.evaluate((element) => element.scrollWidth)).toBeLessThanOrEqual(360);
   const studio = nav.getByRole("link", { name: "Estudio" });
@@ -50,8 +50,15 @@ test("Estudio abre desde la barra móvil y conserva las marcas del expediente", 
       "aria-current",
       "page",
     );
-    await studio.click();
+    const back = page.getByRole("main").getByRole("link", { name: "Estudio", exact: true });
+    await expect(back).toHaveAttribute("href", "/estudio");
+    await back.click();
   }
+
+  const assistant = page.getByRole("link", { name: "Abrir asistente IA" });
+  await assistant.click();
+  await expect(assistant).toHaveAttribute("aria-current", "page");
+  await expect(nav.locator("[aria-current]")).toHaveCount(0);
 
   const avatar = page.getByRole("link", { name: "Abrir cuenta y planes" });
   await avatar.click();

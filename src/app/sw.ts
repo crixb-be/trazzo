@@ -19,7 +19,14 @@ async function handleNavigation(options: RouteHandlerCallbackOptions): Promise<R
   } catch {
     // Offline and never cached: fall through to the precached copies.
   }
-  const { pathname } = new URL(options.request.url);
+  const url = new URL(options.request.url);
+  const { pathname } = url;
+  if (pathname === "/medidas") {
+    const destination = new URL("/normativa?tab=medidas", url);
+    const query = url.searchParams.get("q");
+    if (query) destination.searchParams.set("q", query);
+    return Response.redirect(destination);
+  }
   const page = await serwist.matchPrecache(pathname);
   if (page) return page;
   return (await serwist.matchPrecache(OFFLINE_URL)) ?? Response.error();

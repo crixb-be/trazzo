@@ -1,37 +1,39 @@
 "use client";
 
-import { Search, UserRound, X } from "lucide-react";
+import { Search, Sparkles, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BrandMark } from "@/components/brand/BrandMark";
 import { GlobalSearch, OfflineBadge, ThemeToggle } from "@/components/ui";
 import { useAccountAvatar } from "@/lib/account/use-account-avatar";
 
+import { matchesNavItem, NAV_ITEMS } from "./nav-items";
+
 const titles: Record<string, string> = {
-  "/medidas": "Medidas de bolsillo",
   "/": "Espacio de trabajo",
-  "/normativa": "Biblioteca RNE",
   "/matriz": "Matriz de relaciones",
   "/calculadoras": "Calculadoras técnicas",
   "/bitacora": "Bitácora de obra",
   "/estudio": "Estudio profesional",
   "/metrados": "Proyectos y metrados",
   "/honorarios": "Honorarios y propuestas",
-  "/asistente": "Asistente RNE",
+  "/asistente": "Asistente IA",
   "/cuenta": "Cuenta y planes",
 };
 
 function pageTitle(pathname: string): string {
   if (titles[pathname]) return titles[pathname];
   if (pathname.startsWith("/normativa/")) return "Ficha normativa";
-  return "TRAZZO";
+  return NAV_ITEMS.find(({ href }) => href === pathname)?.label ?? "TRAZZO";
 }
 
 export function Header() {
   const pathname = usePathname();
+  const assistantActive = matchesNavItem(pathname, ["/asistente"]);
   const accountActive = pathname.startsWith("/cuenta");
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const mobileSearchTrigger = useRef<HTMLButtonElement>(null);
   // Own photo (synced from profiles) first; the sign-in provider's photo as fallback.
   const avatar = useAccountAvatar();
 
@@ -39,6 +41,20 @@ export function Header() {
   useEffect(() => {
     setMobileSearchOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    function openMobileSearch(event: KeyboardEvent): void {
+      const shortcut =
+        event.key === "/" || ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k");
+      if (!shortcut || mobileSearchOpen || !mobileSearchTrigger.current?.getClientRects().length) {
+        return;
+      }
+      event.preventDefault();
+      setMobileSearchOpen(true);
+    }
+    window.addEventListener("keydown", openMobileSearch);
+    return () => window.removeEventListener("keydown", openMobileSearch);
+  }, [mobileSearchOpen]);
 
   return (
     <header className="header">
@@ -50,8 +66,11 @@ export function Header() {
         <strong>{pageTitle(pathname)}</strong>
       </div>
       <div className="header-actions">
+        <OfflineBadge />
+        <ThemeToggle />
         <GlobalSearch />
         <button
+          ref={mobileSearchTrigger}
           className="icon-btn header-search-trigger"
           type="button"
           onClick={() => setMobileSearchOpen(true)}
@@ -60,8 +79,15 @@ export function Header() {
         >
           <Search size={17} aria-hidden="true" />
         </button>
-        <OfflineBadge />
-        <ThemeToggle />
+        <Link
+          className="icon-btn header-assistant"
+          href="/asistente"
+          aria-label="Abrir asistente IA"
+          title="Asistente IA"
+          aria-current={assistantActive ? "page" : undefined}
+        >
+          <Sparkles size={17} aria-hidden="true" />
+        </Link>
         <Link
           className={accountActive ? "account-avatar active" : "account-avatar"}
           href="/cuenta"

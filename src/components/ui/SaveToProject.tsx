@@ -50,8 +50,7 @@ export function SaveToProject({ sheet }: { sheet: ResultSheet }) {
   if (projects.length === 0) {
     return (
       <p className="save-to-project muted small" role="status">
-        Aún no tienes proyectos. <Link href="/metrados">Crea uno en Proyectos</Link> y vuelve a
-        guardar.
+        Aún no tienes proyectos. <Link href="/metrados">Crea un proyecto</Link> y vuelve a guardar.
       </p>
     );
   }

@@ -12,8 +12,7 @@ import {
   NotebookPen,
   Plus,
 } from "lucide-react";
-import type { CSSProperties } from "react";
-import { disciplineVisual, tileLayout, toolVisual } from "./tool-visuals";
+import { disciplineVisual, HOME_SHORTCUTS } from "./tool-visuals";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useState } from "react";
 import { GlobalSearch, Badge } from "@/components/ui";
@@ -22,9 +21,6 @@ import { db, type Project } from "@/lib/offline/db";
 import { useCards, useProjects, useSyncStatus } from "@/lib/offline/hooks";
 import { describeSyncStatus } from "@/lib/offline/sync";
 import { useLibraryActivity } from "@/lib/offline/library";
-import { resolveTools } from "@/lib/onboarding/onboarding";
-import { useOnboarding } from "@/lib/onboarding/use-onboarding";
-
 const categories: Array<{ name: RneCategory; label: string }> = [
   { name: "Accesibilidad", label: "Accesibilidad" },
   { name: "Circulación", label: "Circulación" },
@@ -54,9 +50,6 @@ export function HomeDashboard() {
   const projects = useProjects();
   const takeoffs = useLiveQuery(async () => (db ? db.takeoffs.toArray() : []), [], []) ?? [];
   const sync = useSyncStatus();
-  const onboarding = useOnboarding();
-  const calculators = resolveTools(onboarding.state?.tools ?? []);
-  const personalised = (onboarding.state?.tools.length ?? 0) > 0;
   const [quickQuery, setQuickQuery] = useState("");
 
   const library = cards.length ? cards : RNE_CARDS;
@@ -83,7 +76,6 @@ export function HomeDashboard() {
       : backedUp
         ? "En la nube"
         : "Local";
-  const tiles = tileLayout(calculators.length);
   const nothingYet = activeProjects.length === 0 && recentCards.length === 0;
 
   return (
@@ -117,51 +109,52 @@ export function HomeDashboard() {
             ))}
           </div>
         </div>
-        <div className="status-cards">
-          <Link className="status-card" href="/metrados">
-            <span className="status-card-icon" aria-hidden="true">
-              <FolderOpen size={17} />
-            </span>
-            <span className="status-card-body">
-              <small>
-                <span className="status-full">Proyectos activos</span>
-                <span className="status-short">Proyectos</span>
-              </small>
-              <strong className="mono">{allActive.length}</strong>
-            </span>
-          </Link>
-          <Link className="status-card" href="/cuenta">
-            <span
-              className={"status-card-icon " + (backedUp ? "is-ok" : "is-pending")}
-              aria-hidden="true"
-            >
-              {sync.online ? <Cloud size={17} /> : <CloudOff size={17} />}
-            </span>
-            <span className="status-card-body">
-              <small>Respaldo</small>
-              <strong>
-                <span className="status-full">{describeSyncStatus(sync)}</span>
-                <span className="status-short">{syncShort}</span>
-              </strong>
-            </span>
-          </Link>
-          <Link className="status-card" href="/normativa">
-            <span className="status-card-icon" aria-hidden="true">
-              <Library size={17} />
-            </span>
-            <span className="status-card-body">
-              <small>
-                <span className="status-full">Biblioteca offline</span>
-                <span className="status-short">Biblioteca</span>
-              </small>
-              <strong>
-                <span className="status-full">{plural(library.length, "ficha", "fichas")}</span>
-                <span className="status-short mono">{library.length}</span>
-              </strong>
-            </span>
-          </Link>
-        </div>
       </section>
+
+      <div className="status-cards">
+        <Link className="status-card" href="/metrados">
+          <span className="status-card-icon" aria-hidden="true">
+            <FolderOpen size={17} />
+          </span>
+          <span className="status-card-body">
+            <small>
+              <span className="status-full">Proyectos activos</span>
+              <span className="status-short">Proyectos</span>
+            </small>
+            <strong className="mono">{allActive.length}</strong>
+          </span>
+        </Link>
+        <Link className="status-card" href="/cuenta">
+          <span
+            className={"status-card-icon " + (backedUp ? "is-ok" : "is-pending")}
+            aria-hidden="true"
+          >
+            {sync.online ? <Cloud size={17} /> : <CloudOff size={17} />}
+          </span>
+          <span className="status-card-body">
+            <small>Respaldo</small>
+            <strong>
+              <span className="status-full">{describeSyncStatus(sync)}</span>
+              <span className="status-short">{syncShort}</span>
+            </strong>
+          </span>
+        </Link>
+        <Link className="status-card" href="/normativa">
+          <span className="status-card-icon" aria-hidden="true">
+            <Library size={17} />
+          </span>
+          <span className="status-card-body">
+            <small>
+              <span className="status-full">Biblioteca offline</span>
+              <span className="status-short">Biblioteca</span>
+            </small>
+            <strong>
+              <span className="status-full">{plural(library.length, "ficha", "fichas")}</span>
+              <span className="status-short mono">{library.length}</span>
+            </strong>
+          </span>
+        </Link>
+      </div>
 
       <Link href="/bitacora" className="surface-card site-log-featured" data-family="arena">
         <span className="tile-icon">
@@ -176,44 +169,20 @@ export function HomeDashboard() {
 
       <section className="dashboard-section">
         <div className="section-heading">
-          <div>
-            <div className="eyebrow">Acceso rápido</div>
-            <h2>{personalised ? "Tus herramientas" : "Herramientas de proyecto"}</h2>
-          </div>
-          <div className="inline-actions">
-            <Link className="source-link" href="/estudio">
-              Estudio
-            </Link>
-            <Link className="source-link" href="/calculadoras">
-              Ver todas
-            </Link>
-          </div>
+          <h2>Acceso rápido</h2>
         </div>
-        <div
-          className="calculator-tiles home-tiles"
-          style={{ "--tile-columns": tiles.columns } as CSSProperties}
-        >
-          {calculators.map((calculator, index) => {
-            const { icon: Icon, family } = toolVisual(calculator.id);
-            return (
-              <Link
-                className="calculator-tile"
-                href={calculator.href}
-                key={calculator.id}
-                data-family={family}
-                data-wide={index < tiles.wide ? "" : undefined}
-                data-wide-mobile={index < tiles.wideMobile ? "" : undefined}
-              >
-                <span className="tile-icon" aria-hidden="true">
-                  <Icon size={18} />
-                </span>
-                <span className="tile-copy">
-                  <strong>{calculator.title}</strong>
-                  <small className="mono">{calculator.detail}</small>
-                </span>
-              </Link>
-            );
-          })}
+        <div className="calculator-tiles home-tiles">
+          {HOME_SHORTCUTS.map(({ href, title, detail, icon: Icon, family }) => (
+            <Link className="calculator-tile" href={href} key={href} data-family={family}>
+              <span className="tile-icon" aria-hidden="true">
+                <Icon size={18} />
+              </span>
+              <span className="tile-copy">
+                <strong>{title}</strong>
+                <small className="mono">{detail}</small>
+              </span>
+            </Link>
+          ))}
         </div>
       </section>
 

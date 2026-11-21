@@ -96,23 +96,12 @@ html:not(.dark) {
   color: var(--fam);
 }
 
-/* Inicio: la grilla elige columnas y tarjetas anchas para no dejar huérfanas
-   (ver tileLayout en src/components/home/tool-visuals.tsx). */
 .home-dashboard .home-tiles {
-  grid-template-columns: repeat(var(--tile-columns, 4), minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
-.home-dashboard .home-tiles > [data-wide] {
-  grid-column: span 2;
-}
-@media (max-width: 1023px) {
+@media (min-width: 900px) {
   .home-dashboard .home-tiles {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-  .home-dashboard .home-tiles > [data-wide] {
-    grid-column: auto;
-  }
-  .home-dashboard .home-tiles > [data-wide-mobile] {
-    grid-column: 1 / -1;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -157,11 +146,11 @@ html:not(.dark) {
   display: none;
 }
 @media (max-width: 640px) {
-  .home-hero .status-card-icon {
+  .home-dashboard .status-card-icon {
     width: 28px;
     height: 28px;
   }
-  .home-hero .status-card-body strong {
+  .home-dashboard .status-card-body strong {
     font-size: calc(13px * var(--font-scale));
   }
   .status-full {

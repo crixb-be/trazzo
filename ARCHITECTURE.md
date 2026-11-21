@@ -57,7 +57,7 @@ Tokens (en `src/styles/tokens.css`; `globals.css` solo importa los módulos de `
 
 - Fuentes: `Inter` (UI) + `JetBrains Mono` (cotas, artículos, códigos de norma) vía `next/font/google`.
 - Estética de plano técnico: líneas finas 1px, grilla sutil de fondo en láminas, cotas con flechas y texto mono, sin sombras pesadas, radios 10–12px.
-- Layout: sidebar fija en desktop; **bottom tab bar** en móvil (Inicio, Normativa, Calculadoras, Metrados, Asistente). Cuenta en header.
+- Layout: sidebar fija en desktop; **bottom tab bar** en móvil (Inicio, Normativa, Calculadoras, Proyectos, Bitácora, Estudio), con los mismos destinos en desktop. Asistente IA y Cuenta en header.
 - Toggle dark/light persistido en `localStorage` (dark por defecto), sin flash (script inline en `<head>`).
 - Badge de estado offline/online siempre visible en el header.
 

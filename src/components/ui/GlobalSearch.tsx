@@ -42,6 +42,7 @@ export function GlobalSearch({
     function handleShortcut(event: KeyboardEvent): void {
       if (
         variant === "header" &&
+        inputRef.current?.getClientRects().length &&
         (event.key === "/" || ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k"))
       ) {
         event.preventDefault();
@@ -95,11 +96,7 @@ export function GlobalSearch({
         <input
           ref={inputRef}
           autoFocus={autoFocus}
-          placeholder={
-            variant === "inline"
-              ? "Busca fichas, medidas, herramientas o proyectos…"
-              : "Buscar en TRAZZO…"
-          }
+          placeholder="Buscar en TRAZZO…"
           value={query}
           onFocus={() => setOpen(true)}
           onChange={(event) => updateQuery(event.target.value)}

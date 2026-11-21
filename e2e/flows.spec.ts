@@ -34,6 +34,7 @@ test("todas las pantallas principales abren sin conexión", async ({ page, conte
     ["/normativa", "Normativa para decidir"],
     ["/normativa/escalera-paso-contrapaso", "Relación paso–contrapaso"],
     ["/calculadoras", "Cotas para decidir"],
+    ["/normativa?tab=medidas", "Medidas"],
     ["/medidas", "Medidas"],
     ["/matriz", "Matriz"],
     ["/estudio", "Estudio profesional"],
@@ -50,6 +51,15 @@ test("todas las pantallas principales abren sin conexión", async ({ page, conte
       route,
     ).toBeVisible();
   }
+
+  await page.goto("/normativa?cat=Accesibilidad");
+  const tabs = page.getByRole("navigation", { name: "Secciones de Normativa" });
+  await tabs.getByRole("link", { name: "Medidas de bolsillo" }).click();
+  await expect(page).toHaveURL(/normativa\?tab=medidas&cat=Accesibilidad$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Medidas de bolsillo");
+  await tabs.getByRole("link", { name: "Fichas RNE" }).click();
+  await expect(page).toHaveURL(/normativa\?cat=Accesibilidad$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Normativa para decidir");
 });
 
 test("las fotos de obra se guardan en el proyecto", async ({ page }) => {

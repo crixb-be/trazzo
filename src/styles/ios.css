@@ -144,8 +144,6 @@ html
     .saved-quote,
     .project-hub-list li,
     .suggested-prompts button,
-    .onboarding-roles button:not(.active),
-    .onboarding-tools button:not(.active),
     .detail-reference span,
     .norm-code-chip,
     .result-value,
@@ -261,7 +259,7 @@ html :is(.chip.active, .quick-chip[aria-pressed="true"]) {
   background: var(--accent-soft);
   color: var(--accent);
 }
-html :is(.segmented, .projects-switch, .relation-radio-group, .tax-toggle) {
+html :is(.segmented, .relation-radio-group, .tax-toggle) {
   border-color: transparent;
   border-radius: var(--radius-pill);
   background: var(--fill-tonal);
@@ -345,7 +343,7 @@ html .home-hero {
   );
   box-shadow: none;
 }
-html .home-hero .status-card {
+html .home-dashboard .status-card {
   border-color: transparent;
   background: var(--surface);
   box-shadow: var(--card-edge), var(--card-shadow);

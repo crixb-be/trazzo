@@ -272,9 +272,7 @@ textarea.input {
 .home-hero {
   display: grid;
   grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  grid-template-areas:
-    "copy search"
-    "status status";
+  grid-template-areas: "copy search";
   gap: 20px 32px;
   align-items: center;
   padding: 26px 28px;
@@ -346,7 +344,7 @@ textarea.input {
   background: var(--accent-soft);
 }
 .status-cards {
-  grid-area: status;
+  margin-top: 20px;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
@@ -954,8 +952,7 @@ textarea.input {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       "copy"
-      "search"
-      "status";
+      "search";
     gap: 16px;
   }
   .dashboard-columns {

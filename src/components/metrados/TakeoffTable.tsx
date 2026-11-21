@@ -85,9 +85,10 @@ export function TakeoffTable({
         <LoadingState label="Cargando catálogo de materiales…" rows={2} />
       ) : (
         <>
-          <label>
-            Capítulo
+          <div className="field">
+            <label htmlFor="part-chapter">Capítulo</label>
             <input
+              id="part-chapter"
               className="input"
               value={chapter}
               onChange={(e) => {
@@ -102,8 +103,8 @@ export function TakeoffTable({
               }}
               placeholder="Ej. Estructuras"
             />
-          </label>
-          <div className="takeoff-form">
+          </div>
+          <div className="takeoff-item-fields">
             <div className="field">
               <label htmlFor="part-name">Partida</label>
               <Input
@@ -150,6 +151,8 @@ export function TakeoffTable({
                 ))}
               </select>
             </div>
+          </div>
+          <div className="takeoff-number-fields">
             {["m2", "m3"].includes(unit ?? "") && (
               <>
                 <NumberInput
@@ -190,8 +193,10 @@ export function TakeoffTable({
               min={0}
               onValueChange={(value) => setDraft({ ...draft, unitPricePen: value ?? 0 })}
             />
+          </div>
+          <div className="takeoff-reference">
             <button
-              className="btn btn-ghost"
+              className="btn btn-ghost btn-sm"
               type="button"
               onClick={() =>
                 setDraft({
@@ -202,6 +207,8 @@ export function TakeoffTable({
             >
               Usar precio referencial
             </button>
+          </div>
+          <div className="takeoff-actions">
             <div className="takeoff-preview">
               <span className="muted small">Total con desperdicio</span>
               <strong className="mono">

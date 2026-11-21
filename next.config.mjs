@@ -4,13 +4,13 @@ import withSerwistInit from "@serwist/next";
 
 // Pages stored on the device when the app is installed, so every screen opens
 // without signal. Add new routes here.
+// /medidas is a redirect. Cache its destination shell instead.
 const APP_ROUTES = [
   "/",
   "/normativa",
   "/calculadoras",
   "/matriz",
   "/estudio",
-  "/medidas",
   "/metrados",
   "/bitacora",
   "/honorarios",

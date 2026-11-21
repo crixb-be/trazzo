@@ -4,6 +4,7 @@ import { createProject } from "./helpers";
 test("medidas filtra y las nuevas calculadoras responden", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/medidas");
+  await expect(page).toHaveURL(/normativa\?tab=medidas$/);
   await page.getByRole("textbox", { name: "Buscar medidas" }).fill("fondo de colgado");
   await expect(page.locator("article")).toHaveCount(1);
   await expect(page.locator("article")).toContainText("Por verificar");

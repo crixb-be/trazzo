@@ -3,7 +3,7 @@
 import { Download } from "lucide-react";
 import { useEffect, useState } from "react";
 import { detectPlatform, INSTALL_STEPS, type InstallPlatform } from "@/lib/onboarding/onboarding";
-import { useInstallPrompt } from "@/lib/onboarding/use-onboarding";
+import { useInstallPrompt } from "@/lib/onboarding/use-install-prompt";
 
 const PLATFORMS: Array<{ value: InstallPlatform; label: string }> = [
   { value: "ios", label: "iPhone" },

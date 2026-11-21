@@ -12,7 +12,7 @@ const steps = [
   {
     title: "Calculadoras normativas RNE",
     description:
-      "Abre Calculadoras, elige un módulo e ingresa las medidas de tu caso. Revisa las referencias del RNE para arquitectura (A.010 y A.120) e instalaciones sanitarias (IS.010). Para estructuras, consulta la norma de diseño sismorresistente E.030.",
+      "Abre Calculadoras, elige un módulo e ingresa las medidas de tu caso. Revisa las referencias del RNE para arquitectura (A.010 y A.120) e instalaciones sanitarias (IS.010). Para estructuras, consulta la norma de diseño sismorresistente E.030. En Normativa puedes cambiar entre Fichas RNE y Medidas de bolsillo.",
   },
   {
     title: "Trabajo offline y modo Claro/Oscuro",
@@ -22,7 +22,7 @@ const steps = [
   {
     title: "Proyectos, respaldo y sincronización",
     description:
-      "Pulsa «Guardar en proyecto» para conservar un resultado y usa «Compartir» para exportarlo. En Cuenta puedes descargar una copia de seguridad. Inicia sesión para sincronizar en la nube los datos que admiten respaldo cuando vuelva la conexión.",
+      "Crea tu obra en Proyectos. Pulsa «Guardar en proyecto» para conservar un resultado y usa «Compartir» para exportarlo. En Cuenta puedes descargar una copia de seguridad. Inicia sesión para sincronizar en la nube los datos que admiten respaldo cuando vuelva la conexión.",
   },
 ] as const;
 

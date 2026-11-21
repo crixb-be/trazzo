@@ -17,7 +17,7 @@ const routes = [
   "/bitacora",
   "/estudio",
   "/matriz",
-  "/medidas",
+  "/normativa?tab=medidas",
   "/metrados",
   "/honorarios",
   "/asistente",
@@ -60,11 +60,9 @@ test.describe("estados interactivos", () => {
       );
     };
     await page.goto("/cuenta");
-    await page.getByRole("button", { name: "Configurar accesos guiados" }).click();
+    await page.getByRole("button", { name: "Ver bienvenida" }).click();
     const dialog = page.getByRole("dialog");
     await expect(dialog).toBeVisible();
-    expect(await scan()).toEqual([]);
-    await dialog.getByRole("button", { name: /Estudiante/ }).click();
     expect(await scan()).toEqual([]);
     await dialog.getByRole("button", { name: "Continuar" }).click();
     expect(await scan()).toEqual([]);
@@ -74,7 +72,13 @@ test.describe("estados interactivos", () => {
     await expect(page.getByRole("dialog")).toHaveCount(0);
 
     await page.goto("/");
-    await page.getByRole("combobox", { name: "Buscar en TRAZZO" }).last().fill("rampa");
+    const search = page.getByRole("dialog", { name: "Buscar en el RNE" });
+    const query = search.getByRole("combobox", { name: "Buscar en TRAZZO" });
+    await expect(async () => {
+      await page.keyboard.press("Control+k");
+      await expect(query).toBeFocused({ timeout: 400 });
+    }).toPass({ timeout: 5000 });
+    await query.fill("rampa");
     await expect(page.getByRole("option").first()).toBeVisible();
     expect(await scan()).toEqual([]);
   });

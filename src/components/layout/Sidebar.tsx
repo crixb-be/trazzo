@@ -1,37 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import {
-  BookOpen,
-  Calculator,
-  Briefcase,
-  ClipboardList,
-  DraftingCompass,
-  Home,
-  MessageSquare,
-  Network,
-  NotebookPen,
-  Ruler,
-} from "lucide-react";
 import { usePathname } from "next/navigation";
 import { BrandMark } from "@/components/brand/BrandMark";
 
-const items = [
-  { href: "/", label: "Inicio", icon: Home },
-  { href: "/normativa", label: "Normativa", icon: BookOpen },
-  { href: "/medidas", label: "Medidas", icon: Ruler },
-  { href: "/matriz", label: "Matriz de relaciones", icon: Network },
-  { href: "/calculadoras", label: "Calculadoras", icon: Calculator },
-  { href: "/metrados", label: "Metrados", icon: ClipboardList },
-  { href: "/bitacora", label: "Bitácora", icon: NotebookPen },
-  { href: "/estudio", label: "Estudio", icon: DraftingCompass },
-  { href: "/honorarios", label: "Honorarios", icon: Briefcase },
-  { href: "/asistente", label: "Asistente", icon: MessageSquare },
-] as const;
-
-function isActive(pathname: string, href: string): boolean {
-  return href === "/" ? pathname === "/" : pathname.startsWith(href);
-}
+import { matchesNavItem, NAV_ITEMS } from "./nav-items";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -46,13 +19,13 @@ export function Sidebar() {
         </span>
       </Link>
 
-      <nav className="sidebar-nav">
-        {items.map(({ href, label, icon: Icon }) => (
+      <nav className="sidebar-nav" aria-label="Navegación principal">
+        {NAV_ITEMS.map(({ href, label, icon: Icon, match }) => (
           <Link
             key={href}
             href={href}
-            className={isActive(pathname, href) ? "active" : undefined}
-            aria-current={isActive(pathname, href) ? "page" : undefined}
+            className={matchesNavItem(pathname, match) ? "active" : undefined}
+            aria-current={matchesNavItem(pathname, match) ? "page" : undefined}
           >
             <Icon size={18} aria-hidden="true" />
             <span>{label}</span>

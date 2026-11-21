@@ -26,9 +26,6 @@
   .toast-region {
     bottom: calc(78px + env(safe-area-inset-bottom));
   }
-  .projects-switch {
-    display: grid;
-  }
 }
 /* Phones and tablets: every control is at least 44 px so it can be hit with
    one hand, and fields use 16 px text so iOS does not zoom on focus. */

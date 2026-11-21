@@ -1,16 +1,13 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { MEASURES } from "@/data/medidas";
 import { PocketDiagram } from "@/components/svg-diagrams/PocketDiagram";
 import { SaveToProject } from "@/components/ui/SaveToProject";
 import { ShareResult } from "@/components/ui/ShareResult";
 import { measureResultSheet } from "@/lib/share/workspace-sheets";
 import { MEASURE_FAMILY, familyOf } from "@/lib/ui/families";
-export function MeasuresWorkspace() {
-  const [query, setQuery] = useState("");
-  useEffect(() => {
-    setQuery(new URLSearchParams(window.location.search).get("q") ?? "");
-  }, []);
+export function MeasuresWorkspace({ initialQuery }: { initialQuery: string }) {
+  const [query, setQuery] = useState(initialQuery);
   const [category, setCategory] = useState("Todas");
   const normalize = (value: string) =>
     value

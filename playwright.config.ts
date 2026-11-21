@@ -6,9 +6,7 @@ const welcomed = {
   origins: [
     {
       origin: "http://127.0.0.1:3000",
-      localStorage: [
-        { name: "trazzo-onboarding", value: JSON.stringify({ done: true, role: null, tools: [] }) },
-      ],
+      localStorage: [{ name: "trazzo-onboarding", value: JSON.stringify({ done: true }) }],
     },
   ],
 };

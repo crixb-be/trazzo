@@ -47,8 +47,8 @@ export function searchCatalog(
     ...MEASURES.map((m) => ({
       id: "m:" + m.id,
       title: m.title,
-      kind: "Medidas",
-      href: "/medidas?q=" + encodeURIComponent(m.title),
+      kind: "Medidas de bolsillo",
+      href: "/normativa?tab=medidas&q=" + encodeURIComponent(m.title),
       terms: m.category + " " + m.note,
     })),
     ...TOOL_CATALOG.map(([id, title]) => ({
@@ -61,7 +61,7 @@ export function searchCatalog(
     {
       id: "matriz",
       title: "Matriz de relaciones",
-      kind: "Herramienta",
+      kind: "Estudio",
       href: "/matriz",
       terms: "programación arquitectónica ambientes",
     },
@@ -71,6 +71,13 @@ export function searchCatalog(
       kind: "Herramienta",
       href: "/bitacora",
       terms: "bitacora visita obra acta hallazgos residente supervisor",
+    },
+    {
+      id: "honorarios",
+      title: "Honorarios y propuestas",
+      kind: "Estudio",
+      href: "/honorarios",
+      terms: "cotización servicios profesionales",
     },
     ...projects.map((p) => ({
       id: "p:" + p.id,

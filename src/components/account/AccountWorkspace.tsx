@@ -6,6 +6,7 @@ import {
   Cloud,
   FileUp,
   FolderOpen,
+  Github,
   ImageUp,
   Images,
   RotateCcw,
@@ -25,7 +26,8 @@ import {
 } from "@/components/ui";
 import { AccountAccess } from "./AccountAccess";
 import { BackupCard } from "./BackupCard";
-import { FavoriteToolsEditor } from "@/components/onboarding/FavoriteToolsEditor";
+import { OnboardingButton } from "@/components/onboarding/Onboarding";
+import { APP_INFO } from "@/lib/app-info";
 import { WelcomeGuideButton } from "@/components/onboarding/WelcomeGuide";
 import { InstallGuide } from "@/components/onboarding/InstallGuide";
 import { SEED_VERSION } from "@/data/seed-rne";
@@ -707,7 +709,7 @@ export function AccountWorkspace() {
           <p className="muted small">Del estudio a la obra</p>
           <div className="app-info">
             <span>Versión</span>
-            <span className="mono">0.1.0</span>
+            <span className="mono">{APP_INFO.version}</span>
             <span>Catálogo</span>
             <span className="mono">v{SEED_VERSION}</span>
           </div>
@@ -720,14 +722,10 @@ export function AccountWorkspace() {
       <section className="account-grid account-section">
         <BackupCard plan={currentPlan} />
         <Card>
-          <div className="eyebrow">Inicio</div>
-          <h2>Tus herramientas</h2>
-          <FavoriteToolsEditor />
-        </Card>
-        <Card>
           <div className="eyebrow">Instalación</div>
           <h2>TRAZZO en tu pantalla de inicio</h2>
           <InstallGuide />
+          <OnboardingButton />
         </Card>
       </section>
 
@@ -735,6 +733,47 @@ export function AccountWorkspace() {
         Valores referenciales según la edición indicada del RNE. Verifica la versión vigente
         publicada por el MVCS antes de usar en expedientes.
       </p>
+
+      <section className="card developer-card" aria-labelledby="developer-title">
+        <h2 id="developer-title">Información del desarrollador</h2>
+        <div className="developer-profile">
+          {APP_INFO.developer.photoSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              className="developer-avatar"
+              src={APP_INFO.developer.photoSrc}
+              alt="Foto de Cristhian Bustamante"
+            />
+          ) : (
+            <span className="developer-avatar" aria-hidden="true">
+              CB
+            </span>
+          )}
+          <div className="developer-copy">
+            <strong>{APP_INFO.developer.name}</strong>
+            <p className="muted small">{APP_INFO.developer.subtitle}</p>
+            <p className="mono small">
+              {APP_INFO.name} · v{APP_INFO.version}
+            </p>
+            <div className="developer-stack">
+              {APP_INFO.stack.map((item) => (
+                <span className="badge" key={item}>
+                  {item}
+                </span>
+              ))}
+            </div>
+            <a
+              className="source-link"
+              href={APP_INFO.developer.githubUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub de Cristhian Bustamante"
+            >
+              <Github size={16} aria-hidden="true" /> GitHub
+            </a>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

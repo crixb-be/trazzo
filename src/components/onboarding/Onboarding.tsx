@@ -1,54 +1,53 @@
 "use client";
 
-import { Check, GraduationCap, HardHat, WifiOff } from "lucide-react";
+import { WifiOff } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import {
-  MAX_FAVORITE_TOOLS,
-  OPEN_ONBOARDING_EVENT,
-  QUICK_TOOLS,
-  suggestedTools,
-  toggleTool,
-  type UserRole,
-} from "@/lib/onboarding/onboarding";
-import { useOnboarding } from "@/lib/onboarding/use-onboarding";
+import { ONBOARDING_KEY, OPEN_ONBOARDING_EVENT } from "@/lib/onboarding/onboarding";
 import { InstallGuide } from "./InstallGuide";
 
-const STEPS = ["Tu perfil", "Tus herramientas", "Instalar"];
+const STEPS = ["Bienvenida", "Instalar"] as const;
 
-/** Optional setup for the shortcuts shown on Home. */
+export function OnboardingButton() {
+  return (
+    <button
+      type="button"
+      className="btn btn-ghost btn-sm"
+      onClick={() => window.dispatchEvent(new Event(OPEN_ONBOARDING_EVENT))}
+    >
+      Ver bienvenida
+    </button>
+  );
+}
+
 export function Onboarding() {
-  const { save } = useOnboarding();
-  const [open, setOpen] = useState(false);
-  const [step, setStep] = useState(0);
-  const [role, setRole] = useState<UserRole | null>(null);
-  const [tools, setTools] = useState<string[]>([]);
+  const [step, setStep] = useState<0 | 1 | null>(null);
   const heading = useRef<HTMLHeadingElement>(null);
+  const opener = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
     const show = () => {
+      opener.current =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
       setStep(0);
-      setRole(null);
-      setTools([]);
-      setOpen(true);
     };
     window.addEventListener(OPEN_ONBOARDING_EVENT, show);
     return () => window.removeEventListener(OPEN_ONBOARDING_EVENT, show);
   }, []);
 
   useEffect(() => {
-    if (open) heading.current?.focus();
-  }, [open, step]);
+    if (step !== null) heading.current?.focus();
+  }, [step]);
 
-  if (!open) return null;
+  if (step === null) return null;
 
   function finish(): void {
-    save({ done: true, role, tools });
-    setOpen(false);
-  }
-
-  function chooseRole(next: UserRole): void {
-    setRole(next);
-    setTools(suggestedTools(next));
-    setStep(1);
+    try {
+      localStorage.setItem(ONBOARDING_KEY, JSON.stringify({ done: true }));
+    } catch {
+      // The dialog can still close if storage is blocked.
+    }
+    setStep(null);
+    opener.current?.focus();
   }
 
   return (
@@ -70,95 +69,42 @@ export function Onboarding() {
         <p className="eyebrow">
           PASO {step + 1} DE {STEPS.length} · {STEPS[step].toUpperCase()}
         </p>
+        <h2 id="onboarding-title" ref={heading} tabIndex={-1}>
+          {step === 0 ? "Bienvenido a TRAZZO" : "Llévala en tu pantalla de inicio"}
+        </h2>
 
-        {step === 0 && (
+        {step === 0 ? (
+          <p className="onboarding-note">
+            <WifiOff size={16} aria-hidden="true" />
+            <span>
+              Funciona sin cuenta y sin señal. Consulta normas, haz cálculos y guarda tus metrados
+              en este dispositivo.
+            </span>
+          </p>
+        ) : (
           <>
-            <h2 id="onboarding-title" ref={heading} tabIndex={-1}>
-              Bienvenido a TRAZZO
-            </h2>
-            <p className="onboarding-note">
-              <WifiOff size={16} aria-hidden="true" />
-              <span>
-                Funciona sin cuenta y sin señal: normas, calculadoras y metrados se guardan en este
-                teléfono.
-              </span>
-            </p>
-            <p className="muted small">¿Cómo usarás la app? Solo ordena tus accesos.</p>
-            <div className="onboarding-roles">
-              <button type="button" onClick={() => chooseRole("estudiante")}>
-                <GraduationCap size={22} aria-hidden="true" />
-                <strong>Estudiante</strong>
-                <small>Taller, programa y anteproyecto</small>
-              </button>
-              <button type="button" onClick={() => chooseRole("profesional")}>
-                <HardHat size={22} aria-hidden="true" />
-                <strong>Profesional</strong>
-                <small>Obra, metrados y honorarios</small>
-              </button>
-            </div>
-          </>
-        )}
-
-        {step === 1 && (
-          <>
-            <h2 id="onboarding-title" ref={heading} tabIndex={-1}>
-              Elige tus herramientas
-            </h2>
             <p className="muted small">
-              Aparecen primero en Inicio. Hasta {MAX_FAVORITE_TOOLS}; puedes cambiarlas en Cuenta.
-            </p>
-            <div className="onboarding-tools" role="group" aria-label="Herramientas favoritas">
-              {QUICK_TOOLS.map((tool) => {
-                const selected = tools.includes(tool.id);
-                return (
-                  <button
-                    key={tool.id}
-                    type="button"
-                    className={selected ? "active" : ""}
-                    aria-pressed={selected}
-                    onClick={() => setTools((current) => toggleTool(current, tool.id))}
-                  >
-                    {selected && <Check size={14} aria-hidden="true" />}
-                    {tool.title}
-                  </button>
-                );
-              })}
-            </div>
-          </>
-        )}
-
-        {step === 2 && (
-          <>
-            <h2 id="onboarding-title" ref={heading} tabIndex={-1}>
-              Llévala en tu pantalla de inicio
-            </h2>
-            <p className="muted small">
-              Instalada abre a pantalla completa y sin conexión. Es opcional.
+              Si la instalas, podrás abrirla a pantalla completa desde el ícono de TRAZZO.
             </p>
             <InstallGuide />
           </>
         )}
 
         <div className="onboarding-actions">
-          {step === 0 ? (
-            <button type="button" className="btn btn-secondary" onClick={finish}>
-              Omitir
-            </button>
-          ) : (
-            <button type="button" className="btn btn-secondary" onClick={() => setStep(step - 1)}>
-              Atrás
-            </button>
-          )}
-          {step === 1 && (
-            <button type="button" className="btn btn-primary" onClick={() => setStep(2)}>
-              Continuar
-            </button>
-          )}
-          {step === 2 && (
-            <button type="button" className="btn btn-primary" onClick={finish}>
-              Empezar
-            </button>
-          )}
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={step === 0 ? finish : () => setStep(0)}
+          >
+            {step === 0 ? "Omitir" : "Atrás"}
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={step === 0 ? () => setStep(1) : finish}
+          >
+            {step === 0 ? "Continuar" : "Empezar"}
+          </button>
         </div>
       </div>
     </div>

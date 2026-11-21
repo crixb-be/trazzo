@@ -119,20 +119,25 @@
     min-width: 0;
     overflow: hidden;
   }
+  .header-actions .status-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
   .header-title .eyebrow {
     display: none;
   }
   .bottom-nav a span {
     font-size: calc(0.65rem * var(--font-scale));
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
+    white-space: normal;
+    text-align: center;
   }
   .header-title strong {
     max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow-wrap: anywhere;
     font-size: calc(15px * var(--font-scale));
   }
   .header-actions {

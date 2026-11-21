@@ -92,34 +92,6 @@
 .modal-backdrop {
   z-index: 50;
 }
-/* Metrados / Honorarios share the "Proyectos" tab. */
-.projects-switch {
-  display: inline-grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-1);
-  margin-bottom: 18px;
-  padding: 4px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-}
-.projects-switch a {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  min-height: 40px;
-  padding: 0 16px;
-  border-radius: 7px;
-  color: var(--muted);
-  font-size: var(--text-md);
-  text-decoration: none;
-}
-.projects-switch a.active {
-  background: var(--surface-2);
-  color: var(--accent);
-  font-weight: 600;
-}
 .welcome-guide {
   margin-bottom: var(--space-4);
 }

@@ -6,7 +6,6 @@ import type { jsPDF } from "jspdf";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Button, Card, confirmDialog, EmptyState, PaywallModal, toast } from "@/components/ui";
-import { ProjectsSwitch } from "@/components/layout/ProjectsSwitch";
 import { MATERIALS } from "@/data/seed-rne";
 import { computeProjectTotals, computeTakeoffLine } from "@/lib/calculators/takeoff";
 import { type Project, type Takeoff } from "@/lib/offline/db";
@@ -308,7 +307,6 @@ export function MetradosWorkspace() {
 
   return (
     <div className="metrados-page">
-      <ProjectsSwitch />
       <div className="eyebrow">Proyectos / Metrados</div>
       <div className="page-heading-row">
         <div>

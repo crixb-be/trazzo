@@ -392,6 +392,17 @@
 .compact-field {
   min-width: 0;
 }
+.takeoff-reference,
+.takeoff-actions {
+  margin-top: var(--space-2);
+}
+.takeoff-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
 .takeoff-preview {
   display: grid;
   gap: 5px;
@@ -819,4 +830,58 @@
 }
 .mobile-search-sheet .search-box kbd {
   display: none;
+}
+
+.studio-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.developer-card {
+  margin-top: var(--space-4);
+  border: 1px solid var(--border);
+}
+.developer-profile {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+.developer-avatar {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+  object-fit: cover;
+}
+.developer-copy {
+  display: grid;
+  justify-items: start;
+  gap: var(--space-1);
+  overflow-wrap: anywhere;
+}
+.developer-copy p {
+  margin: 0;
+}
+.developer-stack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-block: var(--space-1);
+}
+.developer-stack .badge {
+  background: var(--surface-2);
+  color: var(--muted);
+}
+.developer-copy a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
 }

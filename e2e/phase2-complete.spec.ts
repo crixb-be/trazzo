@@ -32,7 +32,7 @@ test("buscador abre medidas y honorarios conserva datos entre pasos", async ({ p
   await page.goto("/");
   await page.getByRole("combobox", { name: "Buscar en TRAZZO" }).last().fill("clóset");
   await page.getByRole("option").filter({ hasText: "Clóset" }).first().click();
-  await expect(page).toHaveURL(/medidas/);
+  await expect(page).toHaveURL(/normativa\?tab=medidas&q=/);
   await page.goto("/honorarios");
   await page.getByPlaceholder("Casa Miraflores").fill("Proyecto por pasos");
   await page.getByRole("button", { name: "Siguiente", exact: true }).click();
