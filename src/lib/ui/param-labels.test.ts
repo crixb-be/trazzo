@@ -8,8 +8,9 @@ describe("paramMeta", () => {
     expect(paramMeta("cp").unit).toBe("m");
   });
 
-  it("has a readable label for every numeric parameter in the seed", () => {
+  it("has a readable label for every editable numeric diagram parameter in the seed", () => {
     for (const card of RNE_CARDS) {
+      if (card.svg_type === "reference") continue;
       for (const [name, value] of Object.entries(card.params)) {
         if (typeof value !== "number") continue;
         expect(paramMeta(name).label, card.slug + "." + name).not.toBe(name.replaceAll("_", " "));

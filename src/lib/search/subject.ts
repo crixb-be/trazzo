@@ -53,7 +53,7 @@ export const ELEMENT_FAMILIES: ElementFamily[] = [
   {
     id: "evacuacion",
     queryTerms: ["evacuacion", "salida de emergencia", "ruta de escape", "aforo"],
-    cardTerms: ["evacuacion", "recorrido", "ocupante"],
+    cardTerms: ["evacuacion", "recorrido", "ocupante", "aforo"],
   },
 ];
 

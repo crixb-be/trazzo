@@ -14,6 +14,9 @@ import {
   LoadingState,
   PaywallModal,
 } from "@/components/ui";
+import { VerificationBadge } from "@/components/ui/VerificationBadge";
+import { A090_CODE } from "@/data/norms/a090";
+import { NTS113_CODE } from "@/data/norms/nts113";
 import { useLibraryActivity } from "@/lib/offline/library";
 import type { RneCategory } from "@/data/seed-rne";
 import { useCards } from "@/lib/offline/hooks";
@@ -31,6 +34,8 @@ const categories: Array<"Todas" | RneCategory> = [
   "Seguridad",
   "Sanitarias",
   "Estacionamientos",
+  "Salud",
+  "Servicios Comunales",
 ];
 const normCodes = [
   "Todos",
@@ -38,11 +43,13 @@ const normCodes = [
   "A.020",
   "A.070",
   "A.080",
+  A090_CODE,
   "A.120",
   "A.130",
   "IS.010",
   "E.020",
   "E.060",
+  NTS113_CODE,
 ];
 
 export function NormativaCatalog() {
@@ -224,7 +231,7 @@ export function NormativaCatalog() {
                         <Lock size={11} /> Pro
                       </Badge>
                     )}
-                    {!card.verified_at && <Badge variant="por-verificar">Por verificar</Badge>}
+                    <VerificationBadge source={card} />
                   </div>
                   <h2>{card.title}</h2>
                   <p>{card.summary}</p>

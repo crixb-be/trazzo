@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { RNE_CARDS } from "@/data/seed-rne";
+import { retrieveLocal } from "@/lib/rag/retrieve";
 import { normalize } from "./normalize";
 import { searchCards } from "./search";
 
@@ -50,6 +51,17 @@ describe("tolerant RNE search", () => {
       "puerta-accesible-ancho",
     );
     expect(searchCards(RNE_CARDS, "puerta baño accesible")[0]?.slug).toBe("puerta-accesible-ancho");
+  });
+
+  it.each([
+    ["ancho de pasadizo en una posta", "nts113-corredores-asistenciales"],
+    ["área mínima de consultorio de medicina general", "nts113-consultorios-areas"],
+    ["aforo de sala de lectura de biblioteca", "a090-aforo"],
+    ["baños para público en municipalidad", "a090-sshh-publico"],
+    ["altura libre centro de salud I-4", "nts113-altura-libre"],
+  ])("ranks the relevant card first for %s", (query, slug) => {
+    expect(searchCards(RNE_CARDS, query)[0]?.slug).toBe(slug);
+    expect(retrieveLocal(query)[0]?.slug).toBe(slug);
   });
 
   it("treats a stopword-only query as empty", () => {

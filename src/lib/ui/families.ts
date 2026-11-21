@@ -13,6 +13,8 @@ export const DISCIPLINE_FAMILY: Record<string, Family> = {
   Seguridad: "terracota",
   Sanitarias: "pizarra",
   Estacionamientos: "piedra",
+  Salud: "salvia",
+  "Servicios Comunales": "arena",
 };
 
 /** Pocket-measure categories. */
@@ -21,6 +23,8 @@ export const MEASURE_FAMILY: Record<string, Family> = {
   Ambientes: "arena",
   Mobiliario: "piedra",
   Montaje: "pizarra",
+  Salud: "salvia",
+  "Servicios Comunales": "arena",
 };
 
 export function familyOf(map: Record<string, Family>, key: string): Family {

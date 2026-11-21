@@ -616,8 +616,10 @@ textarea.input {
 /* --------------------------------------------------------------- medidas */
 .measures-toolbar {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
   gap: 12px;
+}
+.measures-toolbar > .field {
+  min-width: 0;
 }
 .measures-page .result-count {
   margin: 14px 0 12px;
@@ -679,11 +681,6 @@ textarea.input {
 }
 .measure-actions .btn {
   white-space: nowrap;
-}
-@media (max-width: 640px) {
-  .measures-toolbar {
-    grid-template-columns: minmax(0, 1fr);
-  }
 }
 
 /* ---------------------------------------------------------------- matriz */

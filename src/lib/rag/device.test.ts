@@ -7,5 +7,7 @@ it("responde sin red con cita y reconoce ausencia de fuentes", () => {
 });
 it("vincula herramientas pertinentes", () => {
   expect(calculatorForCard("escalera-paso-contrapaso")).toBe("escaleras");
+  expect(calculatorForCard("nts113-escaleras-rampas")).toBe("salud-nts113");
+  expect(calculatorForCard("a090-aforo")).toBe("comunales-a090");
   expect(calculatorForCard("otro")).toBeNull();
 });

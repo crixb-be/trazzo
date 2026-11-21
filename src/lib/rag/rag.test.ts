@@ -4,7 +4,7 @@ import { citationForCard, parseCitations } from "./citations";
 import { buildLocalAnswer, buildSystemPrompt } from "./prompt";
 import { retrieveLocal } from "./retrieve";
 
-const CITATION = /\[[A-Z]{1,3}\.\d{3}\s+[^\]]+\]/g;
+const CITATION = /\[(?:NTS 113|[A-Z]{1,3}\.\d{3})\s+[^\]]+\]/g;
 
 describe("local RAG", () => {
   it("keeps the extractive answer to the clearly relevant cards", () => {
@@ -58,6 +58,14 @@ describe("card-specific citations", () => {
       const [segment] = parseCitations(citationForCard(card));
       expect(segment.href).toBe(`/normativa/${card.slug}`);
     }
+  });
+
+  it.each([
+    ["[NTS 113 Num. 6.2.1.6 · Altura libre en establecimientos I-1 a I-4]", "nts113-altura-libre"],
+    ["[A.090 Art. 11 · Aforo por uso en servicios comunales]", "a090-aforo"],
+  ])("resolves the citation %s", (citation, slug) => {
+    const [segment] = parseCitations(citation);
+    expect(segment).toMatchObject({ slug, href: `/normativa/${slug}` });
   });
 
   it("still resolves the legacy article-only format", () => {

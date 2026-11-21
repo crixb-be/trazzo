@@ -1,3 +1,5 @@
+import { NTS113_CARDS } from "@/data/norms/nts113";
+import { RNE_CARDS } from "@/data/seed-rne";
 import { describe, expect, it } from "vitest";
 import {
   accessFilterLabel,
@@ -37,6 +39,28 @@ describe("matchesAccessFilter", () => {
     expect(matchesAccessFilter("favoritas", favorite)).toBe(true);
     expect(matchesAccessFilter("favoritas", free)).toBe(false);
     for (const item of [free, pro, favorite]) expect(matchesAccessFilter("todas", item)).toBe(true);
+  });
+});
+
+describe("filtros del catálogo normativo", () => {
+  it("incluye las fichas PRO de las nuevas normas y excluye las gratuitas", () => {
+    const filtered = RNE_CARDS.filter((card) =>
+      matchesAccessFilter("pro", { isPro: Boolean(card.is_pro), favorite: false }),
+    );
+
+    expect(filtered).toEqual(RNE_CARDS.filter((card) => card.is_pro));
+    expect(filtered.map((card) => card.slug)).toEqual(
+      expect.arrayContaining([
+        "nts113-consultorios-areas",
+        "nts113-urgencias",
+        "nts113-atencion-parto",
+        "a090-estacionamientos",
+      ]),
+    );
+  });
+
+  it("devuelve exactamente las fichas NTS 113 para Salud", () => {
+    expect(RNE_CARDS.filter((card) => card.category === "Salud")).toEqual(NTS113_CARDS);
   });
 });
 

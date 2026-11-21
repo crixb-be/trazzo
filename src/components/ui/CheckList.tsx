@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, Info, XCircle } from "lucide-react";
 import type { CalcCheck } from "@/lib/calculators/types";
 
 export interface CheckListProps {
@@ -12,7 +12,7 @@ function formatValue(value: number | string): string {
 }
 
 function referenceHref(reference: string): string {
-  const match = reference.match(/[A-Z]{1,3}\.\d{3}/);
+  const match = reference.match(/(?:NTS \d+|[A-Z]{1,3}\.\d{3})/);
   return match ? "/normativa?q=" + encodeURIComponent(match[0]) : "/normativa";
 }
 
@@ -24,8 +24,13 @@ export function CheckList({ checks }: CheckListProps) {
   return (
     <div className="check-list" aria-label="Comprobaciones normativas">
       {checks.map((check) => (
-        <div className={"check " + (check.pass ? "pass" : "fail")} key={check.label}>
-          {check.pass ? (
+        <div
+          className={"check " + (check.informational ? "muted" : check.pass ? "pass" : "fail")}
+          key={check.label}
+        >
+          {check.informational ? (
+            <Info size={16} aria-label="Información" />
+          ) : check.pass ? (
             <CheckCircle2 size={16} aria-label="Cumple" />
           ) : (
             <XCircle size={16} aria-label="No cumple" />
@@ -34,7 +39,10 @@ export function CheckList({ checks }: CheckListProps) {
             {check.label}
             <br />
             <span className="muted small mono">
-              valor {formatValue(check.value)} · límite {formatValue(check.limit)} ·{" "}
+              {check.informational
+                ? formatValue(check.value)
+                : `valor ${formatValue(check.value)} · límite ${formatValue(check.limit)}`}
+              {" · "}
               <Link href={referenceHref(check.ref)}>{check.ref}</Link>
             </span>
           </span>

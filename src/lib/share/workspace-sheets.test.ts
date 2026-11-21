@@ -51,6 +51,20 @@ describe("workspace result sheets", () => {
       "Ponderación del método: necesaria 4, deseable 2, innecesaria 0.",
     );
   });
+  it("keeps the source and unit of a ratio measure without a depth row", () => {
+    const measure = MEASURES.find((item) => item.id === "a090-sala-lectura")!;
+    const { rows } = measureResultSheet(measure);
+
+    expect(rows).toEqual(
+      expect.arrayContaining([
+        { label: measure.valueLabel, value: `${measure.width} ${measure.unit}` },
+        { label: "Norma", value: measure.norm_code },
+        { label: "Artículo", value: measure.article },
+      ]),
+    );
+    expect(rows.some((row) => row.label === "Profundidad")).toBe(false);
+  });
+
   it("creates a measure sheet", () => {
     const sheet = measureResultSheet(MEASURES[0]);
     expect(sheet.title).toBe(MEASURES[0].title);

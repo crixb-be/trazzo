@@ -21,11 +21,13 @@ const APP_ROUTES = [
   "/~offline",
 ];
 
-// One page per RNE card; the slugs are read from the seed so the list cannot drift.
-const seed = readFileSync(new URL("./src/data/seed-rne.ts", import.meta.url), "utf8");
-const cardRoutes = [...seed.matchAll(/^\s+slug: "([a-z0-9-]+)",$/gm)].map(
-  (match) => "/normativa/" + match[1],
-);
+// Read the slugs directly from the seed and the verified norm tables.
+const cardRoutes = ["seed-rne.ts", "norms/nts113.ts", "norms/a090.ts"].flatMap((path) => {
+  const source = readFileSync(new URL("./src/data/" + path, import.meta.url), "utf8");
+  return [...source.matchAll(/^\s+slug: "([a-z0-9-]+)",$/gm)].map(
+    (match) => "/normativa/" + match[1],
+  );
+});
 
 const revision = process.env.VERCEL_GIT_COMMIT_SHA ?? randomUUID();
 

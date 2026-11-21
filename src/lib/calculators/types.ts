@@ -2,6 +2,7 @@
 export interface CalcCheck {
   label: string;
   pass: boolean;
+  informational?: boolean;
   value: number | string;
   limit: number | string;
   ref: string;

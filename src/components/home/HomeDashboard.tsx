@@ -18,6 +18,8 @@ const categories: Array<{ name: RneCategory; label: string }> = [
   { name: "Seguridad", label: "Seguridad" },
   { name: "Sanitarias", label: "Sanitarias" },
   { name: "Estacionamientos", label: "Estacionamientos" },
+  { name: "Salud", label: "Salud" },
+  { name: "Servicios Comunales", label: "Servicios Comunales" },
 ];
 
 /** Frequent field searches; each chip fills the search box. */

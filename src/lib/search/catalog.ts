@@ -1,4 +1,6 @@
 import { FIELD_EXTRA_TOOLS } from "@/lib/calculators/field-extra";
+import { A090_CODE } from "@/data/norms/a090";
+import { NTS113_CODE } from "@/data/norms/nts113";
 import { MEASURES } from "@/data/medidas";
 import type { RneCard } from "@/data/seed-rne";
 import type { Project, FeeQuote } from "@/lib/offline/db";
@@ -27,6 +29,16 @@ export const TOOL_CATALOG = [
   ["sanitarios", "Aparatos sanitarios"],
   ["luz", "Iluminación y ventilación natural"],
   ["parking", "Estacionamientos accesibles"],
+  [
+    "salud-nts113",
+    `Salud · ${NTS113_CODE}`,
+    "salud minsa posta centro de salud consultorio corredor puerta altura parto urgencias",
+  ],
+  [
+    "comunales-a090",
+    `Servicios Comunales · ${A090_CODE}`,
+    "servicios comunales municipalidad biblioteca comisaría aforo baños aparatos sanitarios",
+  ],
   ...FIELD_EXTRA_TOOLS.map(({ id, label }) => [id, label] as const),
 ] as const;
 export function searchCatalog(
@@ -49,14 +61,14 @@ export function searchCatalog(
       title: m.title,
       kind: "Medidas de bolsillo",
       href: "/normativa?tab=medidas&q=" + encodeURIComponent(m.title),
-      terms: m.category + " " + m.note,
+      terms: [m.category, m.note, m.norm_code, m.article].join(" "),
     })),
-    ...TOOL_CATALOG.map(([id, title]) => ({
+    ...TOOL_CATALOG.map(([id, title, terms]) => ({
       id: "c:" + id,
       title,
       kind: "Calculadora",
       href: "/calculadoras?tab=" + id,
-      terms: "herramienta",
+      terms: terms ? `herramienta ${terms}` : "herramienta",
     })),
     {
       id: "matriz",

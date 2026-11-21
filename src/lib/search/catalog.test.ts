@@ -12,6 +12,17 @@ it("encuentra herramientas y medidas sin tildes", () => {
   ).toBe(true);
   expect(searchCatalog("", RNE_CARDS, [], [])).toEqual([]);
 });
+it("encuentra las calculadoras y medidas normativas por sus términos", () => {
+  expect(searchCatalog("posta urgencias", RNE_CARDS, [], []).map(({ id }) => id)).toContain(
+    "c:salud-nts113",
+  );
+  expect(
+    searchCatalog("municipalidad aparatos sanitarios", RNE_CARDS, [], []).map(({ id }) => id),
+  ).toContain("c:comunales-a090");
+  expect(searchCatalog("a.090 art. 11 lectura", RNE_CARDS, [], []).map(({ id }) => id)).toContain(
+    "m:a090-sala-lectura",
+  );
+});
 it("busca proyectos locales sin confundir identificadores", () => {
   const result = searchCatalog(
     "obra norte",

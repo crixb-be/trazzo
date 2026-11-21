@@ -1,13 +1,78 @@
 import type { PocketMeasure } from "@/data/medidas";
 /** Dibujo propio: envolvente esquemática, no plano de distribución. */
 export function PocketDiagram({ measure: m }: { measure: PocketMeasure }) {
-  const w = (190 * m.width) / Math.max(m.width, m.depth);
-  const h = (190 * m.depth) / Math.max(m.width, m.depth);
+  const { depth } = m;
+  const value = `${m.width} ${m.unit === "m²/persona" ? "m² por persona" : (m.unit ?? "m")}`;
+  if (m.diagram === "ratio") {
+    return (
+      <svg
+        viewBox="0 0 300 280"
+        role="img"
+        aria-label={m.title + ": " + value}
+        style={{ width: "100%", maxHeight: 240 }}
+      >
+        <rect
+          x="55"
+          y="45"
+          width="190"
+          height="190"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
+        <text
+          x="150"
+          y="140"
+          fill="currentColor"
+          fontSize="15"
+          textAnchor="middle"
+          dominantBaseline="central"
+        >
+          {value}
+        </text>
+      </svg>
+    );
+  }
+
+  if (m.diagram === "cota" || depth === null) {
+    const label = m.valueLabel ?? "Ancho";
+    const vertical = label.startsWith("Altura");
+    return (
+      <svg
+        viewBox="0 0 300 280"
+        role="img"
+        aria-label={`${m.title}: ${label}, ${value}`}
+        style={{ width: "100%", maxHeight: 240 }}
+      >
+        <path
+          d={vertical ? "M75 45v190M67 45h16m-16 190h16" : "M40 125h220M40 117v16m220-16v16"}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
+        <text
+          x={vertical ? 180 : 150}
+          y={vertical ? 135 : 153}
+          fill="currentColor"
+          fontSize="14"
+          textAnchor="middle"
+        >
+          <tspan>{label}</tspan>
+          <tspan x={vertical ? 180 : 150} dy="21">
+            {value}
+          </tspan>
+        </text>
+      </svg>
+    );
+  }
+
+  const w = (190 * m.width) / Math.max(m.width, depth);
+  const h = (190 * depth) / Math.max(m.width, depth);
   return (
     <svg
       viewBox="0 0 300 280"
       role="img"
-      aria-label={`${m.title}: ${m.width} por ${m.depth} metros`}
+      aria-label={`${m.title}: ${m.width} por ${depth} metros`}
       style={{ width: "100%", maxHeight: 240 }}
     >
       <g fill="none" stroke="currentColor" strokeWidth="2">
@@ -26,7 +91,7 @@ export function PocketDiagram({ measure: m }: { measure: PocketMeasure }) {
           {m.width} m
         </text>
         <text x="265" y="125" transform="rotate(-90 265 125)">
-          {m.depth} m
+          {depth} m
         </text>
       </g>
     </svg>

@@ -8,6 +8,11 @@ import { EvacuationCalculator } from "./EvacuationCalculator";
 import { LightWellCalculator } from "./LightWellCalculator";
 import { RampCalculator } from "./RampCalculator";
 import { StairCalculator } from "./StairCalculator";
+import { A090_LEGAL_NOTE } from "@/data/norms/a090";
+import { NTS113_LEGAL_NOTE } from "@/data/norms/nts113";
+import { RNE_WARNING } from "@/lib/calculators/types";
+import { HealthNts113Calculator } from "./HealthNts113Calculator";
+import { CommunalA090Calculator } from "./CommunalA090Calculator";
 import { WaterCalculator } from "./WaterCalculator";
 
 import { MaterialsCalculator } from "./materials/MaterialsCalculator";
@@ -31,7 +36,9 @@ type CalculatorTab =
   | "rampas"
   | "agua"
   | "pozos"
-  | "evacuacion";
+  | "evacuacion"
+  | "salud-nts113"
+  | "comunales-a090";
 
 const tabs: Array<{ id: CalculatorTab; label: string }> = [
   { id: "aforo", label: "Aforo" },
@@ -46,6 +53,8 @@ const tabs: Array<{ id: CalculatorTab; label: string }> = [
   { id: "agua", label: "Dotación de agua" },
   { id: "pozos", label: "Pozos de luz" },
   { id: "evacuacion", label: "Evacuación" },
+  { id: "salud-nts113", label: "Salud · NTS 113" },
+  { id: "comunales-a090", label: "Servicios Comunales · A.090" },
   ...FIELD_EXTRA_TOOLS,
 ];
 
@@ -102,8 +111,11 @@ export function CalculatorWorkspace() {
         </nav>
       </div>
       <div className="calculator-disclaimer">
-        Valores referenciales según la edición indicada del RNE. Verifica la versión vigente
-        publicada por el MVCS antes de usar en expedientes.
+        {activeTab === "salud-nts113"
+          ? NTS113_LEGAL_NOTE
+          : activeTab === "comunales-a090"
+            ? A090_LEGAL_NOTE
+            : RNE_WARNING}
       </div>
       {(["aforo", "sanitarios", "luz", "parking"] as string[]).includes(activeTab) && (
         <RneExtraCalculators key={activeTab} tool={activeTab as RneTool} />
@@ -117,6 +129,8 @@ export function CalculatorWorkspace() {
       {activeTab === "agua" && <WaterCalculator />}
       {activeTab === "pozos" && <LightWellCalculator />}
       {activeTab === "evacuacion" && <EvacuationCalculator />}
+      {activeTab === "salud-nts113" && <HealthNts113Calculator />}
+      {activeTab === "comunales-a090" && <CommunalA090Calculator />}
     </div>
   );
 }

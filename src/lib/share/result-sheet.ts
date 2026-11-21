@@ -55,6 +55,7 @@ export function calculatorSheet(input: {
   details: string;
   checks: CalcCheck[];
   warnings: string[];
+  disclaimer?: string;
 }): ResultSheet {
   return {
     kind: "calculo",
@@ -63,12 +64,14 @@ export function calculatorSheet(input: {
     subtitle: input.details,
     rows: input.checks.map((check) => ({
       label: check.label + (check.ref ? " (" + check.ref + ")" : ""),
-      value: tidy(check.value) + " / " + tidy(check.limit),
-      status: check.pass ? "ok" : "fail",
+      value: check.informational
+        ? tidy(check.value)
+        : tidy(check.value) + " / " + tidy(check.limit),
+      status: check.informational ? undefined : check.pass ? "ok" : "fail",
     })),
     // The general disclaimer goes once at the foot, not also as a note.
     notes: input.warnings.filter((warning) => warning !== RNE_WARNING),
-    disclaimer: RNE_WARNING,
+    disclaimer: input.disclaimer ?? RNE_WARNING,
   };
 }
 

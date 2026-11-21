@@ -8,7 +8,14 @@ export interface CitationSegment {
   href: string | null;
 }
 
-const CITATION_PATTERN = /\[([A-Z]{1,3}\.\d{3}\s+[^\]]+)\]/g;
+const NORM_CODES = [...new Set(RNE_CARDS.map((card) => card.norm_code))].sort(
+  (left, right) => right.length - left.length,
+);
+const knownCodes = NORM_CODES.map((code) => code.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|");
+const CITATION_PATTERN = new RegExp(
+  String.raw`\[((?:${knownCodes}|[A-Z]{1,3}\.\d{3})\s+[^\]]+)\]`,
+  "g",
+);
 
 /** Separator between the norm reference and the card title in a citation. */
 export const CITATION_TITLE_SEPARATOR = " · ";
@@ -28,11 +35,12 @@ export function citationForCard(card: {
 }
 
 function findSlug(citation: string): string | null {
-  const firstSpace = citation.indexOf(" ");
-  if (firstSpace < 0) return null;
+  const normCode = NORM_CODES.find(
+    (code) => citation.startsWith(code) && /\s/.test(citation.charAt(code.length)),
+  );
+  if (!normCode) return null;
 
-  const normCode = citation.slice(0, firstSpace);
-  const rest = citation.slice(firstSpace + 1);
+  const rest = citation.slice(normCode.length).trimStart();
   const separatorIndex = rest.indexOf(CITATION_TITLE_SEPARATOR.trim());
 
   // Card-specific form: match the title within the norm.

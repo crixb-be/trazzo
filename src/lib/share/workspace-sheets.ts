@@ -119,13 +119,22 @@ export function measureResultSheet(measure: PocketMeasure): ResultSheet {
     title: measure.title,
     subtitle: measure.note,
     rows: [
-      { label: "Ancho", value: `${measure.width} m` },
-      { label: "Profundidad", value: `${measure.depth} m` },
+      { label: measure.valueLabel ?? "Ancho", value: `${measure.width} ${measure.unit ?? "m"}` },
+      ...(measure.depth === null ? [] : [{ label: "Profundidad", value: `${measure.depth} m` }]),
+      ...(measure.norm_code ? [{ label: "Norma", value: measure.norm_code }] : []),
+      ...(measure.article ? [{ label: "Artículo", value: measure.article }] : []),
+      ...(measure.source_resolution
+        ? [{ label: "Resolución", value: measure.source_resolution }]
+        : []),
       { label: "Categoría", value: measure.category },
     ],
     notes: [
       measure.note,
-      "Referencia de diseño; no representa un mínimo normativo ni sustituye la revisión profesional.",
+      ...(!measure.norm_code
+        ? [
+            "Referencia de diseño; no representa un mínimo normativo ni sustituye la revisión profesional.",
+          ]
+        : []),
     ],
   });
 }

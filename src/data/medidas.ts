@@ -1,13 +1,34 @@
+import { A090_MEASURES } from "./norms/a090";
+import { NTS113_MEASURES } from "./norms/nts113";
+
+export type MeasureCategory =
+  "Antropometría" | "Mobiliario" | "Ambientes" | "Montaje" | "Salud" | "Servicios Comunales";
+
 export interface PocketMeasure {
   id: string;
   title: string;
-  category: "Antropometría" | "Mobiliario" | "Ambientes" | "Montaje";
+  category: MeasureCategory;
+  /** Main value: metres, or m² per person when `unit` is "m²/persona". */
   width: number;
-  depth: number;
+  /** Second dimension in metres; null when the norm fixes a single dimension. */
+  depth: number | null;
   note: string;
-  diagram: "persona" | "mueble" | "ambiente";
+  /**
+   * persona / mueble / ambiente: width × depth envelope.
+   * cota: one normative dimension (width or height); no depth is invented.
+   * ratio: area per person, drawn as an equivalent square without side dimensions.
+   */
+  diagram: "persona" | "mueble" | "ambiente" | "cota" | "ratio";
+  unit?: "m" | "m²/persona";
+  /** Label of the main value, e.g. "Ancho libre" or "Altura libre". */
+  valueLabel?: string;
+  /** Normative source, for measures taken from an official norm. */
+  norm_code?: string;
+  article?: string;
+  source_resolution?: string | null;
+  verified_at?: string | null;
 }
-/** Criterios de anteproyecto, pendientes de contraste con bibliografía del usuario. Metros. */
+/** Referencias de anteproyecto y medidas con fuente normativa. */
 export const MEASURES: PocketMeasure[] = [
   {
     id: "persona",
@@ -108,4 +129,6 @@ export const MEASURES: PocketMeasure[] = [
     diagram: "mueble",
     note: "Altura superior desde piso terminado; verifica equipo, usuario y espacio libre inferior.",
   },
+  ...NTS113_MEASURES,
+  ...A090_MEASURES,
 ];

@@ -5,8 +5,10 @@ import { ChevronDown, Lock, MessageSquare, SlidersHorizontal } from "lucide-reac
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Badge, Button, Card, Chip, NumberField, PaywallModal } from "@/components/ui";
+import { VerificationBadge } from "@/components/ui/VerificationBadge";
 import { ShareResult } from "@/components/ui/ShareResult";
 import { RneDiagram, type DiagramOverrides } from "@/components/svg-diagrams";
+import { isVerifiedSource } from "@/data/rne/verification";
 import { RNE_CARDS, type RneCard } from "@/data/seed-rne";
 import { useCard, useCards } from "@/lib/offline/hooks";
 import { canUseProCards } from "@/lib/plans/plans";
@@ -60,40 +62,42 @@ export function NormativeDetail({ slug }: { slug: string }) {
           <div className="diagram-plate">
             <RneDiagram card={card} overrides={overrides} />
           </div>
-          <Card className="parameter-card">
-            <button
-              className="parameter-toggle"
-              type="button"
-              onClick={() => setShowParameters((visible) => !visible)}
-              aria-expanded={showParameters}
-            >
-              <span>
-                <SlidersHorizontal size={15} /> Parámetros de lámina
-              </span>
-              <ChevronDown size={16} className={showParameters ? "rotate" : ""} />
-            </button>
-            {showParameters && (
-              <div className="parameter-grid">
-                {numericParams.length === 0 ? (
-                  <p className="muted small">Esta lámina no tiene parámetros editables.</p>
-                ) : (
-                  numericParams.map(([name, value]) => {
-                    const meta = paramMeta(name);
-                    return (
-                      <NumberField
-                        key={name}
-                        label={meta.label}
-                        unit={meta.unit || undefined}
-                        value={Number(overrides[name] ?? value)}
-                        step={0.01}
-                        onValueChange={(next) => updateParameter(name, next ?? 0)}
-                      />
-                    );
-                  })
-                )}
-              </div>
-            )}
-          </Card>
+          {card.svg_type !== "reference" && (
+            <Card className="parameter-card">
+              <button
+                className="parameter-toggle"
+                type="button"
+                onClick={() => setShowParameters((visible) => !visible)}
+                aria-expanded={showParameters}
+              >
+                <span>
+                  <SlidersHorizontal size={15} /> Parámetros de lámina
+                </span>
+                <ChevronDown size={16} className={showParameters ? "rotate" : ""} />
+              </button>
+              {showParameters && (
+                <div className="parameter-grid">
+                  {numericParams.length === 0 ? (
+                    <p className="muted small">Esta lámina no tiene parámetros editables.</p>
+                  ) : (
+                    numericParams.map(([name, value]) => {
+                      const meta = paramMeta(name);
+                      return (
+                        <NumberField
+                          key={name}
+                          label={meta.label}
+                          unit={meta.unit || undefined}
+                          value={Number(overrides[name] ?? value)}
+                          step={0.01}
+                          onValueChange={(next) => updateParameter(name, next ?? 0)}
+                        />
+                      );
+                    })
+                  )}
+                </div>
+              )}
+            </Card>
+          )}
         </section>
 
         <section className={"detail-copy " + (locked ? "detail-locked" : "")}>
@@ -119,7 +123,7 @@ export function NormativeDetail({ slug }: { slug: string }) {
                 <Lock size={12} /> Contenido Pro
               </Badge>
             )}
-            {!card.verified_at && <Badge variant="por-verificar">Por verificar</Badge>}
+            <VerificationBadge source={card} />
           </div>
 
           <Card className="highlight-value">
@@ -145,12 +149,12 @@ export function NormativeDetail({ slug }: { slug: string }) {
                   <span>
                     <ChevronDown size={16} className={showLegal ? "rotate" : ""} /> Letra chica
                   </span>
-                  <span className="mono small">RNE / revisión</span>
+                  <span className="mono small">{card.norm_code}</span>
                 </button>
                 {showLegal && (
                   <div>
                     <p>{card.legal_note}</p>
-                    <p className="legal">{legalDisclaimer}</p>
+                    {!isVerifiedSource(card) && <p className="legal">{legalDisclaimer}</p>}
                   </div>
                 )}
               </div>

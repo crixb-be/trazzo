@@ -113,17 +113,21 @@ html.dark .access-filter-menu {
   }
 }
 
-/* Pocket measures: search, category and access filter. */
-html .measures-toolbar {
-  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+/* Pocket measures: search, category, norm and access filter. */
+.measures-toolbar {
+  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr)) auto;
   align-items: end;
 }
 @media (max-width: 640px) {
-  html .measures-toolbar {
-    grid-template-columns: minmax(0, 1fr) auto;
+  .measures-toolbar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  html .measures-toolbar > .field:first-child {
+  .measures-toolbar > .field:first-child,
+  .measures-toolbar > .access-filter {
     grid-column: 1 / -1;
+  }
+  .measures-toolbar > .access-filter {
+    justify-self: end;
   }
 }
 .measures-toolbar .access-filter-button {

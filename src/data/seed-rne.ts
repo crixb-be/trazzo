@@ -1,6 +1,14 @@
+import { A090_CARDS } from "./norms/a090";
+import { NTS113_CARDS } from "./norms/nts113";
 import { ADDITIONAL_CARDS } from "./rne/additional";
 export type RneCategory =
-  "Accesibilidad" | "Circulación" | "Seguridad" | "Sanitarias" | "Estacionamientos";
+  | "Accesibilidad"
+  | "Circulación"
+  | "Seguridad"
+  | "Sanitarias"
+  | "Estacionamientos"
+  | "Salud"
+  | "Servicios Comunales";
 
 export type SvgType =
   | "reference"
@@ -44,7 +52,7 @@ export interface Material {
   notes: string;
 }
 
-export const SEED_VERSION = 7;
+export const SEED_VERSION = 8;
 
 const LEGAL_NOTE =
   "Valores referenciales según la edición indicada del RNE. Verifica la versión vigente publicada por el MVCS antes de usar en expedientes.";
@@ -477,6 +485,8 @@ export const RNE_CARDS: RneCard[] = [
     updated_at: "2026-11-17",
   },
   ...ADDITIONAL_CARDS,
+  ...NTS113_CARDS,
+  ...A090_CARDS,
 ];
 
 export const MATERIALS: Material[] = [

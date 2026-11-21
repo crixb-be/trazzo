@@ -57,6 +57,7 @@ export function CalculatorResult({
   checks,
   warnings,
   copyText,
+  disclaimer,
 }: {
   eyebrow: string;
   main: string;
@@ -64,8 +65,9 @@ export function CalculatorResult({
   checks: CalcCheck[];
   warnings: string[];
   copyText: string;
+  disclaimer?: string;
 }) {
-  const sheet = calculatorSheet({ eyebrow, main, details, checks, warnings });
+  const sheet = calculatorSheet({ eyebrow, main, details, checks, warnings, disclaimer });
   // The floating bar repeats the result card: it steps aside while that card is on
   // screen, so it never sits on top of the inputs next to the very same result.
   const probe = useRef<HTMLSpanElement>(null);
