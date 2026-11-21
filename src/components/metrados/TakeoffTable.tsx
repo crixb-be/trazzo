@@ -69,7 +69,7 @@ export function TakeoffTable({
   const categories = [...new Set(materials.map((material) => material.category))];
 
   return (
-    <Card className="takeoff-card">
+    <Card className="takeoff-card" id="partidas">
       <div className="section-heading">
         <div>
           <div className="eyebrow">Partidas / Metrado</div>

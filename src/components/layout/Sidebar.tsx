@@ -10,6 +10,7 @@ import {
   Home,
   MessageSquare,
   Network,
+  NotebookPen,
   Ruler,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -22,6 +23,7 @@ const items = [
   { href: "/matriz", label: "Matriz de relaciones", icon: Network },
   { href: "/calculadoras", label: "Calculadoras", icon: Calculator },
   { href: "/metrados", label: "Metrados", icon: ClipboardList },
+  { href: "/bitacora", label: "Bitácora", icon: NotebookPen },
   { href: "/estudio", label: "Estudio", icon: DraftingCompass },
   { href: "/honorarios", label: "Honorarios", icon: Briefcase },
   { href: "/asistente", label: "Asistente", icon: MessageSquare },

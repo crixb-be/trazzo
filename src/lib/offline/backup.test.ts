@@ -9,6 +9,7 @@ import {
 } from "./backup";
 
 const contents: BackupContents = {
+  siteLogs: [],
   projects: [
     {
       id: "p1",

@@ -1,6 +1,8 @@
 import { PLANS, type Plan } from "@/lib/plans/plans";
 import {
   db,
+  nextUpdatedAt,
+  type SiteLog,
   type FeeQuote,
   type Meta,
   type Project,
@@ -10,6 +12,7 @@ import {
   type StudioProfile,
   type Takeoff,
 } from "./db";
+import { siteLogSchema } from "@/lib/projects/site-log";
 import { scheduleSync } from "./sync";
 
 /**
@@ -33,6 +36,7 @@ export interface BackupFile {
   projectNotes: ProjectNote[];
   projectLinks: ProjectLink[];
   projectPhotos: ProjectPhoto[];
+  siteLogs: SiteLog[];
   libraryActivity: Array<{ slug: string; favorite: boolean; visitedAt: string }>;
   studioProfile: StudioProfile | null;
   meta: Meta[];
@@ -94,6 +98,9 @@ export function parseBackup(text: string): ParsedBackup {
   const projectLinks = rowsWith(data.projectLinks, ["quoteId", "projectId"]);
   // Absent in copies made before photos existed.
   const projectPhotos = rowsWith(data.projectPhotos, ["id", "projectId", "dataUrl"]);
+  const siteLogs = siteLogSchema
+    .array()
+    .safeParse(data.siteLogs === undefined ? [] : data.siteLogs);
   const libraryActivity = rowsWith(data.libraryActivity, ["slug"]);
   const meta = rowsWith(data.meta, ["key"]);
   if (
@@ -104,6 +111,7 @@ export function parseBackup(text: string): ParsedBackup {
     !projectNotes ||
     !projectLinks ||
     !projectPhotos ||
+    !siteLogs.success ||
     !libraryActivity ||
     !meta
   ) {
@@ -125,6 +133,7 @@ export function parseBackup(text: string): ParsedBackup {
       projectPhotos: (projectPhotos as unknown as ProjectPhoto[]).filter((photo) =>
         photo.dataUrl.startsWith("data:image/"),
       ),
+      siteLogs: siteLogs.data,
       libraryActivity: libraryActivity as unknown as BackupFile["libraryActivity"],
       studioProfile: studio ? ({ ...studio, id: "default" } as StudioProfile) : null,
       meta: (meta as unknown as Meta[]).filter((row) => META_KEYS.includes(row.key)),
@@ -139,6 +148,7 @@ export function describeBackup(backup: BackupFile): string {
     backup.feeQuotes.length + " cotización(es)",
     backup.projectNotes.length + " cálculo(s) guardado(s)",
     backup.projectPhotos.length + " foto(s)",
+    backup.siteLogs.length + " visita(s) de obra",
   ];
   return parts.join(", ");
 }
@@ -176,6 +186,7 @@ export async function exportBackup(): Promise<BackupFile> {
     projectNotes,
     projectLinks,
     projectPhotos,
+    siteLogs,
     libraryActivity,
     studioProfile,
     meta,
@@ -187,6 +198,7 @@ export async function exportBackup(): Promise<BackupFile> {
     db.project_notes.toArray(),
     db.project_links.toArray(),
     db.project_photos.toArray(),
+    db.site_logs.toArray(),
     db.library_activity.toArray(),
     db.studio_profile.get("default"),
     db.meta.where("key").anyOf(META_KEYS).toArray(),
@@ -199,6 +211,7 @@ export async function exportBackup(): Promise<BackupFile> {
     projectNotes,
     projectLinks,
     projectPhotos,
+    siteLogs,
     libraryActivity,
     studioProfile: studioProfile ?? null,
     meta,
@@ -237,6 +250,7 @@ export async function importBackup(
       localDb.project_notes,
       localDb.project_links,
       localDb.project_photos,
+      localDb.site_logs,
       localDb.library_activity,
       localDb.studio_profile,
       localDb.meta,
@@ -250,6 +264,19 @@ export async function importBackup(
       await localDb.project_notes.bulkPut(notes);
       await localDb.project_links.bulkPut(backup.projectLinks);
       await localDb.project_photos.bulkPut(photos);
+      const previousLogs = await localDb.site_logs.bulkGet(backup.siteLogs.map((row) => row.id));
+      const logs = backup.siteLogs.map((row, index) => ({
+        ...restored(row),
+        updatedAt: nextUpdatedAt(
+          new Date(
+            Math.max(
+              Date.parse(previousLogs[index]?.updatedAt ?? row.updatedAt),
+              Date.parse(row.updatedAt),
+            ),
+          ).toISOString(),
+        ),
+      }));
+      await localDb.site_logs.bulkPut(logs);
       await localDb.library_activity.bulkPut(backup.libraryActivity);
       if (backup.studioProfile) await localDb.studio_profile.put(backup.studioProfile);
       await localDb.meta.bulkPut(backup.meta);
@@ -277,6 +304,12 @@ export async function importBackup(
           op: "upsert" as const,
           payload,
           createdAt: now,
+        })),
+        ...logs.map((payload) => ({
+          table: "site_logs" as const,
+          op: "upsert" as const,
+          payload,
+          createdAt: payload.updatedAt,
         })),
         ...photos.map((payload) => ({
           table: "project_photos" as const,

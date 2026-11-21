@@ -38,6 +38,7 @@ test("todas las pantallas principales abren sin conexión", async ({ page, conte
     ["/matriz", "Matriz"],
     ["/estudio", "Estudio profesional"],
     ["/metrados", "Metrados"],
+    ["/bitacora", "Bitácora de obra"],
     ["/honorarios", "Honorarios"],
     ["/asistente", "Consulta el RNE"],
     ["/cuenta", "Tu espacio TRAZZO"],

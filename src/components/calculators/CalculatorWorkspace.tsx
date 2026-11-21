@@ -17,7 +17,11 @@ import { CabidaCalculator } from "./CabidaCalculator";
 
 import { RneExtraCalculators, type RneTool } from "./RneExtraCalculators";
 
+import { FIELD_EXTRA_TOOLS, type FieldExtraTool } from "@/lib/calculators/field-extra";
+import { FieldExtraCalculators } from "./tools/FieldExtraCalculators";
+
 type CalculatorTab =
+  | FieldExtraTool
   | RneTool
   | "cabida"
   | "utilidades"
@@ -41,6 +45,7 @@ const tabs: Array<{ id: CalculatorTab; label: string }> = [
   { id: "agua", label: "Dotación de agua" },
   { id: "pozos", label: "Pozos de luz" },
   { id: "evacuacion", label: "Evacuación" },
+  ...FIELD_EXTRA_TOOLS,
 ];
 
 function normalizeTab(value: string | null): CalculatorTab {
@@ -59,6 +64,8 @@ export function CalculatorWorkspace() {
     setActiveTab(tab);
     window.history.replaceState(null, "", "/calculadoras?tab=" + tab);
   }
+
+  const fieldExtraTool = FIELD_EXTRA_TOOLS.find(({ id }) => id === activeTab);
 
   return (
     <div className="calculators-page">
@@ -108,6 +115,7 @@ export function CalculatorWorkspace() {
       {(["aforo", "sanitarios", "luz", "parking"] as string[]).includes(activeTab) && (
         <RneExtraCalculators key={activeTab} tool={activeTab as RneTool} />
       )}
+      {fieldExtraTool && <FieldExtraCalculators tool={fieldExtraTool.id} />}
       {activeTab === "cabida" && <CabidaCalculator />}
       {activeTab === "utilidades" && <FieldTools />}
       {activeTab === "materiales" && <MaterialsCalculator />}

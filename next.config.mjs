@@ -12,6 +12,7 @@ const APP_ROUTES = [
   "/estudio",
   "/medidas",
   "/metrados",
+  "/bitacora",
   "/honorarios",
   "/asistente",
   "/cuenta",

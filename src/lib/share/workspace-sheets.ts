@@ -56,13 +56,14 @@ export function materialsResultSheet(input: {
 export function fieldToolResultSheet(input: {
   toolLabel: string;
   result: string;
+  rows?: ResultSheet["rows"];
   notes?: string[];
 }): ResultSheet {
   return workspaceSheet({
     eyebrow: "UTILIDADES DE CAMPO / RESULTADO",
     title: input.toolLabel,
     subtitle: input.result,
-    rows: [{ label: "Resultado", value: input.result }],
+    rows: input.rows ?? [{ label: "Resultado", value: input.result }],
     notes: input.notes,
   });
 }

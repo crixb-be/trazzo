@@ -5,8 +5,7 @@ import { db, type Project, type Takeoff } from "@/lib/offline/db";
 import { saveProject, saveTakeoff } from "@/lib/offline/repositories";
 import { MATERIALS } from "@/data/seed-rne";
 import { PARTIDAS } from "@/data/partidas";
-import { DEFAULT_MATERIAL_INPUT } from "@/data/rendimientos";
-import { computeMaterials } from "@/lib/calculators/materials/quantities";
+import { roomPartTakeoffs } from "@/lib/calculators/room";
 import { shoppingList, chapterFor } from "@/lib/calculators/takeoff";
 import { NumberField } from "@/components/ui";
 export function TakeoffExtras({
@@ -57,24 +56,9 @@ export function TakeoffExtras({
     setBusy(true);
     try {
       const r = PARTIDAS[recipe];
-      const rows = computeMaterials(r.id, { ...DEFAULT_MATERIAL_INPUT, area });
+      const rows = roomPartTakeoffs({ ...r, area }, MATERIALS);
       await db.transaction("rw", [db.takeoffs, db.outbox], async () => {
-        for (const row of rows) {
-          const m = MATERIALS.find((m) => m.code === row.code)!;
-          await saveTakeoff({
-            projectId: project.id,
-            partName: `[${r.chapter}] ${r.name} · ${m.name}`,
-            materialCode: m.code,
-            length: 0,
-            width: 0,
-            height: 0,
-            quantity: row.quantity,
-            total: row.quantity,
-            wastePct: 0,
-            unitPricePen: m.ref_price_pen,
-            subtotalPen: Math.round(row.quantity * m.ref_price_pen * 100) / 100,
-          });
-        }
+        for (const row of rows) await saveTakeoff({ ...row, projectId: project.id });
       });
       setNotice("Receta agregada. Ajusta rendimientos específicos en Calculadoras → Materiales.");
     } catch {

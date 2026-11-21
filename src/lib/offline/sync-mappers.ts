@@ -1,4 +1,13 @@
-import type { FeeQuote, Project, ProjectNote, ProjectPhoto, ProjectStatus, Takeoff } from "./db";
+import type {
+  FeeQuote,
+  Project,
+  ProjectNote,
+  ProjectPhoto,
+  ProjectStatus,
+  SiteLog,
+  Takeoff,
+} from "./db";
+import { siteLogSchema } from "@/lib/projects/site-log";
 
 /**
  * Pure translation between the local (camelCase, IndexedDB) records and the
@@ -181,6 +190,30 @@ export function rowToPhoto(row: Row): ProjectPhoto | null {
     updatedAt: row.updated_at as string,
     syncState: "synced",
   };
+}
+
+export function siteLogToRow(log: SiteLog, userId: string): Row {
+  return {
+    id: log.id,
+    user_id: userId,
+    project_id: log.projectId,
+    data: log,
+    updated_at: log.updatedAt,
+  };
+}
+
+export function rowToSiteLog(row: Row): SiteLog | null {
+  if (typeof row.data !== "object" || !row.data || Array.isArray(row.data)) return null;
+  const time = typeof row.updated_at === "string" ? Date.parse(row.updated_at) : NaN;
+  if (!Number.isFinite(time)) return null;
+  const parsed = siteLogSchema.safeParse({
+    ...row.data,
+    id: row.id,
+    projectId: row.project_id,
+    updatedAt: new Date(time).toISOString(),
+    syncState: "synced",
+  });
+  return parsed.success ? parsed.data : null;
 }
 
 export function recordTime(row: { updatedAt?: string; createdAt?: string }): number {

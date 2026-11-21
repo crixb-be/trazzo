@@ -1,16 +1,19 @@
 "use client";
 
-import { Calculator, FileText, Trash2 } from "lucide-react";
+import { Calculator, FileText, NotebookPen, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { Card } from "@/components/ui";
 import { formatPen } from "@/lib/calculators/fees";
 import type { Project } from "@/lib/offline/db";
+import { useSiteLogs } from "@/lib/offline/site-logs";
+import { VISIT_TYPES } from "@/lib/projects/site-log";
 import { ProjectPhotos } from "./ProjectPhotos";
 import { deleteProjectNote, useProjectNotes, useProjectQuotes } from "@/lib/offline/project-hub";
 
 /** What else belongs to the project besides its takeoffs: saved results and quotes. */
 export function ProjectHub({ project }: { project: Project }) {
   const notes = useProjectNotes(project.id);
+  const logs = useSiteLogs(project.id);
   const quotes = useProjectQuotes(project.id);
 
   return (
@@ -81,6 +84,31 @@ export function ProjectHub({ project }: { project: Project }) {
         </ul>
       )}
 
+      <section aria-labelledby="project-site-log-title">
+        <div className="site-log-actions">
+          <h3 id="project-site-log-title">Bitácora de obra</h3>
+          <Link className="btn" href={"/bitacora?project=" + encodeURIComponent(project.id)}>
+            Nueva visita
+          </Link>
+        </div>
+        {logs.length ? (
+          <ul className="project-hub-list">
+            {logs.map((log) => (
+              <li key={log.id}>
+                <NotebookPen size={16} aria-hidden="true" />
+                <Link href={"/bitacora?log=" + encodeURIComponent(log.id)}>
+                  <strong>{VISIT_TYPES[log.visitType]}</strong>
+                  <small>
+                    <time dateTime={log.visitDate}>{log.visitDate}</time>
+                  </small>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="muted small">Este proyecto aún no tiene visitas registradas.</p>
+        )}
+      </section>
       <ProjectPhotos project={project} />
     </Card>
   );

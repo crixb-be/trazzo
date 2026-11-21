@@ -21,7 +21,7 @@ const items = [
     href: "/estudio",
     label: "Estudio",
     icon: DraftingCompass,
-    match: ["/estudio", "/matriz", "/honorarios"],
+    match: ["/estudio", "/matriz", "/honorarios", "/bitacora"],
   },
   { href: "/asistente", label: "Asistente", icon: MessageSquare, match: ["/asistente"] },
 ] as const;

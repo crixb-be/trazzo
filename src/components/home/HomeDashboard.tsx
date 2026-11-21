@@ -9,6 +9,7 @@ import {
   Compass,
   FolderOpen,
   Library,
+  NotebookPen,
   Plus,
 } from "lucide-react";
 import type { CSSProperties } from "react";
@@ -161,6 +162,17 @@ export function HomeDashboard() {
           </Link>
         </div>
       </section>
+
+      <Link href="/bitacora" className="surface-card site-log-featured" data-family="arena">
+        <span className="tile-icon">
+          <NotebookPen size={20} aria-hidden="true" />
+        </span>
+        <span>
+          <strong>Bitácora de obra</strong>
+          <small className="muted">Visitas, hallazgos y fotos por proyecto</small>
+        </span>
+        <ArrowUpRight size={18} aria-hidden="true" />
+      </Link>
 
       <section className="dashboard-section">
         <div className="section-heading">

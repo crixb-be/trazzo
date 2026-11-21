@@ -1,5 +1,7 @@
 /** First-run welcome: who uses the app, their favourite tools and how to install it. */
 
+import { FIELD_EXTRA_TOOLS } from "@/lib/calculators/field-extra";
+
 export type UserRole = "estudiante" | "profesional";
 export type InstallPlatform = "ios" | "android" | "escritorio";
 
@@ -65,6 +67,12 @@ export const QUICK_TOOLS: readonly QuickTool[] = [
   },
   { id: "aforo", title: "Aforo", detail: "Personas por uso", href: "/calculadoras?tab=aforo" },
   { id: "metrados", title: "Metrados", detail: "Partidas y compras", href: "/metrados" },
+  ...FIELD_EXTRA_TOOLS.map(({ id, label, detail }) => ({
+    id,
+    title: label,
+    detail,
+    href: "/calculadoras?tab=" + id,
+  })),
 ];
 
 /** What the home screen shows when the user has not chosen anything. */

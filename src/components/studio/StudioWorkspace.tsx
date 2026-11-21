@@ -1,7 +1,7 @@
 "use client";
 
 import { useLiveQuery } from "dexie-react-hooks";
-import { ArrowUpRight, Briefcase, ClipboardList, IdCard, Network } from "lucide-react";
+import { ArrowUpRight, Briefcase, ClipboardList, IdCard, Network, NotebookPen } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Button, Card } from "@/components/ui";
@@ -17,6 +17,13 @@ import {
 } from "@/lib/studio/checklist";
 
 const tools = [
+  {
+    href: "/bitacora",
+    title: "Bitácora de obra",
+    description: "Registra visitas y exporta actas e informes con fotos.",
+    icon: NotebookPen,
+    family: "arena",
+  },
   {
     href: "/matriz",
     title: "Matriz de Relaciones Ponderadas",
@@ -77,7 +84,10 @@ export function StudioWorkspace() {
         {tools.map(({ href, title, description, icon: Icon, family }) => (
           <Link
             key={href}
-            className="surface-card studio-card studio-tool"
+            className={
+              "surface-card studio-card studio-tool" +
+              (href === "/bitacora" ? " site-log-featured" : "")
+            }
             href={href}
             data-family={family}
           >

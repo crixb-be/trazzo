@@ -54,6 +54,7 @@ import {
   saveProjectNote,
   updateProjectPhotoCaption,
 } from "./project-hub";
+import { deleteSiteLog, saveSiteLog } from "./site-logs";
 import { getSyncActivity, getSyncStatus, startOnlineSync, syncNow } from "./sync";
 
 type CloudRow = Record<string, unknown> & { id: string; updated_at: string };
@@ -249,6 +250,57 @@ describe("sincronización con datos de campo", () => {
     });
     await syncNow();
     expect(await database.projects.get(project.id)).toBeUndefined();
+  });
+
+  it("protege ediciones de bitácora pendientes y aplica tombstones de visitas independientes", async () => {
+    signIn();
+    const project = await saveProject(draft);
+    const log = await saveSiteLog({
+      projectId: project.id,
+      visitType: "visita",
+      visitDate: "2026-11-20",
+      attendees: "",
+      workStatus: "",
+      findings: "Original",
+      orders: "",
+      followUp: "",
+      topics: [],
+      photos: [],
+    });
+    connection.onLine = true;
+    expect((await syncNow()).status).toBe("ok");
+    const remote = table("site_logs").get(log.id)!;
+    expect(remote).toMatchObject({
+      user_id: "owner",
+      project_id: project.id,
+      data: { findings: "Original" },
+    });
+    await deleteProject(project.id);
+    expect((await syncNow()).status).toBe("ok");
+    expect(await database.site_logs.get(log.id)).toMatchObject({ syncState: "synced" });
+
+    const edit = await saveSiteLog({ ...log, findings: "Pendiente" });
+    failNextWrite = true;
+    table("site_logs").set(log.id, {
+      ...remote,
+      data: { ...log, findings: "Edición remota" },
+      updated_at: new Date(Date.parse(edit.updatedAt) + 5).toISOString(),
+    });
+    expect((await syncNow()).status).toBe("partial");
+    expect(await database.site_logs.get(log.id)).toMatchObject({ findings: "Pendiente" });
+    expect((await syncNow()).status).toBe("ok");
+    expect(await database.site_logs.get(log.id)).toMatchObject({ findings: "Edición remota" });
+
+    const stale = table("site_logs").get(log.id)!;
+    await deleteSiteLog(log.id);
+    expect((await syncNow()).status).toBe("ok");
+    expect(table("site_logs").get(log.id)).toMatchObject({
+      deleted_at: expect.any(String),
+      data: {},
+    });
+    table("site_logs").set(log.id, stale);
+    await syncNow();
+    expect(await database.site_logs.get(log.id)).toBeUndefined();
   });
 
   it("sincroniza al iniciar sesión o volver al primer plano y protege la cuenta original", async () => {

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Check, Copy } from "lucide-react";
-import { Button, CheckList, Card } from "@/components/ui";
+import { Button, CheckList, Card, toast } from "@/components/ui";
 import { SaveToProject } from "@/components/ui/SaveToProject";
 import { ShareResult } from "@/components/ui/ShareResult";
 import type { CalcCheck } from "@/lib/calculators/types";
@@ -10,14 +10,35 @@ import { calculatorSheet } from "@/lib/share/result-sheet";
 
 export function CopyResultButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
+  const reset = useRef<number | undefined>(undefined);
+  useEffect(() => () => window.clearTimeout(reset.current), []);
 
   async function copy(): Promise<void> {
     try {
-      await navigator.clipboard.writeText(text);
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const focus = document.activeElement;
+        const field = document.createElement("textarea");
+        field.value = text;
+        field.readOnly = true;
+        field.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+        document.body.append(field);
+        try {
+          field.select();
+          if (!document.execCommand("copy")) throw new Error("clipboard");
+        } finally {
+          field.remove();
+          if (focus instanceof HTMLElement) focus.focus({ preventScroll: true });
+        }
+      }
       setCopied(true);
-      window.setTimeout(() => setCopied(false), 1800);
+      toast("Resultado copiado.", "ok");
+      window.clearTimeout(reset.current);
+      reset.current = window.setTimeout(() => setCopied(false), 1800);
     } catch {
       setCopied(false);
+      toast("No se pudo copiar el resultado.", "error");
     }
   }
 

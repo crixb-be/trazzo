@@ -58,7 +58,7 @@ export interface StudioProfile {
 }
 
 export type OutboxTable =
-  "projects" | "takeoffs" | "fee_quotes" | "project_notes" | "project_photos";
+  "projects" | "takeoffs" | "fee_quotes" | "project_notes" | "project_photos" | "site_logs";
 export type OutboxOperation = "upsert" | "delete";
 
 export interface FeeQuote {
@@ -128,6 +128,32 @@ export interface ProjectLink {
   projectId: string;
 }
 
+export type SiteVisitType = "apertura" | "visita" | "cierre";
+export type SiteLogTopic =
+  "linderos" | "suelos" | "estructuras" | "arquitectura" | "instalaciones" | "seguridad";
+export interface SiteLogPhoto {
+  id: string;
+  dataUrl: string;
+  caption: string;
+  createdAt: string;
+}
+export interface SiteLog {
+  id: string;
+  projectId: string | null;
+  visitType: SiteVisitType;
+  visitDate: string;
+  attendees: string;
+  workStatus: string;
+  findings: string;
+  orders: string;
+  followUp: string;
+  topics: SiteLogTopic[];
+  photos: SiteLogPhoto[];
+  createdAt: string;
+  updatedAt: string;
+  syncState: SyncState;
+}
+
 export class TrazzoDB extends Dexie {
   rneCards!: Table<RneCard, string>;
   materials!: Table<Material, string>;
@@ -147,8 +173,10 @@ export class TrazzoDB extends Dexie {
   project_links!: Table<ProjectLink, string>;
   /** Site photos taken for a project. */
   project_photos!: Table<ProjectPhoto, string>;
+  site_logs!: Table<SiteLog, string>;
   constructor() {
     super("TrazzoDB");
+    this.version(9).stores({ site_logs: "id,projectId,visitDate,updatedAt,syncState" });
     this.version(1).stores({
       rneCards: "slug,norm_code,category,*keywords",
       materials: "code,category",

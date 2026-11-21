@@ -10,6 +10,7 @@ import {
   type FeeQuoteResult,
 } from "@/lib/calculators/fees";
 import type { FeeQuote, StudioProfile } from "@/lib/offline/db";
+import { addFittedPdfImage } from "./images";
 import { signatureParties, type SignatureParty } from "./signatures";
 import { DEFAULT_STUDIO_PROFILE } from "@/lib/offline/profile";
 
@@ -82,14 +83,6 @@ function studioFrom(options: ProposalOptions): StudioProfile {
   };
 }
 
-/** jsPDF needs the real image format; logos are PNG today but older ones may be JPEG/WebP. */
-function imageFormat(dataUrl: string): "PNG" | "JPEG" | "WEBP" {
-  const mime = /^data:image\/([a-z+]+);/i.exec(dataUrl)?.[1]?.toLowerCase() ?? "png";
-  if (mime === "jpeg" || mime === "jpg") return "JPEG";
-  if (mime === "webp") return "WEBP";
-  return "PNG";
-}
-
 function addLogoOrMonogram(
   pdf: jsPDF,
   studio: StudioProfile,
@@ -101,16 +94,7 @@ function addLogoOrMonogram(
 ): void {
   if (studio.logoDataUrl) {
     try {
-      const properties = pdf.getImageProperties(studio.logoDataUrl);
-      const ratio = Math.min(maxWidth / properties.width, maxHeight / properties.height);
-      pdf.addImage(
-        studio.logoDataUrl,
-        imageFormat(studio.logoDataUrl),
-        x,
-        y,
-        properties.width * ratio,
-        properties.height * ratio,
-      );
+      addFittedPdfImage(pdf, studio.logoDataUrl, x, y, maxWidth, maxHeight);
       return;
     } catch {
       // Fall back to the monogram when a user-provided image is not embeddable.

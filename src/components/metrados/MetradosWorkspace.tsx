@@ -16,6 +16,8 @@ import { deleteProject, deleteTakeoff, saveProject, saveTakeoff } from "@/lib/of
 import { describeSyncResult, describeSyncStatus, syncNow as runSync } from "@/lib/offline/sync";
 import { canCreateProject, canExportPdf } from "@/lib/plans/plans";
 import { useCurrentPlan } from "@/lib/plans/use-current-plan";
+import { ProjectStageStepper } from "./ProjectStageStepper";
+import { QuickRoomGenerator } from "./QuickRoomGenerator";
 import { TakeoffExtras } from "./TakeoffExtras";
 import { ProjectList } from "./ProjectList";
 import { TakeoffTable, type TakeoffDraft } from "./TakeoffTable";
@@ -366,6 +368,11 @@ export function MetradosWorkspace() {
                   </div>
                 </div>
               </div>
+              <ProjectStageStepper
+                key={activeProject.id}
+                projectId={activeProject.id}
+                takeoffsCount={takeoffs.length}
+              />
               <TakeoffExtras
                 key={activeProject.id}
                 project={activeProject}
@@ -373,6 +380,7 @@ export function MetradosWorkspace() {
                 canDuplicate={canCreateProject(plan, projects.length)}
                 onDuplicate={(p) => setSelectedId(p.id)}
               />
+              <QuickRoomGenerator key={activeProject.id} projectId={activeProject.id} />
               <TakeoffTable
                 takeoffs={takeoffs}
                 materials={catalog}

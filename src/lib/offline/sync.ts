@@ -10,6 +10,7 @@ import {
   type ProjectNote,
   type ProjectPhoto,
   type Takeoff,
+  type SiteLog,
   type TrazzoDB,
 } from "./db";
 import {
@@ -23,6 +24,8 @@ import {
   rowToProject,
   rowToQuote,
   rowToTakeoff,
+  rowToSiteLog,
+  siteLogToRow,
   takeoffToRow,
   recordTime,
   versionFromRow,
@@ -102,6 +105,18 @@ function remoteTable(table: OutboxTable): string {
 
 async function writeRemote(client: Client, userId: string, item: Outbox, id: string) {
   const table = remoteTable(item.table);
+  if (item.op === "delete" && item.table === "site_logs") {
+    const { error } = await client.from(table).upsert({
+      id,
+      user_id: userId,
+      project_id: (item.payload as { projectId?: string | null }).projectId ?? null,
+      data: {},
+      updated_at: item.createdAt,
+      deleted_at: item.createdAt,
+    });
+    if (error) throw error;
+    return;
+  }
   if (item.op === "delete") {
     const { error } = await client
       .from(table)
@@ -123,10 +138,12 @@ async function writeRemote(client: Client, userId: string, item: Outbox, id: str
         ? takeoffToRow(item.payload as Takeoff)
         : item.table === "fee_quotes"
           ? quoteToRow(item.payload as FeeQuote, userId)
-          : recordToRow(
-              item.payload as ProjectNote | ProjectPhoto,
-              item.table === "project_notes" ? "note" : "photo",
-            );
+          : item.table === "site_logs"
+            ? siteLogToRow(item.payload as SiteLog, userId)
+            : recordToRow(
+                item.payload as ProjectNote | ProjectPhoto,
+                item.table === "project_notes" ? "note" : "photo",
+              );
   const { error } = await client.from(table).upsert({ ...row, deleted_at: null });
   if (error) throw error;
 }
@@ -141,7 +158,8 @@ async function flush(local: TrazzoDB, client: Client, userId: string): Promise<S
     try {
       const id = payloadId(item);
       key = item.table + ":" + id;
-      const parent = (item.payload as { projectId?: string }).projectId;
+      const parent =
+        item.table === "site_logs" ? undefined : (item.payload as { projectId?: string }).projectId;
       if (blocked.has(key) || (parent && blocked.has("projects:" + parent))) continue;
       await writeRemote(client, userId, item, id);
       if (item.id !== undefined) {
@@ -213,13 +231,20 @@ async function fetchRows(
 }
 
 /** Already backed up photos don't need to be downloaded on every reconnect. */
-async function fetchProjectRecords(local: TrazzoDB, client: Client): Promise<Row[]> {
-  const [versions, notes, photos] = await Promise.all([
-    fetchRows(client, "project_records", 100, "id,project_id,kind,updated_at,deleted_at"),
-    local.project_notes.toArray(),
-    local.project_photos.toArray(),
+async function fetchVersionedRecords(
+  client: Client,
+  table: "project_records" | "site_logs",
+  localRecords: PromiseLike<Array<ProjectNote | ProjectPhoto | SiteLog>>,
+): Promise<Row[]> {
+  const columns =
+    table === "project_records"
+      ? "id,project_id,kind,updated_at,deleted_at"
+      : "id,updated_at,deleted_at";
+  const [versions, localRows] = await Promise.all([
+    fetchRows(client, table, 100, columns),
+    localRecords,
   ]);
-  const current = new Map([...notes, ...photos].map((row) => [row.id, row]));
+  const current = new Map(localRows.map((row) => [row.id, row]));
   const changed = versions.filter((row) => {
     const existing = current.get(row.id);
     return (
@@ -231,7 +256,7 @@ async function fetchProjectRecords(local: TrazzoDB, client: Client): Promise<Row
   const records = versions.filter((row) => row.deleted_at);
   for (let index = 0; index < changed.length; index += 10) {
     const ids = changed.slice(index, index + 10).map((row) => row.id);
-    const { data, error } = await client.from("project_records").select("*").in("id", ids);
+    const { data, error } = await client.from(table).select("*").in("id", ids);
     if (error) throw error;
     records.push(...data);
   }
@@ -239,11 +264,18 @@ async function fetchProjectRecords(local: TrazzoDB, client: Client): Promise<Row
 }
 
 async function pullPrivate(local: TrazzoDB, client: Client): Promise<number> {
-  const [projects, takeoffs, quotes, records] = await Promise.all([
+  const [projects, takeoffs, quotes, records, siteLogs] = await Promise.all([
     fetchRows(client, "projects", 100),
     fetchRows(client, "project_takeoffs", 100),
     fetchRows(client, "fee_quotes", 50),
-    fetchProjectRecords(local, client),
+    fetchVersionedRecords(
+      client,
+      "project_records",
+      Promise.all([local.project_notes.toArray(), local.project_photos.toArray()]).then(
+        ([notes, photos]) => [...notes, ...photos],
+      ),
+    ),
+    fetchVersionedRecords(client, "site_logs", local.site_logs.toArray()),
   ]);
   const activeProjectIds = new Set(projects.filter((row) => !row.deleted_at).map((row) => row.id));
   const projectVersions = projects.map((row) => versionFromRow(row, rowToProject));
@@ -259,6 +291,8 @@ async function pullPrivate(local: TrazzoDB, client: Client): Promise<number> {
     .filter((row) => row.kind === "photo")
     .map((row) => versionFromRow(row, rowToPhoto));
 
+  const siteLogVersions = siteLogs.map((row) => versionFromRow(row, rowToSiteLog));
+
   // Read the queue and the current device versions inside the same transaction
   // as the writes. A device edit made during the network request wins here.
   return local.transaction(
@@ -270,6 +304,7 @@ async function pullPrivate(local: TrazzoDB, client: Client): Promise<number> {
       local.fee_quotes,
       local.project_notes,
       local.project_photos,
+      local.site_logs,
       local.meta,
     ],
     async () => {
@@ -356,6 +391,13 @@ async function pullPrivate(local: TrazzoDB, client: Client): Promise<number> {
         ),
         pending.get("project_photos") ?? new Set(),
       );
+      const siteLogPlan = planPull(
+        await local.site_logs.toArray(),
+        await applyDeletionHistory(local, "site_logs", siteLogVersions),
+        pending.get("site_logs") ?? new Set(),
+      );
+      await local.site_logs.bulkPut(siteLogPlan.put);
+      await local.site_logs.bulkDelete(siteLogPlan.remove);
       await local.takeoffs.bulkPut(takeoffPlan.put);
       await local.takeoffs.bulkDelete(takeoffPlan.remove);
       await local.fee_quotes.bulkPut(quotePlan.put);
@@ -374,7 +416,9 @@ async function pullPrivate(local: TrazzoDB, client: Client): Promise<number> {
         notePlan.put.length +
         notePlan.remove.length +
         photoPlan.put.length +
-        photoPlan.remove.length
+        photoPlan.remove.length +
+        siteLogPlan.put.length +
+        siteLogPlan.remove.length
       );
     },
   );

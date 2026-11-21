@@ -1,3 +1,4 @@
+import { FIELD_EXTRA_TOOLS } from "@/lib/calculators/field-extra";
 import { MEASURES } from "@/data/medidas";
 import type { RneCard } from "@/data/seed-rne";
 import type { Project, FeeQuote } from "@/lib/offline/db";
@@ -26,6 +27,7 @@ export const TOOL_CATALOG = [
   ["sanitarios", "Aparatos sanitarios"],
   ["luz", "Iluminación y ventilación natural"],
   ["parking", "Estacionamientos accesibles"],
+  ...FIELD_EXTRA_TOOLS.map(({ id, label }) => [id, label] as const),
 ] as const;
 export function searchCatalog(
   query: string,
@@ -62,6 +64,13 @@ export function searchCatalog(
       kind: "Herramienta",
       href: "/matriz",
       terms: "programación arquitectónica ambientes",
+    },
+    {
+      id: "bitacora",
+      title: "Bitácora de obra",
+      kind: "Herramienta",
+      href: "/bitacora",
+      terms: "bitacora visita obra acta hallazgos residente supervisor",
     },
     ...projects.map((p) => ({
       id: "p:" + p.id,
