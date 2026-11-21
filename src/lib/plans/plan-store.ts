@@ -1,4 +1,3 @@
-import { getStudioProfile } from "@/lib/offline/profile";
 import type { TrazzoDB } from "@/lib/offline/db";
 import {
   getActiveDatabase,
@@ -85,9 +84,8 @@ export function snapshotFromProfile(
   profile: CachedPlanProfile,
   source: PlanSnapshot["source"],
   now = new Date(),
-  studio?: { capNumber: string; ruc: string },
 ): PlanSnapshot {
-  const ownerReason = ownerAccountReason({ ...studio, email: profile.email, signedIn: true });
+  const ownerReason = ownerAccountReason({ email: profile.email, signedIn: true });
   const owner = ownerReason !== null;
   const ownerPreviewFree = owner && readOwnerPreview();
   return {
@@ -178,7 +176,6 @@ async function fetchSnapshot(workspaceId: string): Promise<PlanSnapshot> {
   }
   if (user.id !== workspaceId || local !== getActiveDatabase()) return SIGNED_OUT_SNAPSHOT;
 
-  const studio = await getStudioProfile().catch(() => undefined);
   const fallback: CachedPlanProfile = {
     userId: user.id,
     email: user.email ?? null,
@@ -204,10 +201,10 @@ async function fetchSnapshot(workspaceId: string): Promise<PlanSnapshot> {
       fetchedAt: new Date().toISOString(),
     };
     if (local === getActiveDatabase()) await writeCache(local, profile);
-    return snapshotFromProfile(profile, "network", new Date(), studio);
+    return snapshotFromProfile(profile, "network");
   } catch {
     const profile = cached ? { ...cached, email: fallback.email } : fallback;
-    return snapshotFromProfile(profile, cached ? "cache" : "none", new Date(), studio);
+    return snapshotFromProfile(profile, cached ? "cache" : "none");
   }
 }
 

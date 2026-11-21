@@ -33,11 +33,21 @@ describe("snapshotFromProfile", () => {
     ).toMatchObject({ plan: "pro", owner: true, ownerReason: "email", ownerPreviewFree: false });
   });
 
-  it("uses the studio profile and never marks guests as owners", () => {
+  it("grants Pro to a profile with plan 'pro' in Supabase without owner access", () => {
     vi.stubEnv("NEXT_PUBLIC_TRAZZO_OWNER_EMAILS", "");
-    expect(
-      snapshotFromProfile(profile, "none", undefined, { capNumber: "38-255", ruc: "" }),
-    ).toMatchObject({ plan: "pro", owner: true, ownerReason: "cap" });
+    expect(snapshotFromProfile({ ...profile, plan: "pro" }, "network")).toMatchObject({
+      plan: "pro",
+      owner: false,
+    });
+  });
+
+  it("is not an owner without a listed email and never marks guests as owners", () => {
+    vi.stubEnv("NEXT_PUBLIC_TRAZZO_OWNER_EMAILS", "");
+    expect(snapshotFromProfile(profile, "none")).toMatchObject({
+      plan: "free",
+      owner: false,
+      ownerReason: null,
+    });
     expect(LOCAL_SNAPSHOT.owner).toBe(false);
     expect(SIGNED_OUT_SNAPSHOT.owner).toBe(false);
   });

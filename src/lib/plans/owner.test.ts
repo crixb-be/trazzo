@@ -17,16 +17,24 @@ describe("isOwnerAccount", () => {
     expect(isOwnerAccount(account)).toBe(false);
   });
 
-  it.each([
-    [{ capNumber: "CAP 38-255" }, "cap"],
-    [{ ruc: "20-61491877-3" }, "ruc"],
-  ])("requires a signed-in account for a matching studio identifier", (studio, reason) => {
-    expect(ownerAccountReason({ ...studio, signedIn: true })).toBe(reason);
-    expect(isOwnerAccount({ ...studio, signedIn: false })).toBe(false);
+  it("requires a signed-in account even for a listed email", () => {
+    vi.stubEnv("NEXT_PUBLIC_TRAZZO_OWNER_EMAILS", "owner@example.test");
+    expect(ownerAccountReason({ signedIn: true, email: "owner@example.test" })).toBe("email");
+    expect(isOwnerAccount({ signedIn: false, email: "owner@example.test" })).toBe(false);
   });
 
-  it("rejects missing email and non-matching studio identifiers", () => {
+  it("never grants access from studio identifiers such as CAP or RUC", () => {
+    vi.stubEnv("NEXT_PUBLIC_TRAZZO_OWNER_EMAILS", "owner@example.test");
+    const studio = { capNumber: "38255", ruc: "20614918773" };
+    expect(isOwnerAccount({ ...studio, signedIn: true } as never)).toBe(false);
+    expect(
+      isOwnerAccount({ ...studio, signedIn: true, email: "other@example.test" } as never),
+    ).toBe(false);
+  });
+
+  it("rejects a missing email and an empty list", () => {
     vi.stubEnv("NEXT_PUBLIC_TRAZZO_OWNER_EMAILS", ", ,");
-    expect(isOwnerAccount({ signedIn: true, email: "", capNumber: "123", ruc: "123" })).toBe(false);
+    expect(isOwnerAccount({ signedIn: true, email: "" })).toBe(false);
+    expect(isOwnerAccount({ signedIn: true, email: null })).toBe(false);
   });
 });

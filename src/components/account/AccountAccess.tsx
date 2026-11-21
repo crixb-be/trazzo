@@ -25,8 +25,6 @@ function callbackUrl(): string {
 
 const ownerReasons = {
   email: "tu correo coincide con la lista de propietarios",
-  cap: "el CAP de tu perfil de estudio coincide con el del propietario",
-  ruc: "el RUC de tu perfil de estudio coincide con el del propietario",
 };
 
 export function AccountAccess({ onSessionChange }: AccountAccessProps) {
