@@ -19,6 +19,7 @@ const categories: Array<{ name: RneCategory; label: string }> = [
   { name: "Sanitarias", label: "Sanitarias" },
   { name: "Estacionamientos", label: "Estacionamientos" },
   { name: "Salud", label: "Salud" },
+  { name: "Educación", label: "Educación" },
   { name: "Servicios Comunales", label: "Servicios Comunales" },
 ];
 
@@ -213,7 +214,11 @@ export function HomeDashboard() {
             return (
               <Link
                 className="discipline-card"
-                href={"/normativa?cat=" + encodeURIComponent(category.name)}
+                href={
+                  category.name === "Educación"
+                    ? "/normativa?sector=educacion"
+                    : "/normativa?cat=" + encodeURIComponent(category.name)
+                }
                 key={category.name}
                 data-family={family}
               >

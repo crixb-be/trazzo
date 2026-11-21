@@ -22,7 +22,12 @@ const APP_ROUTES = [
 ];
 
 // Read the slugs directly from the seed and the verified norm tables.
-const cardRoutes = ["seed-rne.ts", "norms/nts113.ts", "norms/a090.ts"].flatMap((path) => {
+const cardRoutes = [
+  "seed-rne.ts",
+  "norms/nts113.ts",
+  "norms/a090.ts",
+  "norms/education.ts",
+].flatMap((path) => {
   const source = readFileSync(new URL("./src/data/" + path, import.meta.url), "utf8");
   return [...source.matchAll(/^\s+slug: "([a-z0-9-]+)",$/gm)].map(
     (match) => "/normativa/" + match[1],

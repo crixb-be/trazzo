@@ -39,6 +39,11 @@ export const TOOL_CATALOG = [
     `Servicios Comunales · ${A090_CODE}`,
     "servicios comunales municipalidad biblioteca comisaría aforo baños aparatos sanitarios",
   ],
+  [
+    "educacion",
+    "Educación · A.040 / MINEDU",
+    "educación colegio escuela aula iiee minedu biblioteca sum losa laboratorio taller ept baños inicial primaria secundaria superior",
+  ],
   ...FIELD_EXTRA_TOOLS.map(({ id, label }) => [id, label] as const),
 ] as const;
 export function searchCatalog(

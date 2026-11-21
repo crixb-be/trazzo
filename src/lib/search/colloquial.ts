@@ -13,6 +13,7 @@ export const COLLOQUIAL_RULES: ColloquialRule[] = [
   {
     patterns: ["baño", "baños", "baño de servicio", "baño de servicios", "ss.hh", "ss hh", "wc"],
     technical: [
+      "baño",
       "servicios higiénicos",
       "cuarto de baño",
       "aparato sanitario",

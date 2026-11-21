@@ -30,6 +30,7 @@ export function deviceAnswer(query: string, cards: RneCard[]) {
 export function calculatorForCard(slug: string): string | null {
   if (slug.startsWith("nts113-")) return "salud-nts113";
   if (slug.startsWith("a090-")) return "comunales-a090";
+  if (slug.startsWith("a040-") || slug.startsWith("minedu208-")) return "educacion";
   if (/escaler|contrapaso/.test(slug)) return "escaleras";
   if (/rampa/.test(slug)) return "rampas";
   if (/agua|dotacion/.test(slug)) return "agua";

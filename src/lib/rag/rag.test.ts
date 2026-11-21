@@ -61,6 +61,7 @@ describe("card-specific citations", () => {
   });
 
   it.each([
+    ["[MINEDU 208 Cuadro N° 12 y num. 11.1.1 · Aula de primaria y secundaria]", "minedu208-aula"],
     ["[NTS 113 Num. 6.2.1.6 · Altura libre en establecimientos I-1 a I-4]", "nts113-altura-libre"],
     ["[A.090 Art. 11 · Aforo por uso en servicios comunales]", "a090-aforo"],
   ])("resolves the citation %s", (citation, slug) => {

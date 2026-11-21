@@ -3,8 +3,8 @@ import { Star } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/Badge";
 import { VerificationBadge } from "@/components/ui/VerificationBadge";
-import { A090_CODE } from "@/data/norms/a090";
-import { NTS113_CODE } from "@/data/norms/nts113";
+import { SectorFilters } from "@/components/normativa/SectorFilters";
+import { codesForSector, matchesSector, SECTORS, type SectorId } from "@/lib/normativa/sectors";
 import { MEASURES } from "@/data/medidas";
 import { AccessFilterMenu } from "@/components/ui/AccessFilterMenu";
 import { PocketDiagram } from "@/components/svg-diagrams/PocketDiagram";
@@ -14,10 +14,19 @@ import { measureResultSheet } from "@/lib/share/workspace-sheets";
 import { MEASURE_FAMILY, familyOf } from "@/lib/ui/families";
 import { toggleFavorite, useLibraryActivity } from "@/lib/offline/library";
 import { matchesAccessFilter, measureFavoriteKey, type AccessFilter } from "@/lib/ui/access-filter";
+const measureCodes = new Set(MEASURES.map(({ norm_code }) => norm_code));
+const measureSectors = [
+  ...SECTORS.filter(
+    ({ id, codes }) => id === "todos" || codes.some((code) => measureCodes.has(code)),
+  ),
+  { id: "referencias", label: "Referencias de diseño" } as const,
+];
+
 export function MeasuresWorkspace({ initialQuery }: { initialQuery: string }) {
   const [query, setQuery] = useState(initialQuery);
   const [category, setCategory] = useState("Todas");
-  const [normCode, setNormCode] = useState("todas");
+  const [sector, setSector] = useState<SectorId | "referencias">("todos");
+  const [normCode, setNormCode] = useState("Todos");
   const [access, setAccess] = useState<AccessFilter>("todas");
   const activity = useLibraryActivity();
   const favorites = new Set(activity.filter((a) => a.favorite).map((a) => a.slug));
@@ -29,8 +38,11 @@ export function MeasuresWorkspace({ initialQuery }: { initialQuery: string }) {
   const matches = MEASURES.filter(
     (m) =>
       (category === "Todas" || category === m.category) &&
-      (normCode === "todas" ||
-        (normCode === "sin-norma" ? !m.norm_code : normCode === m.norm_code)) &&
+      (sector === "todos" ||
+        (sector === "referencias"
+          ? !m.norm_code
+          : Boolean(m.norm_code && matchesSector(sector, m.norm_code)))) &&
+      (normCode === "Todos" || normCode === m.norm_code) &&
       // Pocket measures are all free reference content.
       matchesAccessFilter(access, {
         isPro: false,
@@ -72,28 +84,31 @@ export function MeasuresWorkspace({ initialQuery }: { initialQuery: string }) {
               "Ambientes",
               "Montaje",
               "Salud",
+              "Educación",
               "Servicios Comunales",
             ].map((c) => (
               <option key={c}>{c}</option>
             ))}
           </select>
         </div>
-        <div className="field">
-          <label htmlFor="measures-norm">Norma</label>
-          <select
-            id="measures-norm"
-            className="select"
-            value={normCode}
-            onChange={(e) => setNormCode(e.target.value)}
-          >
-            <option value="todas">Todas</option>
-            <option>{NTS113_CODE}</option>
-            <option>{A090_CODE}</option>
-            <option value="sin-norma">Referencias sin norma</option>
-          </select>
-        </div>
         <AccessFilterMenu value={access} onChange={setAccess} />
       </div>
+      <SectorFilters
+        options={measureSectors}
+        sector={sector}
+        onSectorChange={(next) => {
+          if (next === sector) return;
+          setSector(next);
+          setNormCode("Todos");
+        }}
+        codes={
+          sector === "todos" || sector === "referencias"
+            ? []
+            : codesForSector(sector).filter((code) => measureCodes.has(code))
+        }
+        normCode={normCode}
+        onNormChange={setNormCode}
+      />
       <p className="result-count mono" role="status">
         {matches.length} fichas
       </p>

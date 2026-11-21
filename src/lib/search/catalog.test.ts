@@ -19,6 +19,12 @@ it("encuentra las calculadoras y medidas normativas por sus términos", () => {
   expect(
     searchCatalog("municipalidad aparatos sanitarios", RNE_CARDS, [], []).map(({ id }) => id),
   ).toContain("c:comunales-a090");
+  expect(searchCatalog("colegio ept secundaria", RNE_CARDS, [], []).map(({ id }) => id)).toContain(
+    "c:educacion",
+  );
+  expect(searchCatalog("MINEDU 208 losa", RNE_CARDS, [], []).map(({ id }) => id)).toContain(
+    "m:minedu208-losa-i",
+  );
   expect(searchCatalog("a.090 art. 11 lectura", RNE_CARDS, [], []).map(({ id }) => id)).toContain(
     "m:a090-sala-lectura",
   );

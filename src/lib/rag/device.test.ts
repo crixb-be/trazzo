@@ -9,5 +9,7 @@ it("vincula herramientas pertinentes", () => {
   expect(calculatorForCard("escalera-paso-contrapaso")).toBe("escaleras");
   expect(calculatorForCard("nts113-escaleras-rampas")).toBe("salud-nts113");
   expect(calculatorForCard("a090-aforo")).toBe("comunales-a090");
+  expect(calculatorForCard("a040-escaleras")).toBe("educacion");
+  expect(calculatorForCard("minedu208-aula")).toBe("educacion");
   expect(calculatorForCard("otro")).toBeNull();
 });

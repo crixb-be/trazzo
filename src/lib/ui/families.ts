@@ -14,6 +14,7 @@ export const DISCIPLINE_FAMILY: Record<string, Family> = {
   Sanitarias: "pizarra",
   Estacionamientos: "piedra",
   Salud: "salvia",
+  Educación: "pizarra",
   "Servicios Comunales": "arena",
 };
 
@@ -24,6 +25,7 @@ export const MEASURE_FAMILY: Record<string, Family> = {
   Mobiliario: "piedra",
   Montaje: "pizarra",
   Salud: "salvia",
+  Educación: "pizarra",
   "Servicios Comunales": "arena",
 };
 

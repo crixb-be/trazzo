@@ -59,6 +59,11 @@ describe("tolerant RNE search", () => {
     ["aforo de sala de lectura de biblioteca", "a090-aforo"],
     ["baños para público en municipalidad", "a090-sshh-publico"],
     ["altura libre centro de salud I-4", "nts113-altura-libre"],
+    ["área de aula de primaria", "minedu208-aula"],
+    ["puerta de aula colegio", "a040-puertas"],
+    ["baños para alumnos de secundaria", "a040-sshh-ebr"],
+    ["losa deportiva colegio", "minedu208-losas"],
+    ["altura libre colegio", "a040-altura-libre"],
   ])("ranks the relevant card first for %s", (query, slug) => {
     expect(searchCards(RNE_CARDS, query)[0]?.slug).toBe(slug);
     expect(retrieveLocal(query)[0]?.slug).toBe(slug);

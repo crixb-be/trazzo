@@ -1,8 +1,15 @@
 import { A090_MEASURES } from "./norms/a090";
+import { EDUCATION_MEASURES } from "./norms/education";
 import { NTS113_MEASURES } from "./norms/nts113";
 
 export type MeasureCategory =
-  "Antropometría" | "Mobiliario" | "Ambientes" | "Montaje" | "Salud" | "Servicios Comunales";
+  | "Antropometría"
+  | "Mobiliario"
+  | "Ambientes"
+  | "Montaje"
+  | "Salud"
+  | "Servicios Comunales"
+  | "Educación";
 
 export interface PocketMeasure {
   id: string;
@@ -131,4 +138,5 @@ export const MEASURES: PocketMeasure[] = [
   },
   ...NTS113_MEASURES,
   ...A090_MEASURES,
+  ...EDUCATION_MEASURES,
 ];

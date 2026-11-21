@@ -12,7 +12,7 @@ function formatValue(value: number | string): string {
 }
 
 function referenceHref(reference: string): string {
-  const match = reference.match(/(?:NTS \d+|[A-Z]{1,3}\.\d{3})/);
+  const match = reference.match(/(?:(?:NTS|MINEDU) \d+|[A-Z]{1,3}\.\d{3})/);
   return match ? "/normativa?q=" + encodeURIComponent(match[0]) : "/normativa";
 }
 

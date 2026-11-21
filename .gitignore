@@ -22,3 +22,6 @@ ios/
 /yo.jpeg
 /supabase/.temp/
 /android/
+
+# Normas en PDF: copias locales de consulta, no se versionan (archivos pesados)
+/docs/rne/*.pdf

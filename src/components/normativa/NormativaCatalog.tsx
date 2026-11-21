@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { Lock, Search, SlidersHorizontal } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Lock, Search } from "lucide-react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 import {
   AccessFilterMenu,
   Badge,
@@ -15,10 +15,15 @@ import {
   PaywallModal,
 } from "@/components/ui";
 import { VerificationBadge } from "@/components/ui/VerificationBadge";
-import { A090_CODE } from "@/data/norms/a090";
-import { NTS113_CODE } from "@/data/norms/nts113";
 import { useLibraryActivity } from "@/lib/offline/library";
-import type { RneCategory } from "@/data/seed-rne";
+import {
+  codesForSector,
+  matchesSector,
+  sectorOfCode,
+  SECTORS,
+  type SectorId,
+} from "@/lib/normativa/sectors";
+import { SectorFilters } from "./SectorFilters";
 import { useCards } from "@/lib/offline/hooks";
 import { ensureSeeded } from "@/lib/offline/db";
 import { canUseProCards } from "@/lib/plans/plans";
@@ -27,43 +32,24 @@ import { searchCards } from "@/lib/search/search";
 import { DISCIPLINE_FAMILY, familyOf } from "@/lib/ui/families";
 import { matchesAccessFilter, parseAccessFilter, type AccessFilter } from "@/lib/ui/access-filter";
 
-const categories: Array<"Todas" | RneCategory> = [
-  "Todas",
-  "Accesibilidad",
-  "Circulación",
-  "Seguridad",
-  "Sanitarias",
-  "Estacionamientos",
-  "Salud",
-  "Servicios Comunales",
-];
-const normCodes = [
-  "Todos",
-  "A.010",
-  "A.020",
-  "A.070",
-  "A.080",
-  A090_CODE,
-  "A.120",
-  "A.130",
-  "IS.010",
-  "E.020",
-  "E.060",
-  NTS113_CODE,
-];
-
 export function NormativaCatalog() {
   const cards = useCards();
   const activity = useLibraryActivity();
   const searchParams = useSearchParams();
-  const router = useRouter();
   const pathname = usePathname();
-  const [query, setQuery] = useState(searchParams.get("q") ?? "");
-  const [category, setCategory] = useState<"Todas" | RneCategory>(
-    (searchParams.get("cat") as "Todas" | RneCategory) || "Todas",
-  );
-  const [normCode, setNormCode] = useState(searchParams.get("norm") ?? "Todos");
-  const [access, setAccess] = useState<AccessFilter>(() => parseAccessFilter(searchParams));
+  const query = searchParams.get("q") ?? "";
+  const category = searchParams.get("cat") ?? "Todas";
+  const requestedSector = searchParams.get("sector");
+  const requestedNorm = searchParams.get("norm");
+  const sector =
+    SECTORS.find(({ id }) => id === requestedSector)?.id ??
+    (requestedNorm ? sectorOfCode(requestedNorm) : undefined) ??
+    "todos";
+  const normCode =
+    sector !== "todos" && requestedNorm && codesForSector(sector).includes(requestedNorm)
+      ? requestedNorm
+      : "Todos";
+  const access = parseAccessFilter(searchParams);
   const { plan } = useCurrentPlan();
   const [paywall, setPaywall] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -78,38 +64,38 @@ export function NormativaCatalog() {
       });
   }, []);
 
-  const urlTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(
-    () => () => {
-      if (urlTimer.current) clearTimeout(urlTimer.current);
-    },
-    [],
-  );
-
-  function syncUrl(next: { q?: string; cat?: string; norm?: string; access?: AccessFilter }): void {
+  function syncUrl(next: {
+    q?: string;
+    cat?: string;
+    sector?: SectorId;
+    norm?: string;
+    access?: AccessFilter;
+  }): void {
     const params = new URLSearchParams();
     if (next.q) params.set("q", next.q);
     if (next.cat && next.cat !== "Todas") params.set("cat", next.cat);
+    if (next.sector && next.sector !== "todos") params.set("sector", next.sector);
     if (next.norm && next.norm !== "Todos") params.set("norm", next.norm);
     if (next.access && next.access !== "todas") params.set("acceso", next.access);
     const value = params.toString();
-    if (urlTimer.current) clearTimeout(urlTimer.current);
-    urlTimer.current = setTimeout(() => {
-      router.replace(value ? pathname + "?" + value : pathname, { scroll: false });
-    }, 300);
+    window.history.replaceState(null, "", value ? pathname + "?" + value : pathname);
   }
 
   const filteredCards = useMemo(() => {
     const filtered = cards.filter((card) => {
       if (category !== "Todas" && card.category !== category) return false;
+      if (!matchesSector(sector, card.norm_code)) return false;
       if (normCode !== "Todos" && card.norm_code !== normCode) return false;
       const favorite = activity.some((a) => a.slug === card.slug && a.favorite);
       if (!matchesAccessFilter(access, { isPro: Boolean(card.is_pro), favorite })) return false;
       return true;
     });
     return searchCards(filtered, query);
-  }, [cards, category, normCode, access, query, activity]);
+  }, [cards, category, sector, normCode, access, query, activity]);
 
+  const hasFilters = Boolean(
+    query || category !== "Todas" || sector !== "todos" || access !== "todas",
+  );
   const hasProAccess = canUseProCards(plan);
 
   if (!loaded && cards.length === 0) {
@@ -141,8 +127,7 @@ export function NormativaCatalog() {
             value={query}
             onChange={(event) => {
               const next = event.target.value;
-              setQuery(next);
-              syncUrl({ q: next, cat: category, norm: normCode, access });
+              syncUrl({ q: next, cat: category, sector, norm: normCode, access });
             }}
             placeholder="Busca alfeizar, garganta, cochera…"
             aria-label="Buscar fichas normativas"
@@ -151,65 +136,47 @@ export function NormativaCatalog() {
         <AccessFilterMenu
           value={access}
           onChange={(next) => {
-            setAccess(next);
-            syncUrl({ q: query, cat: category, norm: normCode, access: next });
+            syncUrl({ q: query, cat: category, sector, norm: normCode, access: next });
           }}
         />
       </div>
 
-      <div className="filter-row">
-        <SlidersHorizontal size={16} className="muted" aria-hidden="true" />
-        {categories.map((item) => (
-          <Chip
-            active={category === item}
-            key={item}
-            onClick={() => {
-              setCategory(item);
-              syncUrl({ q: query, cat: item, norm: normCode, access });
-            }}
-          >
-            {item}
-          </Chip>
-        ))}
-      </div>
-
-      <div className="norm-code-row">
-        {normCodes.map((code) => (
-          <button
-            type="button"
-            key={code}
-            className={"norm-code-chip " + (normCode === code ? "active" : "")}
-            onClick={() => {
-              setNormCode(code);
-              syncUrl({ q: query, cat: category, norm: code, access });
-            }}
-          >
-            {code}
+      <SectorFilters
+        options={SECTORS}
+        sector={sector}
+        onSectorChange={(next) => {
+          if (next === sector) return;
+          syncUrl({ q: query, cat: category, sector: next, access });
+        }}
+        codes={sector === "todos" ? [] : codesForSector(sector)}
+        normCode={normCode}
+        onNormChange={(next) => {
+          syncUrl({ q: query, cat: category, sector, norm: next, access });
+        }}
+      />
+      {hasFilters && (
+        <div className="catalog-active-filters">
+          {category !== "Todas" && (
+            <Chip
+              aria-label={`Quitar tema: ${category}`}
+              onClick={() => {
+                syncUrl({ q: query, sector, norm: normCode, access });
+              }}
+            >
+              Tema: {category} ×
+            </Chip>
+          )}
+          <button className="btn btn-sm" type="button" onClick={() => syncUrl({})}>
+            Limpiar filtros
           </button>
-        ))}
-      </div>
+        </div>
+      )}
 
       {filteredCards.length === 0 ? (
         <EmptyState
           icon={<Search size={22} />}
           title="No encontramos fichas"
           description="Prueba con una norma, un artículo o jerga de obra como garganta o vano."
-          action={
-            <button
-              className="btn"
-              type="button"
-              onClick={() => {
-                setQuery("");
-                setCategory("Todas");
-                setNormCode("Todos");
-                setAccess("todas");
-                if (urlTimer.current) clearTimeout(urlTimer.current);
-                router.replace(pathname, { scroll: false });
-              }}
-            >
-              Limpiar filtros
-            </button>
-          }
         />
       ) : (
         <div className="norm-grid">

@@ -1,4 +1,5 @@
 import { A090_CARDS } from "./norms/a090";
+import { EDUCATION_CARDS } from "./norms/education";
 import { NTS113_CARDS } from "./norms/nts113";
 import { ADDITIONAL_CARDS } from "./rne/additional";
 export type RneCategory =
@@ -8,7 +9,8 @@ export type RneCategory =
   | "Sanitarias"
   | "Estacionamientos"
   | "Salud"
-  | "Servicios Comunales";
+  | "Servicios Comunales"
+  | "Educación";
 
 export type SvgType =
   | "reference"
@@ -52,7 +54,7 @@ export interface Material {
   notes: string;
 }
 
-export const SEED_VERSION = 8;
+export const SEED_VERSION = 9;
 
 const LEGAL_NOTE =
   "Valores referenciales según la edición indicada del RNE. Verifica la versión vigente publicada por el MVCS antes de usar en expedientes.";
@@ -487,6 +489,7 @@ export const RNE_CARDS: RneCard[] = [
   ...ADDITIONAL_CARDS,
   ...NTS113_CARDS,
   ...A090_CARDS,
+  ...EDUCATION_CARDS,
 ];
 
 export const MATERIALS: Material[] = [

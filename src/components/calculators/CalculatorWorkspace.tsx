@@ -9,10 +9,12 @@ import { LightWellCalculator } from "./LightWellCalculator";
 import { RampCalculator } from "./RampCalculator";
 import { StairCalculator } from "./StairCalculator";
 import { A090_LEGAL_NOTE } from "@/data/norms/a090";
+import { A040_LEGAL_NOTE, MINEDU208_LEGAL_NOTE } from "@/data/norms/education";
 import { NTS113_LEGAL_NOTE } from "@/data/norms/nts113";
 import { RNE_WARNING } from "@/lib/calculators/types";
 import { HealthNts113Calculator } from "./HealthNts113Calculator";
 import { CommunalA090Calculator } from "./CommunalA090Calculator";
+import { EducationCalculator } from "./EducationCalculator";
 import { WaterCalculator } from "./WaterCalculator";
 
 import { MaterialsCalculator } from "./materials/MaterialsCalculator";
@@ -38,7 +40,8 @@ type CalculatorTab =
   | "pozos"
   | "evacuacion"
   | "salud-nts113"
-  | "comunales-a090";
+  | "comunales-a090"
+  | "educacion";
 
 const tabs: Array<{ id: CalculatorTab; label: string }> = [
   { id: "aforo", label: "Aforo" },
@@ -55,6 +58,7 @@ const tabs: Array<{ id: CalculatorTab; label: string }> = [
   { id: "evacuacion", label: "Evacuación" },
   { id: "salud-nts113", label: "Salud · NTS 113" },
   { id: "comunales-a090", label: "Servicios Comunales · A.090" },
+  { id: "educacion", label: "Educación · A.040 / MINEDU" },
   ...FIELD_EXTRA_TOOLS,
 ];
 
@@ -115,7 +119,9 @@ export function CalculatorWorkspace() {
           ? NTS113_LEGAL_NOTE
           : activeTab === "comunales-a090"
             ? A090_LEGAL_NOTE
-            : RNE_WARNING}
+            : activeTab === "educacion"
+              ? `${A040_LEGAL_NOTE} ${MINEDU208_LEGAL_NOTE}`
+              : RNE_WARNING}
       </div>
       {(["aforo", "sanitarios", "luz", "parking"] as string[]).includes(activeTab) && (
         <RneExtraCalculators key={activeTab} tool={activeTab as RneTool} />
@@ -131,6 +137,7 @@ export function CalculatorWorkspace() {
       {activeTab === "evacuacion" && <EvacuationCalculator />}
       {activeTab === "salud-nts113" && <HealthNts113Calculator />}
       {activeTab === "comunales-a090" && <CommunalA090Calculator />}
+      {activeTab === "educacion" && <EducationCalculator />}
     </div>
   );
 }

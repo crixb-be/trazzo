@@ -323,10 +323,12 @@
 
 .calculator-navigation {
   position: relative;
+  min-width: 0;
   margin: var(--space-5) 0;
 }
 .calculator-pills {
   display: flex;
+  max-width: 100%;
   flex-wrap: wrap;
 }
 .calculator-pills a {
