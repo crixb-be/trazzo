@@ -14,6 +14,7 @@ export { Input } from "./Input";
 export { LoadingState } from "./LoadingState";
 export { NumberField } from "./NumberField";
 export { OfflineBadge } from "./OfflineBadge";
+export { AccessFilterMenu } from "./AccessFilterMenu";
 export { PaywallModal } from "./PaywallModal";
 export { Select } from "./Select";
 export { ThemeToggle } from "./ThemeToggle";

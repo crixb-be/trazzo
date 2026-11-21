@@ -14,7 +14,8 @@ test("favoritos y recientes conservan visitas", async ({ page }) => {
   await page.getByRole("button", { name: "Guardar favorito" }).click();
   await expect(page.getByRole("button", { name: "Quitar favorito" })).toBeVisible();
   await page.goto("/normativa");
-  await page.getByLabel("Solo favoritos").check();
+  await page.getByRole("button", { name: /Filtrar por acceso/ }).click();
+  await page.getByRole("menuitemradio", { name: "Favoritas" }).click();
   await expect(page.getByText("Relación paso–contrapaso", { exact: false }).first()).toBeVisible();
 });
 test("asistente responde sin red y conserva historial", async ({ page }) => {

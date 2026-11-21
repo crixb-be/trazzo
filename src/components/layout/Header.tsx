@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Sparkles, UserRound, X } from "lucide-react";
+import { Sparkles, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { handleSearchShortcut } from "@/lib/ui/search-shortcut";
@@ -34,46 +34,47 @@ export function Header() {
   const pathname = usePathname();
   const assistantActive = matchesNavItem(pathname, ["/asistente"]);
   const accountActive = pathname.startsWith("/cuenta");
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
-  const mobileSearchTrigger = useRef<HTMLButtonElement>(null);
+  // Where focus returns when the search palette closes.
+  const returnFocus = useRef<HTMLElement | null>(null);
   // Own photo (synced from profiles) first; the sign-in provider's photo as fallback.
   const avatar = useAccountAvatar();
 
   useEffect(() => setPortalTarget(document.body), []);
 
-  // Close the mobile search sheet whenever the route changes.
+  // Close the search palette whenever the route changes.
   useEffect(() => {
-    setMobileSearchOpen(false);
+    setSearchOpen(false);
   }, [pathname]);
 
+  // The top bar has no search button: Ctrl/Cmd+K (or "/") opens the palette.
   useEffect(() => {
-    function openMobileSearch(event: KeyboardEvent): void {
-      if (mobileSearchOpen || !mobileSearchTrigger.current?.getClientRects().length) return;
-      handleSearchShortcut(event, () => setMobileSearchOpen(true));
+    function openSearch(event: KeyboardEvent): void {
+      if (searchOpen) return;
+      handleSearchShortcut(event, () => {
+        returnFocus.current =
+          document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        setSearchOpen(true);
+      });
     }
-    window.addEventListener("keydown", openMobileSearch);
-    return () => window.removeEventListener("keydown", openMobileSearch);
-  }, [mobileSearchOpen]);
+    window.addEventListener("keydown", openSearch);
+    return () => window.removeEventListener("keydown", openSearch);
+  }, [searchOpen]);
 
   useEffect(() => {
-    if (!mobileSearchOpen || !portalTarget) return;
+    if (!searchOpen || !portalTarget) return;
     const previousOverflow = portalTarget.style.overflow;
     portalTarget.style.overflow = "hidden";
-
-    function closeIfTriggerHidden() {
-      if (!mobileSearchTrigger.current?.getClientRects().length) setMobileSearchOpen(false);
-    }
-    window.addEventListener("resize", closeIfTriggerHidden);
     return () => {
       portalTarget.style.overflow = previousOverflow;
-      window.removeEventListener("resize", closeIfTriggerHidden);
     };
-  }, [mobileSearchOpen, portalTarget]);
+  }, [searchOpen, portalTarget]);
 
-  function dismissMobileSearch() {
-    setMobileSearchOpen(false);
-    mobileSearchTrigger.current?.focus({ preventScroll: true });
+  function dismissSearch() {
+    setSearchOpen(false);
+    returnFocus.current?.focus({ preventScroll: true });
+    returnFocus.current = null;
   }
 
   return (
@@ -88,18 +89,6 @@ export function Header() {
       <div className="header-actions">
         <OfflineBadge />
         <ThemeToggle />
-        <GlobalSearch />
-        <button
-          ref={mobileSearchTrigger}
-          className="icon-btn header-search-trigger"
-          type="button"
-          onClick={() => setMobileSearchOpen(true)}
-          aria-label="Buscar en el RNE"
-          aria-haspopup="dialog"
-          aria-expanded={mobileSearchOpen}
-        >
-          <Search size={17} aria-hidden="true" />
-        </button>
         <Link
           className="icon-btn header-assistant"
           href="/asistente"
@@ -126,15 +115,11 @@ export function Header() {
         </Link>
       </div>
 
-      {mobileSearchOpen &&
+      {searchOpen &&
         portalTarget &&
         createPortal(
           <>
-            <div
-              className="mobile-search-backdrop"
-              aria-hidden="true"
-              onClick={dismissMobileSearch}
-            />
+            <div className="mobile-search-backdrop" aria-hidden="true" onClick={dismissSearch} />
             <div
               className="mobile-search-sheet"
               role="dialog"
@@ -142,7 +127,7 @@ export function Header() {
               aria-label="Buscar en el RNE"
               onKeyDown={(event) => {
                 if (event.key === "Escape" && !event.defaultPrevented) {
-                  dismissMobileSearch();
+                  dismissSearch();
                   return;
                 }
                 if (event.key !== "Tab") return;
@@ -155,11 +140,11 @@ export function Header() {
                 (event.shiftKey ? last : first)?.focus();
               }}
             >
-              <GlobalSearch autoFocus onDismiss={dismissMobileSearch} />
+              <GlobalSearch autoFocus onDismiss={dismissSearch} />
               <button
                 className="icon-btn"
                 type="button"
-                onClick={dismissMobileSearch}
+                onClick={dismissSearch}
                 aria-label="Cerrar búsqueda"
               >
                 <X size={17} aria-hidden="true" />

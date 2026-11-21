@@ -1,14 +1,21 @@
 "use client";
+import { Star } from "lucide-react";
 import { useState } from "react";
 import { MEASURES } from "@/data/medidas";
+import { AccessFilterMenu } from "@/components/ui/AccessFilterMenu";
 import { PocketDiagram } from "@/components/svg-diagrams/PocketDiagram";
 import { SaveToProject } from "@/components/ui/SaveToProject";
 import { ShareResult } from "@/components/ui/ShareResult";
 import { measureResultSheet } from "@/lib/share/workspace-sheets";
 import { MEASURE_FAMILY, familyOf } from "@/lib/ui/families";
+import { toggleFavorite, useLibraryActivity } from "@/lib/offline/library";
+import { matchesAccessFilter, measureFavoriteKey, type AccessFilter } from "@/lib/ui/access-filter";
 export function MeasuresWorkspace({ initialQuery }: { initialQuery: string }) {
   const [query, setQuery] = useState(initialQuery);
   const [category, setCategory] = useState("Todas");
+  const [access, setAccess] = useState<AccessFilter>("todas");
+  const activity = useLibraryActivity();
+  const favorites = new Set(activity.filter((a) => a.favorite).map((a) => a.slug));
   const normalize = (value: string) =>
     value
       .normalize("NFD")
@@ -17,6 +24,11 @@ export function MeasuresWorkspace({ initialQuery }: { initialQuery: string }) {
   const matches = MEASURES.filter(
     (m) =>
       (category === "Todas" || category === m.category) &&
+      // Pocket measures are all free reference content.
+      matchesAccessFilter(access, {
+        isPro: false,
+        favorite: favorites.has(measureFavoriteKey(m.id)),
+      }) &&
       normalize(m.title + " " + m.note).includes(normalize(query)),
   );
   return (
@@ -51,6 +63,7 @@ export function MeasuresWorkspace({ initialQuery }: { initialQuery: string }) {
             ))}
           </select>
         </div>
+        <AccessFilterMenu value={access} onChange={setAccess} />
       </div>
       <p className="result-count mono" role="status">
         {matches.length} fichas
@@ -66,6 +79,19 @@ export function MeasuresWorkspace({ initialQuery }: { initialQuery: string }) {
                 {m.category}
               </span>
               <span className="badge badge-por-verificar">Por verificar</span>
+              <button
+                type="button"
+                className="icon-btn measure-favorite"
+                aria-pressed={favorites.has(measureFavoriteKey(m.id))}
+                aria-label={
+                  (favorites.has(measureFavoriteKey(m.id))
+                    ? "Quitar de favoritas: "
+                    : "Guardar en favoritas: ") + m.title
+                }
+                onClick={() => void toggleFavorite(measureFavoriteKey(m.id))}
+              >
+                <Star size={16} aria-hidden="true" />
+              </button>
             </div>
             <h2>{m.title}</h2>
             <div className="measure-diagram">
@@ -80,7 +106,15 @@ export function MeasuresWorkspace({ initialQuery }: { initialQuery: string }) {
           </article>
         ))}
       </div>
-      {!matches.length && <p className="panel-empty muted">No hay medidas con ese filtro.</p>}
+      {!matches.length && (
+        <p className="panel-empty muted">
+          {access === "pro"
+            ? "Las medidas de bolsillo son gratuitas: no hay contenido PRO en esta sección."
+            : access === "favoritas"
+              ? "Aún no tienes medidas favoritas. Toca la estrella de una ficha para guardarla."
+              : "No hay medidas con ese filtro."}
+        </p>
+      )}
     </div>
   );
 }

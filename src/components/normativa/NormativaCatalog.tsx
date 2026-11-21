@@ -4,7 +4,16 @@ import Link from "next/link";
 import { Lock, Search, SlidersHorizontal } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Badge, Card, Chip, EmptyState, Input, LoadingState, PaywallModal } from "@/components/ui";
+import {
+  AccessFilterMenu,
+  Badge,
+  Card,
+  Chip,
+  EmptyState,
+  Input,
+  LoadingState,
+  PaywallModal,
+} from "@/components/ui";
 import { useLibraryActivity } from "@/lib/offline/library";
 import type { RneCategory } from "@/data/seed-rne";
 import { useCards } from "@/lib/offline/hooks";
@@ -13,6 +22,7 @@ import { canUseProCards } from "@/lib/plans/plans";
 import { useCurrentPlan } from "@/lib/plans/use-current-plan";
 import { searchCards } from "@/lib/search/search";
 import { DISCIPLINE_FAMILY, familyOf } from "@/lib/ui/families";
+import { matchesAccessFilter, parseAccessFilter, type AccessFilter } from "@/lib/ui/access-filter";
 
 const categories: Array<"Todas" | RneCategory> = [
   "Todas",
@@ -38,7 +48,6 @@ const normCodes = [
 export function NormativaCatalog() {
   const cards = useCards();
   const activity = useLibraryActivity();
-  const [favoritesOnly, setFavoritesOnly] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -47,7 +56,7 @@ export function NormativaCatalog() {
     (searchParams.get("cat") as "Todas" | RneCategory) || "Todas",
   );
   const [normCode, setNormCode] = useState(searchParams.get("norm") ?? "Todos");
-  const [onlyFree, setOnlyFree] = useState(searchParams.get("free") === "1");
+  const [access, setAccess] = useState<AccessFilter>(() => parseAccessFilter(searchParams));
   const { plan } = useCurrentPlan();
   const [paywall, setPaywall] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -70,12 +79,12 @@ export function NormativaCatalog() {
     [],
   );
 
-  function syncUrl(next: { q?: string; cat?: string; norm?: string; free?: boolean }): void {
+  function syncUrl(next: { q?: string; cat?: string; norm?: string; access?: AccessFilter }): void {
     const params = new URLSearchParams();
     if (next.q) params.set("q", next.q);
     if (next.cat && next.cat !== "Todas") params.set("cat", next.cat);
     if (next.norm && next.norm !== "Todos") params.set("norm", next.norm);
-    if (next.free) params.set("free", "1");
+    if (next.access && next.access !== "todas") params.set("acceso", next.access);
     const value = params.toString();
     if (urlTimer.current) clearTimeout(urlTimer.current);
     urlTimer.current = setTimeout(() => {
@@ -85,14 +94,14 @@ export function NormativaCatalog() {
 
   const filteredCards = useMemo(() => {
     const filtered = cards.filter((card) => {
-      if (favoritesOnly && !activity.some((a) => a.slug === card.slug && a.favorite)) return false;
       if (category !== "Todas" && card.category !== category) return false;
       if (normCode !== "Todos" && card.norm_code !== normCode) return false;
-      if (onlyFree && card.is_pro) return false;
+      const favorite = activity.some((a) => a.slug === card.slug && a.favorite);
+      if (!matchesAccessFilter(access, { isPro: Boolean(card.is_pro), favorite })) return false;
       return true;
     });
     return searchCards(filtered, query);
-  }, [cards, category, normCode, onlyFree, query, favoritesOnly, activity]);
+  }, [cards, category, normCode, access, query, activity]);
 
   const hasProAccess = canUseProCards(plan);
 
@@ -126,32 +135,19 @@ export function NormativaCatalog() {
             onChange={(event) => {
               const next = event.target.value;
               setQuery(next);
-              syncUrl({ q: next, cat: category, norm: normCode, free: onlyFree });
+              syncUrl({ q: next, cat: category, norm: normCode, access });
             }}
             placeholder="Busca alfeizar, garganta, cochera…"
             aria-label="Buscar fichas normativas"
           />
         </div>
-        <label className="toggle-control">
-          <input
-            type="checkbox"
-            checked={onlyFree}
-            onChange={(event) => {
-              const next = event.target.checked;
-              setOnlyFree(next);
-              syncUrl({ q: query, cat: category, norm: normCode, free: next });
-            }}
-          />
-          <span>Solo gratuitas</span>
-        </label>
-        <label className="toggle-control">
-          <input
-            type="checkbox"
-            checked={favoritesOnly}
-            onChange={(e) => setFavoritesOnly(e.target.checked)}
-          />
-          <span>Solo favoritos</span>
-        </label>
+        <AccessFilterMenu
+          value={access}
+          onChange={(next) => {
+            setAccess(next);
+            syncUrl({ q: query, cat: category, norm: normCode, access: next });
+          }}
+        />
       </div>
 
       <div className="filter-row">
@@ -162,7 +158,7 @@ export function NormativaCatalog() {
             key={item}
             onClick={() => {
               setCategory(item);
-              syncUrl({ q: query, cat: item, norm: normCode, free: onlyFree });
+              syncUrl({ q: query, cat: item, norm: normCode, access });
             }}
           >
             {item}
@@ -178,7 +174,7 @@ export function NormativaCatalog() {
             className={"norm-code-chip " + (normCode === code ? "active" : "")}
             onClick={() => {
               setNormCode(code);
-              syncUrl({ q: query, cat: category, norm: code, free: onlyFree });
+              syncUrl({ q: query, cat: category, norm: code, access });
             }}
           >
             {code}
@@ -199,7 +195,7 @@ export function NormativaCatalog() {
                 setQuery("");
                 setCategory("Todas");
                 setNormCode("Todos");
-                setOnlyFree(false);
+                setAccess("todas");
                 if (urlTimer.current) clearTimeout(urlTimer.current);
                 router.replace(pathname, { scroll: false });
               }}

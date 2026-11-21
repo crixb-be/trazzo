@@ -1,0 +1,200 @@
+/* ------------------------------------------------ access filter dropdown */
+/* One clean row: search box + compact "Todas / Gratuitas / PRO / Favoritas". */
+html .catalog-toolbar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 10px;
+}
+html .catalog-toolbar .search-box {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.access-filter {
+  position: relative;
+  flex: none;
+}
+.access-filter-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 46px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 9999px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 560;
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    border-color 150ms ease,
+    background-color 150ms ease;
+}
+.access-filter-button svg {
+  color: var(--muted);
+}
+.access-filter-button .rotate {
+  transform: rotate(180deg);
+}
+.access-filter-button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.access-filter-button.is-filtered {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.access-filter-button.is-filtered svg {
+  color: var(--accent);
+}
+
+.access-filter-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 25;
+  display: grid;
+  min-width: 176px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow:
+    0 14px 34px rgb(15 23 42 / 0.16),
+    0 2px 6px rgb(15 23 42 / 0.08);
+  transform-origin: top right;
+  animation: access-filter-in 140ms ease-out;
+}
+html.dark .access-filter-menu {
+  box-shadow:
+    0 16px 40px rgb(0 0 0 / 0.55),
+    0 2px 8px rgb(0 0 0 / 0.35);
+}
+.access-filter-menu button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+  cursor: pointer;
+}
+.access-filter-menu button:hover,
+.access-filter-menu button:focus-visible {
+  outline: none;
+  background: var(--surface-2);
+}
+.access-filter-menu button[aria-checked="true"] {
+  color: var(--accent);
+  font-weight: 620;
+}
+@keyframes access-filter-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .access-filter-menu {
+    animation: none;
+  }
+}
+
+/* Pocket measures: search, category and access filter. */
+html .measures-toolbar {
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto;
+  align-items: end;
+}
+@media (max-width: 640px) {
+  html .measures-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  html .measures-toolbar > .field:first-child {
+    grid-column: 1 / -1;
+  }
+}
+.measures-toolbar .access-filter-button {
+  height: var(--touch-min, 44px);
+}
+.measure-card-head .measure-favorite {
+  flex: none;
+  margin-left: auto;
+}
+.measure-favorite[aria-pressed="true"] {
+  color: var(--accent);
+}
+.measure-favorite[aria-pressed="true"] svg {
+  fill: currentColor;
+}
+
+/* ------------------------------------------- compact reference value card */
+/* About 35–40% shorter: label and value share one row. */
+html .detail-copy .highlight-value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 2px 12px;
+  margin: 4px 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+}
+html .detail-copy .highlight-value .eyebrow {
+  margin: 0;
+  font-size: calc(12px * var(--font-scale));
+}
+html .detail-copy .highlight-value strong {
+  display: block;
+  font-size: calc(22px * var(--font-scale));
+  line-height: 1.45;
+  letter-spacing: -0.02em;
+}
+html .detail-copy .highlight-value strong small {
+  font-size: 0.6em;
+}
+
+/* --------------------------------------- search palette (Ctrl/Cmd + K) */
+/* The top bar has no search button; on wide screens the palette opens centred. */
+@media (min-width: 1024px) {
+  .mobile-search-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgb(0 0 0 / 0.35);
+  }
+  html .mobile-search-sheet {
+    top: 96px;
+    left: 50%;
+    right: auto;
+    z-index: 1001;
+    width: min(640px, calc(100vw - 48px));
+    align-items: flex-start;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    transform: translateX(-50%);
+  }
+  .mobile-search-sheet .global-search {
+    min-width: 0;
+  }
+  .mobile-search-sheet .search-results {
+    position: static;
+    max-height: min(60vh, 520px);
+    margin-top: 6px;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+}
