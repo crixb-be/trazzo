@@ -61,7 +61,7 @@ Los hallazgos de Claude llevan prefijo **C** y los de Codex prefijo **T**. Cuand
 
 ## c) Mejoras aplicadas en esta entrega
 
-Las correcciones las implementó Codex sobre una especificación de arquitectura. Claude revisó el código, repitió todas las validaciones y corrigió tres detalles visuales que encontró en las capturas finales. Se aplicaron todos los hallazgos salvo **T02** y **T21** (ver «Pendiente»).
+Las correcciones las implementó Codex sobre una especificación de arquitectura. Claude revisó el código, repitió todas las validaciones y corrigió tres detalles visuales que encontró en las capturas finales. Se aplicaron todos los hallazgos. Las acciones de despliegue que siguen abiertas figuran en «Pendiente».
 
 ### Pedidos de esta entrega
 
@@ -76,6 +76,9 @@ El ratio S/ por m² se rotula como «Estimación referencial · materiales a pre
 
 ### Datos y sincronización
 
+- **Espacio local por cuenta (T02).** El espacio sin cuenta conserva `TrazzoDB` y cada cuenta abre su propia base, con perfil, historial, cola de sincronización, lista de expediente y borradores aislados. El traslado reanudable confirma el destino antes de limpiar el origen. Los datos previos con propietario van a su cuenta. Para pasar los datos sin propietario se pide permiso y la opción queda en Cuenta. Cerrar sesión abre el espacio sin cuenta, con una acción separada y confirmación para borrar la copia local de la cuenta.
+  - _Revisión de Claude:_ en una instalación **sin Supabase configurado** no hay cuentas que aislar, así que los datos se quedan en el espacio sin cuenta aunque una versión anterior los haya asociado a un dueño. Sin esta salvaguarda quedaban apartados en una base de cuenta a la que no se puede entrar (verificado en Chromium con una base antigua sembrada). El aviso para pasar los datos sin cuenta nombra solo lo que existe, con plurales correctos («1 proyecto», «2 cotizaciones»), y nunca dice «0 proyectos» cuando solo hay fichas recientes o historial.
+- **Consultas de proyectos (T21).** Inicio, Proyectos, Bitácora y los selectores comparten un hook que distingue entre carga y lista vacía. Inicio consulta por `projectId` las partidas de los tres proyectos activos que muestra.
 - **Ficha de obra completa.** `Project` incorpora `client` y `builtArea`. La actualización local **Dexie v10** copia el área que estaba en `project_options` (solo local) al proyecto, la deja pendiente de sincronizar y elimina esa tabla. Los respaldos antiguos con `projectOptions` se siguen importando.
 - **Migración remota** `supabase/migrations/20261121010000_project_details.sql`: agrega `client` y `built_area` a `projects`.
 - **Compatibilidad si la migración aún no se aplicó:** si Supabase responde que la columna no existe (`PGRST204` / `42703`), la sincronización reintenta sin esas dos columnas y conserva los valores en el dispositivo, así que los proyectos siguen sincronizando.
@@ -120,14 +123,17 @@ El ratio S/ por m² se rotula como «Estimación referencial · materiales a pre
 
 Pruebas nuevas: indicadores del proyecto, estado de respaldo, borradores de Bitácora, parser numérico, mapeos de `client`/`built_area`, reintento sin columnas nuevas, actualización Dexie v10, importación de respaldos antiguos, protección de partidas editadas y el recorrido e2e `ux-functional.spec.ts`.
 
+La verificación de **T02** y **T21** pasó con `npm run typecheck`, `npm run lint`, `npm test` (**347 pruebas** en 63 archivos), `npm run build` sin `.env`, `npx playwright test --workers=4` (30 pruebas en modo local) y `scripts/audit-overlaps.mjs` (78 pantallas sin incidencias). Las pruebas unitarias, sobre IndexedDB simulado, cubren cada caso de conciliación de propietarios, la reanudación sin duplicados tras un traslado interrumpido, el borrado protegido de la copia local y el texto del aviso. En Chromium se comprobó además que una base antigua con dueño sigue visible en modo sin Supabase y que no se crea ninguna base de cuenta.
+
 ### Pendiente
 
-| ID                                        | Por qué no se aplicó                                                                                                                       | Propuesta                                                                                                                                                                                                       |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **T02** · Aislar datos locales por cuenta | Cambia la estructura de toda la base local y la cola de sincronización; hacerlo sin un plan de migración arriesga perder trabajo guardado. | Separar un espacio «invitado» y un espacio por cuenta (prefijo o base por `userId`), con una migración que conserve los datos actuales en el espacio invitado y un paso explícito para asignarlos a una cuenta. |
-| **T21** · Consolidar hooks de proyectos   | Bajo impacto visible; conviene hacerlo junto con T02, que toca las mismas consultas.                                                       | Un solo hook con estados explícitos de carga y vacío; en Inicio, consultar solo las partidas de las obras visibles por el índice `projectId`.                                                                   |
+**Migraciones de Supabase:** aplicadas en producción el 21 de noviembre de 2026. `site_logs` ya estaba creada y coincidía con su migración; `project_details` se aplicó y la API REST reconoce `client` y `built_area`.
 
-**Acciones manuales:**
+**Prueba manual con cuentas reales (pendiente):** las pruebas automáticas corren sin Supabase, así que el recorrido con sesiones reales debe confirmarse a mano en un mismo navegador:
 
-- Aplicar en Supabase las migraciones `20261120010000_site_logs.sql` y `20261121010000_project_details.sql`. Mientras no se apliquen, la Bitácora y el cliente/área de los proyectos solo se guardan en el dispositivo.
-- Si algún proyecto ya se sincronizó sin las columnas nuevas, su cliente y su área se suben la próxima vez que se edite el proyecto.
+1. Sin sesión, crea un proyecto «Prueba invitado».
+2. Inicia sesión con la cuenta A: debe aparecer el aviso «Datos sin cuenta en este dispositivo». Elige «Pasar a mi cuenta» y confirma que el proyecto aparece y se sincroniza.
+3. Cierra sesión: Proyectos debe quedar vacío (espacio sin cuenta).
+4. Inicia sesión con la cuenta B: no debe ver nada de A. Crea «Prueba B».
+5. Vuelve a A: debe ver solo «Prueba invitado», no «Prueba B».
+6. En A, usa «Cerrar sesión y borrar los datos de esta cuenta en este dispositivo» y confirma que, al volver a entrar con A, sus datos se descargan otra vez desde la nube.

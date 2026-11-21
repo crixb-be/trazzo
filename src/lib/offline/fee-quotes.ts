@@ -66,19 +66,21 @@ export async function saveFeeQuote(
 export async function duplicateFeeQuote(id: string): Promise<FeeQuote> {
   if (!db) throw new Error("La base local no está disponible.");
   const localDb = db;
-  const original = await localDb.fee_quotes.get(id);
-  if (!original) throw new Error("No se encontró la cotización.");
-  return saveFeeQuote(
-    {
-      ...original,
-      documentType: original.documentType ?? "propuesta",
-      clientDocument: original.clientDocument ?? "",
-      signerName: original.signerName ?? "",
-      signerDocument: original.signerDocument ?? "",
-      projectName: original.projectName + " (copia)",
-    },
-    { createdAt: new Date().toISOString() },
-  );
+  return localDb.transaction("rw", [localDb.fee_quotes, localDb.outbox], async () => {
+    const original = await localDb.fee_quotes.get(id);
+    if (!original) throw new Error("No se encontró la cotización.");
+    return saveFeeQuote(
+      {
+        ...original,
+        documentType: original.documentType ?? "propuesta",
+        clientDocument: original.clientDocument ?? "",
+        signerName: original.signerName ?? "",
+        signerDocument: original.signerDocument ?? "",
+        projectName: original.projectName + " (copia)",
+      },
+      { createdAt: new Date().toISOString() },
+    );
+  });
 }
 
 export async function deleteFeeQuote(id: string): Promise<void> {

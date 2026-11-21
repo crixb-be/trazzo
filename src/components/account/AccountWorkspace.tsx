@@ -31,7 +31,9 @@ import { APP_INFO } from "@/lib/app-info";
 import { WelcomeGuideButton } from "@/components/onboarding/WelcomeGuide";
 import { InstallGuide } from "@/components/onboarding/InstallGuide";
 import { SEED_VERSION } from "@/data/seed-rne";
-import { db, type StudioProfile } from "@/lib/offline/db";
+import type { StudioProfile } from "@/lib/offline/db";
+import { getActiveDatabase, GUEST_WORKSPACE } from "@/lib/offline/workspace";
+import { useWorkspace } from "@/components/layout/WorkspaceProvider";
 import { getStudioProfile, saveStudioProfile } from "@/lib/offline/profile";
 import { describeProfileSave } from "@/lib/offline/profile-sync";
 import { syncNow } from "@/lib/offline/sync";
@@ -98,6 +100,7 @@ export function AccountWorkspace() {
   const [configured, setConfigured] = useState(Boolean(createClient()));
   const [email, setEmail] = useState("");
   const { plan: currentPlan, studentVerified } = useCurrentPlan();
+  const { id: workspaceId } = useWorkspace();
   const [name, setName] = useState("");
   const [capNumber, setCapNumber] = useState("");
   const [studioName, setStudioName] = useState("");
@@ -202,8 +205,10 @@ export function AccountWorkspace() {
   // The logo is saved as soon as it changes: the proposal PDF reads it from
   // IndexedDB, so it must not depend on pressing "Guardar perfil" afterwards.
   async function changeLogo(file: File): Promise<void> {
+    const local = getActiveDatabase();
     try {
       const dataUrl = await prepareLogo(file);
+      if (local !== getActiveDatabase()) return;
       setLogoDataUrl(dataUrl);
       const notice = await saveAndBackUp({ logoDataUrl: dataUrl });
       setNotice("Logo listo para tus propuestas. " + notice);
@@ -213,9 +218,11 @@ export function AccountWorkspace() {
   }
 
   async function changeAvatar(file: File): Promise<void> {
+    const local = getActiveDatabase();
     setAvatarBusy(true);
     try {
       const dataUrl = await prepareAvatar(file);
+      if (local !== getActiveDatabase()) return;
       setAvatarDataUrl(dataUrl);
       setNotice("Foto actualizada. " + (await saveAndBackUp({ avatarDataUrl: dataUrl })));
     } catch (error) {
@@ -308,15 +315,17 @@ export function AccountWorkspace() {
   }
 
   async function resetLocal(): Promise<void> {
+    if (workspaceId !== GUEST_WORKSPACE) return;
+    const local = getActiveDatabase();
     const confirmed = await confirmDialog({
       title: "¿Restablecer los datos de este dispositivo?",
       message:
-        "Se borrarán los proyectos, metrados y cotizaciones guardados aquí. Lo que ya esté respaldado en tu cuenta se volverá a descargar.",
+        "Se borrarán los proyectos, metrados y cotizaciones guardados en el espacio sin cuenta.",
       confirmLabel: "Restablecer",
       danger: true,
     });
-    if (!confirmed) return;
-    await db?.delete();
+    if (!confirmed || local !== getActiveDatabase()) return;
+    await local.delete();
     // The connection is closed after deleting: reload so the app reopens and reseeds it.
     window.location.reload();
   }
@@ -586,19 +595,20 @@ export function AccountWorkspace() {
           <DisplaySettings />
           <WelcomeGuideButton />
         </Card>
-        <Card>
-          <div className="eyebrow">Datos del dispositivo</div>
-          <h2>{sync.online ? "En línea" : "Trabajando sin conexión"}</h2>
-          <p className="muted small">
-            Borra lo guardado en este dispositivo. Lo que ya esté respaldado en tu cuenta se vuelve
-            a descargar al iniciar sesión.
-          </p>
-          <div className="hero-actions">
-            <Button variant="danger" onClick={() => void resetLocal()}>
-              <RotateCcw size={15} /> Restablecer datos
-            </Button>
-          </div>
-        </Card>
+        {workspaceId === GUEST_WORKSPACE && (
+          <Card>
+            <div className="eyebrow">Datos del dispositivo</div>
+            <h2>{sync.online ? "En línea" : "Trabajando sin conexión"}</h2>
+            <p className="muted small">
+              Restablece los datos guardados en el espacio sin cuenta de este dispositivo.
+            </p>
+            <div className="hero-actions">
+              <Button variant="danger" onClick={() => void resetLocal()}>
+                <RotateCcw size={15} /> Restablecer datos
+              </Button>
+            </div>
+          </Card>
+        )}
       </div>
 
       <section className="account-section">

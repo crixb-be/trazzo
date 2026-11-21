@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useWorkspace } from "@/components/layout/WorkspaceProvider";
 import type { User } from "@supabase/supabase-js";
 import { useStudioProfile } from "@/lib/offline/hooks";
-import { createClient } from "@/lib/supabase/client";
 
 /** Photo offered by the sign-in provider (Google sends `avatar_url` or `picture`). */
 export function providerAvatar(
@@ -24,24 +23,8 @@ export function providerAvatar(
  */
 export function useAccountAvatar(): { src: string | null; own: boolean } {
   const { avatarDataUrl } = useStudioProfile();
-  const [provider, setProvider] = useState<string | null>(null);
-
-  useEffect(() => {
-    const client = createClient();
-    if (!client) return;
-    let active = true;
-    void client.auth.getSession().then(({ data }) => {
-      if (active) setProvider(providerAvatar(data.session?.user));
-    });
-    const { data } = client.auth.onAuthStateChange((_event, session) => {
-      setProvider(providerAvatar(session?.user));
-    });
-    return () => {
-      active = false;
-      data.subscription.unsubscribe();
-    };
-  }, []);
+  const { user } = useWorkspace();
 
   if (avatarDataUrl) return { src: avatarDataUrl, own: true };
-  return { src: provider, own: false };
+  return { src: providerAvatar(user), own: false };
 }

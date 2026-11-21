@@ -1,4 +1,4 @@
-export const EXPEDIENTE_CHECKLIST_KEY = "trazzo-expediente-checklist";
+export { EXPEDIENTE_CHECKLIST_KEY } from "@/lib/offline/workspace-storage";
 
 export const CHECKLIST_GROUPS = [
   {

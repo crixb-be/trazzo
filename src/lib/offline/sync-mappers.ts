@@ -277,7 +277,7 @@ export function describeSyncResult(result: SyncResult): string {
     case "signed-out":
       return "Tus datos están guardados en este dispositivo. Inicia sesión para respaldarlos en tu cuenta.";
     case "account-mismatch":
-      return "Este dispositivo contiene datos de otra cuenta. Vuelve a esa cuenta para sincronizar.";
+      return "La cuenta no coincide con el espacio activo. Vuelve a ingresar para sincronizar.";
     case "offline":
       return "Sin conexión: tus cambios quedan guardados aquí y se enviarán al reconectar.";
     case "busy":

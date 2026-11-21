@@ -3,14 +3,14 @@
 import { FolderPlus } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { useProjectList } from "@/lib/offline/hooks";
+import { useProjects } from "@/lib/offline/hooks";
 import { saveProjectNote } from "@/lib/offline/project-hub";
 import type { ResultSheet } from "@/lib/share/result-sheet";
 import { toast } from "./Feedback";
 
 /** Files the current calculator result under one of the user's projects. */
 export function SaveToProject({ sheet }: { sheet: ResultSheet }) {
-  const loaded = useProjectList();
+  const loaded = useProjects();
   const projects = loaded ?? [];
   const [open, setOpen] = useState(false);
   const [projectId, setProjectId] = useState("");

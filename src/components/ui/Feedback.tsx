@@ -3,6 +3,7 @@
 import { AlertTriangle, CheckCircle2, Info, X } from "lucide-react";
 import { useSyncExternalStore } from "react";
 import { Modal } from "./Modal";
+import { subscribeWorkspace } from "@/lib/offline/workspace";
 
 /**
  * App-wide feedback: floating notices (toast) and a confirmation dialog that
@@ -54,6 +55,11 @@ function setState(next: FeedbackState): void {
   state = next;
   for (const listener of listeners) listener();
 }
+
+subscribeWorkspace(() => {
+  state.confirm?.resolve(false);
+  if (state !== EMPTY) setState(EMPTY);
+});
 
 function subscribe(listener: () => void): () => void {
   listeners.add(listener);

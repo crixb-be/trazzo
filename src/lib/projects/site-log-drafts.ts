@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SITE_LOG_DRAFT_PREFIX, workspaceStorageKey } from "@/lib/offline/workspace-storage";
 import { siteLogSchema } from "./site-log";
 
 const draftState = z.object({
@@ -11,7 +12,7 @@ export type SiteLogEdit = z.infer<typeof draftState>;
 type DraftStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
 export function siteLogDraftKey(logId: string | undefined, projectId: string | null): string {
-  return "trazzo:site-log-draft:" + (logId ?? "new:" + (projectId ?? "none"));
+  return workspaceStorageKey(SITE_LOG_DRAFT_PREFIX + (logId ?? "new:" + (projectId ?? "none")));
 }
 
 export function readSiteLogDraft(key: string, storage?: DraftStorage): SiteLogEdit | null {

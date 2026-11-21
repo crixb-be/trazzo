@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Button, Card } from "@/components/ui";
 import { LoadingState } from "@/components/ui/LoadingState";
-import { useProjectList } from "@/lib/offline/hooks";
+import { useProjects } from "@/lib/offline/hooks";
 import { useSiteLog, useSiteLogs } from "@/lib/offline/site-logs";
 import { VISIT_TYPES } from "@/lib/projects/site-log";
 import { SiteLogEditor } from "./SiteLogEditor";
@@ -26,7 +26,7 @@ export function SiteLogWorkspace() {
   const [draftKey, setDraftKey] = useState(0);
   const logs = useSiteLogs(projectFilter ?? undefined);
   const log = useSiteLog(logId);
-  const projects = useProjectList();
+  const projects = useProjects();
   function navigate(path: string) {
     if (path === visitUrl(projectId, logId ?? undefined)) setDraftKey((key) => key + 1);
     else window.history.pushState(null, "", path);

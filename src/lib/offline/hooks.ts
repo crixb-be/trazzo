@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
 import { useLiveQuery } from "dexie-react-hooks";
-import { db, ensureSeeded, type FeeQuote, type Project, type Takeoff } from "./db";
+import { db, type FeeQuote, type Project, type Takeoff } from "./db";
 import { getStudioProfile } from "./profile";
 import type { StudioProfile } from "./db";
 import {
@@ -14,11 +14,7 @@ import {
 } from "./sync";
 
 export function useCards() {
-  const cards = useLiveQuery(async () => (db ? db.rneCards.toArray() : []), [], []);
-  useEffect(() => {
-    void ensureSeeded();
-  }, []);
-  return cards;
+  return useLiveQuery(async () => (db ? db.rneCards.toArray() : []), [], []);
 }
 
 export function useCard(slug: string) {
@@ -30,18 +26,8 @@ export function useMaterials() {
 }
 
 /** Projects, or `undefined` while IndexedDB is still being read (not the same as none). */
-export function useProjectList(): Project[] | undefined {
+export function useProjects(): Project[] | undefined {
   return useLiveQuery(async () => (db ? db.projects.orderBy("updatedAt").reverse().toArray() : []));
-}
-
-export function useProjects(): Project[] {
-  return (
-    useLiveQuery(
-      async () => (db ? db.projects.orderBy("updatedAt").reverse().toArray() : []),
-      [],
-      [],
-    ) ?? []
-  );
 }
 
 export function useTakeoffs(projectId: string): Takeoff[] {

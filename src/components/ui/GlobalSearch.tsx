@@ -5,7 +5,7 @@ import { handleSearchShortcut } from "@/lib/ui/search-shortcut";
 import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RNE_CARDS } from "@/data/seed-rne";
-import { ensureSeeded } from "@/lib/offline/db";
+
 import { searchCatalog } from "@/lib/search/catalog";
 import { useCards, useProjects, useFeeQuotes } from "@/lib/offline/hooks";
 
@@ -35,11 +35,9 @@ export function GlobalSearch({
   const cards = useCards(),
     projects = useProjects(),
     quotes = useFeeQuotes();
-  const results = searchCatalog(query, cards.length ? cards : RNE_CARDS, projects, quotes);
+  const results = searchCatalog(query, cards.length ? cards : RNE_CARDS, projects ?? [], quotes);
 
   useEffect(() => {
-    void ensureSeeded();
-
     function handleShortcut(event: KeyboardEvent): void {
       if (variant !== "header" || !inputRef.current?.getClientRects().length) return;
       handleSearchShortcut(event, () => {
@@ -127,7 +125,7 @@ export function GlobalSearch({
             ))
           ) : (
             <p className="muted small" role="option" aria-selected="false" aria-disabled="true">
-              Sin resultados locales.
+              {projects === undefined ? "Buscando en este espacio…" : "Sin resultados locales."}
             </p>
           )}
         </div>

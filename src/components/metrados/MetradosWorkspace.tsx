@@ -9,6 +9,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Button, Card, confirmDialog, EmptyState, PaywallModal, toast } from "@/components/ui";
 import { MATERIALS } from "@/data/seed-rne";
 import { chapterFor, computeProjectTotals, shoppingList } from "@/lib/calculators/takeoff";
+import { LoadingState } from "@/components/ui/LoadingState";
 import { db, type Project, type Takeoff } from "@/lib/offline/db";
 import { useMaterials, useProjects, useTakeoffs, useSyncStatus } from "@/lib/offline/hooks";
 import { ProjectHub } from "./ProjectHub";
@@ -46,7 +47,8 @@ const projectTabs = [
 ] as const;
 
 export function MetradosWorkspace() {
-  const projects = useProjects();
+  const loadedProjects = useProjects();
+  const projects = loadedProjects ?? [];
   const materials = useMaterials();
   const searchParams = useSearchParams();
   const sync = useSyncStatus();
@@ -343,6 +345,8 @@ export function MetradosWorkspace() {
   async function syncNow(): Promise<void> {
     toast(describeSyncResult(await runSync()));
   }
+
+  if (loadedProjects === undefined) return <LoadingState label="Cargando proyectos…" />;
 
   return (
     <div className="metrados-page">

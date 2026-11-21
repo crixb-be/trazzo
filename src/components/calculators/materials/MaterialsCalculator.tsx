@@ -264,16 +264,21 @@ export function MaterialsCalculator() {
       )}
       <label>
         Proyecto de destino
-        <select className="input" value={project} onChange={(e) => setProject(e.target.value)}>
-          <option value="">Selecciona proyecto</option>
-          {projects.map((p) => (
+        <select
+          className="input"
+          value={project}
+          disabled={!projects}
+          onChange={(e) => setProject(e.target.value)}
+        >
+          <option value="">{projects ? "Selecciona proyecto" : "Cargando proyectos…"}</option>
+          {projects?.map((p) => (
             <option value={p.id} key={p.id}>
               {p.name}
             </option>
           ))}
         </select>
       </label>
-      {!projects.length && <Link href="/metrados">Crear proyecto</Link>}
+      {projects?.length === 0 && <Link href="/metrados">Crear proyecto</Link>}
       <button
         className="btn btn-primary"
         disabled={

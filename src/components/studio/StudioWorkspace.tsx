@@ -1,5 +1,7 @@
 "use client";
 
+import { workspaceStorageKey } from "@/lib/offline/workspace-storage";
+
 import { useLiveQuery } from "dexie-react-hooks";
 import { ArrowUpRight, Briefcase, ClipboardList, IdCard, Network, NotebookPen } from "lucide-react";
 import Link from "next/link";
@@ -53,7 +55,9 @@ export function StudioWorkspace() {
 
   useEffect(() => {
     try {
-      setChecked(parseChecklist(localStorage.getItem(EXPEDIENTE_CHECKLIST_KEY)));
+      setChecked(
+        parseChecklist(localStorage.getItem(workspaceStorageKey(EXPEDIENTE_CHECKLIST_KEY))),
+      );
     } catch {
       // La lista se puede usar durante la visita aunque el almacenamiento esté bloqueado.
     }
@@ -62,7 +66,7 @@ export function StudioWorkspace() {
   function updateChecklist(next: CheckedItems) {
     setChecked(next);
     try {
-      localStorage.setItem(EXPEDIENTE_CHECKLIST_KEY, serializeChecklist(next));
+      localStorage.setItem(workspaceStorageKey(EXPEDIENTE_CHECKLIST_KEY), serializeChecklist(next));
     } catch {
       // Las marcas siguen disponibles mientras la página esté abierta.
     }

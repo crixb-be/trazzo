@@ -1,4 +1,10 @@
-import { db } from "@/lib/offline/db";
+import type { TrazzoDB } from "@/lib/offline/db";
+import {
+  getActiveDatabase,
+  getActiveWorkspaceId,
+  GUEST_WORKSPACE,
+  subscribeWorkspace,
+} from "@/lib/offline/workspace";
 import { createClient } from "@/lib/supabase/client";
 import { resolveEffectivePlan, type Plan } from "./plans";
 
@@ -89,30 +95,30 @@ export function parseCachedProfile(raw: string | undefined): CachedPlanProfile |
   }
 }
 
-async function readCache(): Promise<CachedPlanProfile | null> {
-  if (!db) return null;
+async function readCache(local: TrazzoDB): Promise<CachedPlanProfile | null> {
   try {
-    return parseCachedProfile((await db.meta.get(CACHE_KEY))?.value);
+    return parseCachedProfile((await local.meta.get(CACHE_KEY))?.value);
   } catch {
     return null;
   }
 }
 
-async function writeCache(profile: CachedPlanProfile | null): Promise<void> {
-  if (!db) return;
+async function writeCache(local: TrazzoDB, profile: CachedPlanProfile): Promise<void> {
   try {
-    if (profile) await db.meta.put({ key: CACHE_KEY, value: JSON.stringify(profile) });
-    else await db.meta.delete(CACHE_KEY);
+    await local.meta.put({ key: CACHE_KEY, value: JSON.stringify(profile) });
   } catch {
     // The cache is best effort; the plan still resolves from the network.
   }
 }
 
-async function fetchSnapshot(): Promise<PlanSnapshot> {
+async function fetchSnapshot(workspaceId: string): Promise<PlanSnapshot> {
   const client = createClient();
   if (!client) return LOCAL_SNAPSHOT;
 
-  const cached = await readCache();
+  if (workspaceId === GUEST_WORKSPACE) return SIGNED_OUT_SNAPSHOT;
+  const local = getActiveDatabase();
+  const entry = await readCache(local);
+  const cached = entry?.userId === workspaceId ? entry : null;
   const offline = typeof navigator !== "undefined" && !navigator.onLine;
 
   let user: { id: string; email?: string } | null = null;
@@ -129,9 +135,9 @@ async function fetchSnapshot(): Promise<PlanSnapshot> {
 
   if (!user) {
     if ((sessionFailed || offline) && cached) return snapshotFromProfile(cached, "cache");
-    if (!sessionFailed && !offline) await writeCache(null);
     return SIGNED_OUT_SNAPSHOT;
   }
+  if (user.id !== workspaceId) return SIGNED_OUT_SNAPSHOT;
 
   try {
     const { data, error } = await client
@@ -149,7 +155,7 @@ async function fetchSnapshot(): Promise<PlanSnapshot> {
         typeof data?.subscription_expires_at === "string" ? data.subscription_expires_at : null,
       fetchedAt: new Date().toISOString(),
     };
-    await writeCache(profile);
+    if (local === getActiveDatabase()) await writeCache(local, profile);
     return snapshotFromProfile(profile, "network");
   } catch {
     if (cached && cached.userId === user.id) return snapshotFromProfile(cached, "cache");
@@ -167,17 +173,22 @@ export function peekPlanSnapshot(): PlanSnapshot | null {
 /** Resolves the current plan; concurrent callers share one request. */
 export function loadPlanSnapshot(force = false): Promise<PlanSnapshot> {
   if (!force && memo && Date.now() - memo.at < MEMO_MS) return Promise.resolve(memo.value);
-  inflight ??= fetchSnapshot()
+  if (inflight) return inflight;
+  const request = fetchSnapshot(getActiveWorkspaceId())
     .then((value) => {
-      memo = { at: Date.now(), value };
+      if (inflight === request) memo = { at: Date.now(), value };
       return value;
     })
     .finally(() => {
-      inflight = null;
+      if (inflight === request) inflight = null;
     });
-  return inflight;
+  inflight = request;
+  return request;
 }
 
 export function invalidatePlanSnapshot(): void {
   memo = null;
+  inflight = null;
 }
+
+subscribeWorkspace(invalidatePlanSnapshot);

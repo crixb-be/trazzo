@@ -2,7 +2,6 @@ import { createClient, createSyncClient } from "@/lib/supabase/client";
 import { canUseProCards } from "@/lib/plans/plans";
 import { loadPlanSnapshot } from "@/lib/plans/plan-store";
 import {
-  db,
   type FeeQuote,
   type Outbox,
   type OutboxTable,
@@ -36,6 +35,14 @@ import { retryDelay, subscribeToSyncTriggers } from "./sync-lifecycle";
 import { PROFILE_DIRTY, syncProfile } from "./profile-sync";
 import { DEFAULT_STUDIO_PROFILE } from "./profile";
 import { compressImageForSync } from "@/lib/ui/image-budget";
+import { DELETION_PREFIX, SYNC_OWNER } from "./sync-keys";
+import {
+  GUEST_WORKSPACE,
+  getActiveDatabase,
+  getActiveWorkspaceId,
+  subscribeWorkspace,
+  WORKSPACE_OWNER,
+} from "./workspace";
 
 export { describeSyncResult };
 export type { SyncResult };
@@ -58,8 +65,7 @@ type Client = ReturnType<typeof createSyncClient>;
 type Row = Record<string, unknown> & { id: string };
 const LAST_SYNC = "lastSync";
 const LAST_ERROR = "lastSyncError";
-const OWNER = "sync:owner";
-const DELETION_PREFIX = "sync:deleted:";
+
 const initialActivity: SyncActivity = { syncing: false, signedIn: false, accountMismatch: false };
 let activity = initialActivity;
 const listeners = new Set<() => void>();
@@ -103,9 +109,24 @@ function remoteTable(table: OutboxTable): string {
   return table;
 }
 
-let legacyProjectColumns = false;
+const legacyProjectColumns = new WeakSet<TrazzoDB>();
 
-async function writeRemote(client: Client, userId: string, item: Outbox, id: string) {
+subscribeWorkspace(() => {
+  if (scheduled) clearTimeout(scheduled);
+  scheduled = null;
+  failures = 0;
+  rerun = false;
+  publish(initialActivity);
+  scheduleSync(0);
+});
+
+async function writeRemote(
+  local: TrazzoDB,
+  client: Client,
+  userId: string,
+  item: Outbox,
+  id: string,
+) {
   const table = remoteTable(item.table);
   if (item.op === "delete" && item.table === "site_logs") {
     const { error } = await client.from(table).upsert({
@@ -151,11 +172,14 @@ async function writeRemote(client: Client, userId: string, item: Outbox, id: str
     const legacyPayload = { ...payload };
     delete legacyPayload.client;
     delete legacyPayload.built_area;
-    const result = await client.from(table).upsert(legacyProjectColumns ? legacyPayload : payload);
+    const result = await client
+      .from(table)
+      .upsert(legacyProjectColumns.has(local) ? legacyPayload : payload);
     if (!result.error) return;
-    if (legacyProjectColumns || !["PGRST204", "42703"].includes(result.error.code))
+    if (legacyProjectColumns.has(local) || !["PGRST204", "42703"].includes(result.error.code))
       throw result.error;
-    legacyProjectColumns = true;
+    if (getActiveDatabase() !== local) return;
+    legacyProjectColumns.add(local);
     const { error } = await client.from(table).upsert(legacyPayload);
     if (error) throw error;
     return;
@@ -170,6 +194,7 @@ async function flush(local: TrazzoDB, client: Client, userId: string): Promise<S
   let sent = 0;
   let error: string | null = null;
   for (const item of pending) {
+    if (getActiveDatabase() !== local) break;
     let key: string | undefined;
     try {
       const id = payloadId(item);
@@ -177,7 +202,8 @@ async function flush(local: TrazzoDB, client: Client, userId: string): Promise<S
       const parent =
         item.table === "site_logs" ? undefined : (item.payload as { projectId?: string }).projectId;
       if (blocked.has(key) || (parent && blocked.has("projects:" + parent))) continue;
-      await writeRemote(client, userId, item, id);
+      await writeRemote(local, client, userId, item, id);
+      if (getActiveDatabase() !== local) break;
       if (item.id !== undefined) {
         const queueId = item.id;
         await local.transaction("rw", [local.outbox, local.meta], async () => {
@@ -454,7 +480,9 @@ async function pullPrivate(local: TrazzoDB, client: Client): Promise<number> {
 }
 
 async function syncCatalogue(local: TrazzoDB, client: Client) {
+  if (getActiveDatabase() !== local) return;
   const { plan } = await loadPlanSnapshot();
+  if (getActiveDatabase() !== local) return;
   const [cards, materials] = await Promise.all([
     client
       .from("rne_cards")
@@ -468,11 +496,13 @@ async function syncCatalogue(local: TrazzoDB, client: Client) {
 
 /** One account-bound pass for both directions. Changes stay queued on any write failure. */
 export async function syncNow(): Promise<SyncResult> {
-  const local = db;
-  if (!local) return result("error");
   const authClient = createClient();
   if (!authClient) return result("not-configured");
+  const workspaceId = getActiveWorkspaceId();
+  if (workspaceId === GUEST_WORKSPACE) return result("signed-out");
   if (!online()) return result("offline");
+  const local = getActiveDatabase();
+  const isCurrent = () => getActiveDatabase() === local;
   if (activity.syncing) {
     rerun = true;
     return result("busy");
@@ -487,23 +517,28 @@ export async function syncNow(): Promise<SyncResult> {
       data: { session },
       error,
     } = await authClient.auth.getSession();
+    if (!isCurrent()) return outcome;
     if (error) throw error;
+    if (session && session.user.id !== workspaceId) return outcome;
     publish({ signedIn: Boolean(session), accountMismatch: false });
     if (session) {
       const userId = session.user.id;
-      const ownsDevice = await local.transaction("rw", local.meta, async () => {
-        const owner = (await local.meta.get(OWNER))?.value;
-        if (owner) return owner === userId;
-        await local.meta.put({ key: OWNER, value: userId });
+      const ownsWorkspace = await local.transaction("rw", local.meta, async () => {
+        const [legacyOwner, owner] = await local.meta.bulkGet([SYNC_OWNER, WORKSPACE_OWNER]);
+        if ([legacyOwner, owner].some((entry) => entry && entry.value !== userId)) return false;
+        if (!legacyOwner) await local.meta.put({ key: SYNC_OWNER, value: userId });
         return true;
       });
-      if (!ownsDevice) {
+      if (!isCurrent()) return outcome;
+      if (!ownsWorkspace) {
         publish({ accountMismatch: true });
         return result("account-mismatch");
       }
       const client = createSyncClient(session.access_token);
       outcome = await flush(local, client, userId);
+      if (!isCurrent()) return result("signed-out");
       outcome.pulled = await pullPrivate(local, client);
+      if (!isCurrent()) return result("signed-out");
       // Profile, photo and studio brand: reconciled by newest updatedAt.
       const profile = await syncProfile(
         local,
@@ -512,6 +547,7 @@ export async function syncNow(): Promise<SyncResult> {
         compressImageForSync,
         DEFAULT_STUDIO_PROFILE,
       ).catch((cause: unknown) => ({ action: "none" as const, error: errorMessage(cause) }));
+      if (!isCurrent()) return result("signed-out");
       if (profile.action === "pull") outcome.pulled += 1;
       if (profile.action === "push" && !profile.error) outcome.sent += 1;
       if (profile.error) {
@@ -529,23 +565,26 @@ export async function syncNow(): Promise<SyncResult> {
     }
     return outcome;
   } catch (cause) {
+    if (!isCurrent()) return result("signed-out");
     outcome = { ...outcome, status: "error", error: errorMessage(cause) };
     await local.meta.put({ key: LAST_ERROR, value: outcome.error! }).catch(() => undefined);
     return outcome;
   } finally {
-    publish({ syncing: false });
-    if (outcome.status === "partial" || outcome.status === "error") {
-      scheduleSync(retryDelay(failures++));
-    } else {
-      failures = 0;
-      if (rerun) scheduleSync(0);
+    if (isCurrent()) {
+      publish({ syncing: false });
+      if (outcome.status === "partial" || outcome.status === "error") {
+        scheduleSync(retryDelay(failures++));
+      } else {
+        failures = 0;
+        if (rerun) scheduleSync(0);
+      }
+      rerun = false;
     }
-    rerun = false;
   }
 }
 
 export function scheduleSync(delayMs = 2500): void {
-  if (!online() || !createClient()) return;
+  if (getActiveWorkspaceId() === GUEST_WORKSPACE || !online() || !createClient()) return;
   if (scheduled) clearTimeout(scheduled);
   scheduled = setTimeout(() => {
     scheduled = null;
@@ -554,19 +593,25 @@ export function scheduleSync(delayMs = 2500): void {
 }
 
 export async function getSyncStatus(): Promise<Omit<SyncStatus, keyof SyncActivity | "online">> {
+  const local = typeof window === "undefined" ? null : getActiveDatabase();
+  const [count, dirty, lastSync, error] = await Promise.all([
+    local?.outbox.count(),
+    local?.meta.get(PROFILE_DIRTY),
+    local?.meta.get(LAST_SYNC),
+    local?.meta.get(LAST_ERROR),
+  ]);
   return {
     configured: Boolean(createClient()),
-    // Queued rows plus the profile, when it has an edit the cloud has not confirmed.
-    pending: ((await db?.outbox.count()) ?? 0) + ((await db?.meta.get(PROFILE_DIRTY)) ? 1 : 0),
-    lastSync: (await db?.meta.get(LAST_SYNC))?.value ?? null,
-    error: (await db?.meta.get(LAST_ERROR))?.value ?? null,
+    pending: (count ?? 0) + Number(Boolean(dirty)),
+    lastSync: lastSync?.value ?? null,
+    error: error?.value ?? null,
   };
 }
 
 export function describeSyncStatus(status: SyncStatus): string {
   if (status.syncing) return "Sincronizando…";
-  if (status.accountMismatch) return "Datos de otra cuenta en este dispositivo";
-  if (!status.configured) return "Guardado en este dispositivo";
+  if (status.accountMismatch) return "La cuenta no coincide con el espacio activo";
+  if (!status.configured || !status.signedIn) return "Guardado en este dispositivo";
   if (status.pending || status.error) return "Pendiente de sincronizar";
   if (status.signedIn && status.lastSync) return "Respaldado en la nube";
   return "Guardado en este dispositivo";
@@ -577,30 +622,24 @@ export function startOnlineSync(): () => void {
   if (!client) return () => undefined;
   const stop = subscribeToSyncTriggers(window, document, () => scheduleSync(0));
   let profileFeed: { userId: string; stop: () => void } | null = null;
-  const auth = client.auth.onAuthStateChange((event, session) => {
-    if (!session) {
-      publish({ signedIn: false, accountMismatch: false });
-      profileFeed?.stop();
-      profileFeed = null;
-    }
-    // Supabase auth callbacks run under an auth lock; schedule outside it.
-    if (session && (event === "INITIAL_SESSION" || event === "SIGNED_IN")) {
-      // Show a cloud confirmation only after this account has been checked.
-      publish({ signedIn: false });
-      scheduleSync(0);
-      if (profileFeed?.userId !== session.user.id) {
-        profileFeed?.stop();
-        profileFeed = {
-          userId: session.user.id,
-          stop: watchRemoteProfile(client, session.user.id),
-        };
-      }
-    }
-  });
+  const updateFeed = () => {
+    const userId = getActiveWorkspaceId();
+    if (profileFeed?.userId === userId) return;
+    profileFeed?.stop();
+    profileFeed =
+      userId === GUEST_WORKSPACE
+        ? null
+        : {
+            userId,
+            stop: watchRemoteProfile(client, userId),
+          };
+  };
+  updateFeed();
+  const unsubscribe = subscribeWorkspace(updateFeed);
   return () => {
     stop();
     profileFeed?.stop();
-    auth.data.subscription.unsubscribe();
+    unsubscribe();
     if (scheduled) clearTimeout(scheduled);
     scheduled = null;
   };
@@ -626,8 +665,10 @@ function watchRemoteProfile(
       (change) => {
         const version = (change.new as { profile_updated_at?: string | null }).profile_updated_at;
         void (async () => {
-          const local = await db?.studio_profile.get("default");
-          if (version && local?.updatedAt === version) return;
+          if (getActiveWorkspaceId() !== userId) return;
+          const database = getActiveDatabase();
+          const local = await database.studio_profile.get("default").catch(() => undefined);
+          if (database !== getActiveDatabase() || (version && local?.updatedAt === version)) return;
           scheduleSync(300);
         })();
       },

@@ -4,10 +4,11 @@ import Link from "next/link";
 import { ArrowUpRight, BookOpen, Compass, FolderOpen, Library, Sparkles, Plus } from "lucide-react";
 import { disciplineVisual, HOME_SHORTCUTS } from "./tool-visuals";
 import { useLiveQuery } from "dexie-react-hooks";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { GlobalSearch, Badge } from "@/components/ui";
 import { RNE_CARDS, type RneCategory } from "@/data/seed-rne";
-import { db, type Project } from "@/lib/offline/db";
+import { db } from "@/lib/offline/db";
+import { LoadingState } from "@/components/ui/LoadingState";
 import { useCards, useProjects, useSyncStatus } from "@/lib/offline/hooks";
 import { syncPresentation } from "@/lib/offline/sync-presentation";
 import { useLibraryActivity } from "@/lib/offline/library";
@@ -22,15 +23,6 @@ const categories: Array<{ name: RneCategory; label: string }> = [
 /** Frequent field searches; each chip fills the search box. */
 const QUICK_SEARCHES = ["garganta", "alféizar", "cochera", "A.120"];
 
-function projectTotal(
-  project: Project,
-  takeoffs: Array<{ projectId: string; subtotalPen: number }>,
-) {
-  return takeoffs
-    .filter((takeoff) => takeoff.projectId === project.id)
-    .reduce((total, takeoff) => total + takeoff.subtotalPen, 0);
-}
-
 function plural(count: number, one: string, many: string): string {
   return count + " " + (count === 1 ? one : many);
 }
@@ -38,7 +30,6 @@ function plural(count: number, one: string, many: string): string {
 export function HomeDashboard() {
   const cards = useCards();
   const projects = useProjects();
-  const takeoffs = useLiveQuery(async () => (db ? db.takeoffs.toArray() : []), [], []) ?? [];
   const sync = useSyncStatus();
   const [quickQuery, setQuickQuery] = useState("");
 
@@ -55,10 +46,24 @@ export function HomeDashboard() {
     .map((a) => library.find((c) => c.slug === a.slug))
     .filter((c): c is (typeof RNE_CARDS)[number] => !!c)
     .slice(0, 4);
-  const allActive = projects.filter((project) => project.status === "activo");
-  const activeProjects = allActive.slice(0, 3);
+  const allActive = useMemo(
+    () => projects?.filter((project) => project.status === "activo") ?? [],
+    [projects],
+  );
+  const activeProjects = useMemo(() => allActive.slice(0, 3), [allActive]);
+  const totals = useLiveQuery(async () => {
+    const ids = activeProjects.map(({ id }) => id);
+    const totals = new Map<string, number>();
+    if (!db || !ids.length) return totals;
+    const takeoffs = await db.takeoffs.where("projectId").anyOf(ids).toArray();
+    for (const { projectId, subtotalPen } of takeoffs) {
+      totals.set(projectId, (totals.get(projectId) ?? 0) + subtotalPen);
+    }
+    return totals;
+  }, [activeProjects]);
   const { long, short, icon: SyncIcon, backedUp } = syncPresentation(sync);
-  const nothingYet = activeProjects.length === 0 && recentCards.length === 0;
+  const nothingYet =
+    projects !== undefined && activeProjects.length === 0 && recentCards.length === 0;
 
   return (
     <div className="home-dashboard">
@@ -255,7 +260,9 @@ export function HomeDashboard() {
                 <ArrowUpRight size={17} />
               </Link>
             </div>
-            {activeProjects.length === 0 ? (
+            {projects === undefined ? (
+              <LoadingState label="Cargando proyectos…" />
+            ) : activeProjects.length === 0 ? (
               <div className="panel-empty panel-empty-action">
                 <span className="muted small">
                   Aún no hay proyectos. Se guardan primero en este dispositivo.
@@ -280,7 +287,9 @@ export function HomeDashboard() {
                         {project.typology || "Sin tipología"}
                       </small>
                     </span>
-                    <span className="mono">S/ {projectTotal(project, takeoffs).toFixed(2)}</span>
+                    <span className="mono">
+                      {totals ? "S/ " + (totals.get(project.id) ?? 0).toFixed(2) : "…"}
+                    </span>
                   </Link>
                 ))}
               </div>

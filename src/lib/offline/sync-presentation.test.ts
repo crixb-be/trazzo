@@ -26,7 +26,7 @@ it("keeps local work local even when it has queued writes", () => {
 
 it("gives account mismatch priority and keeps text and icon in agreement", () => {
   expect(syncPresentation({ ...local, syncing: true, accountMismatch: true })).toMatchObject({
-    short: "Otra cuenta",
+    short: "Revisa tu sesión",
     icon: CloudAlert,
     backedUp: false,
   });

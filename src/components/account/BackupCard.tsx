@@ -11,6 +11,7 @@ import {
   parseBackup,
 } from "@/lib/offline/backup";
 import type { Plan } from "@/lib/plans/plans";
+import { getActiveDatabase } from "@/lib/offline/workspace";
 
 /** Saves the user's work to a file and restores it, with or without an account. */
 export function BackupCard({ plan }: { plan: Plan }) {
@@ -18,9 +19,11 @@ export function BackupCard({ plan }: { plan: Plan }) {
   const [busy, setBusy] = useState(false);
 
   async function download(): Promise<void> {
+    const local = getActiveDatabase();
     setBusy(true);
     try {
       const backup = await exportBackup();
+      if (getActiveDatabase() !== local) return;
       const blob = new Blob([JSON.stringify(backup)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -37,9 +40,11 @@ export function BackupCard({ plan }: { plan: Plan }) {
   }
 
   async function restore(file: File): Promise<void> {
+    const local = getActiveDatabase();
     setBusy(true);
     try {
       const parsed = parseBackup(await file.text());
+      if (getActiveDatabase() !== local) return;
       if (!parsed.ok) {
         toast(parsed.error, "error");
         return;
@@ -52,7 +57,7 @@ export function BackupCard({ plan }: { plan: Plan }) {
           ". Lo que coincida con lo guardado aquí se reemplaza; lo demás no se borra.",
         confirmLabel: "Restaurar",
       });
-      if (!confirmed) return;
+      if (!confirmed || getActiveDatabase() !== local) return;
       const result = await importBackup(parsed.backup, plan);
       if (result.ok) toast("Copia restaurada.", "ok");
       else toast(result.error, "error");

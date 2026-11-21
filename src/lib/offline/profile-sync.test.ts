@@ -1,5 +1,6 @@
-import "fake-indexeddb/auto";
 import { createClient as createSupabase } from "@supabase/supabase-js";
+import Dexie from "dexie";
+import { indexedDB, IDBKeyRange } from "fake-indexeddb";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { StudioProfile } from "./db";
 
@@ -8,24 +9,16 @@ const auth = vi.hoisted(() => ({
   session: null as TestSession,
   fetch: vi.fn<typeof fetch>(),
   compress: vi.fn<(dataUrl: string, maxBytes: number) => Promise<string | null>>(),
-  onAuth: undefined as ((event: string, session: TestSession) => void) | undefined,
   /** Realtime handler for this account's profiles row, once subscribed. */
   onProfileChange: undefined as ((change: { new: Record<string, unknown> }) => void) | undefined,
   channelFilter: "",
 }));
 
-vi.mock("./db", async (load) => {
-  const actual = await load<typeof import("./db")>();
-  return { ...actual, db: new actual.TrazzoDB() };
-});
+vi.hoisted(() => vi.stubGlobal("window", {}));
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({
     auth: {
       getSession: async () => ({ data: { session: auth.session }, error: null }),
-      onAuthStateChange: (callback: typeof auth.onAuth) => {
-        auth.onAuth = callback;
-        return { data: { subscription: { unsubscribe: () => (auth.onAuth = undefined) } } };
-      },
     },
     channel: () => {
       const channel = {
@@ -65,7 +58,10 @@ import {
   rowToProfile,
   type ProfileRow,
 } from "./profile-sync";
-import { getSyncStatus, startOnlineSync, syncNow } from "./sync";
+import { getSyncStatus, scheduleSync, startOnlineSync, syncNow } from "./sync";
+import { activateWorkspace, GUEST_WORKSPACE } from "./workspace";
+
+const ownerId = "10000000-0000-4000-a000-000000000001";
 
 const database = db!;
 /** ~3 KB JPEG-like data URL. */
@@ -185,13 +181,17 @@ describe("sincronización del perfil con Supabase", () => {
   let missingColumns: boolean;
   let patches: Array<Partial<ProfileRow>>;
 
-  function signIn(id = "owner") {
-    auth.session = { user: { id }, access_token: "session-" + id };
+  async function signIn() {
+    auth.session = { user: { id: ownerId }, access_token: "session-owner" };
+    await activateWorkspace(ownerId);
   }
 
   beforeEach(async () => {
-    await database.open();
-    cloud = new Map([["owner", row()]]);
+    Dexie.dependencies.indexedDB = indexedDB;
+    Dexie.dependencies.IDBKeyRange = IDBKeyRange;
+    vi.stubGlobal("window", new EventTarget());
+    await activateWorkspace(GUEST_WORKSPACE);
+    cloud = new Map([[ownerId, row()]]);
     patches = [];
     missingColumns = false;
     connection = { onLine: true };
@@ -224,12 +224,15 @@ describe("sincronización del perfil con Supabase", () => {
   afterEach(async () => {
     vi.clearAllTimers();
     vi.useRealTimers();
+    await activateWorkspace(ownerId);
+    await database.delete();
+    await activateWorkspace(GUEST_WORKSPACE);
     await database.delete();
     vi.unstubAllGlobals();
   });
 
   it("al guardar con sesión sube perfil, empresa, colores, foto y logo de inmediato", async () => {
-    signIn();
+    await signIn();
     const saved = await saveStudioProfile({
       fullName: "Ana Pérez",
       capNumber: "CAP 1234",
@@ -243,7 +246,7 @@ describe("sincronización del perfil con Supabase", () => {
     });
     const result = await syncNow();
     expect(result.status).toBe("ok");
-    expect(cloud.get("owner")).toMatchObject({
+    expect(cloud.get(ownerId)).toMatchObject({
       full_name: "Ana Pérez",
       cap_number: "CAP 1234",
       studio_name: "Pérez Arquitectos",
@@ -260,22 +263,22 @@ describe("sincronización del perfil con Supabase", () => {
   });
 
   it("sin red queda en cola y se envía al reconectar", async () => {
-    signIn();
+    await signIn();
     connection.onLine = false;
     await saveStudioProfile({ fullName: "Sin señal" });
     expect((await syncNow()).status).toBe("offline");
     expect((await getSyncStatus()).pending).toBe(1);
-    expect(cloud.get("owner")?.full_name).toBeNull();
+    expect(cloud.get(ownerId)?.full_name).toBeNull();
 
     connection.onLine = true;
     expect((await syncNow()).status).toBe("ok");
-    expect(cloud.get("owner")?.full_name).toBe("Sin señal");
+    expect(cloud.get(ownerId)?.full_name).toBe("Sin señal");
     expect((await getSyncStatus()).pending).toBe(0);
   });
 
   it("al entrar en otro dispositivo descarga todo el perfil e imágenes", async () => {
     cloud.set(
-      "owner",
+      ownerId,
       row({
         full_name: "Ana Pérez",
         cap_number: "CAP 1234",
@@ -289,7 +292,7 @@ describe("sincronización del perfil con Supabase", () => {
         profile_updated_at: "2026-11-19T12:00:00.000Z",
       }),
     );
-    signIn();
+    await signIn();
     const result = await syncNow();
     expect(result.status).toBe("ok");
     expect(result.pulled).toBeGreaterThanOrEqual(1);
@@ -310,11 +313,11 @@ describe("sincronización del perfil con Supabase", () => {
   });
 
   it("gana la edición más reciente entre dispositivos", async () => {
-    signIn();
+    await signIn();
     await saveStudioProfile({ studioName: "Local viejo" });
     // Another device saved later.
     cloud.set(
-      "owner",
+      ownerId,
       row({
         studio_name: "Desde la tablet",
         profile_updated_at: new Date(Date.now() + 60_000).toISOString(),
@@ -331,31 +334,31 @@ describe("sincronización del perfil con Supabase", () => {
     });
     await database.meta.put({ key: PROFILE_DIRTY, value: "edit" });
     await syncNow();
-    expect(cloud.get("owner")?.studio_name).toBe("Ahora desde el teléfono");
+    expect(cloud.get(ownerId)?.studio_name).toBe("Ahora desde el teléfono");
   });
 
   it("comprime un logo de más de 150 KB antes de subirlo", async () => {
-    signIn();
+    await signIn();
     await saveStudioProfile({ fullName: "Ana", logoDataUrl: HUGE_LOGO });
     await syncNow();
     expect(auth.compress).toHaveBeenCalledWith(HUGE_LOGO, MAX_SYNC_IMAGE_BYTES);
-    expect(cloud.get("owner")?.logo_data_url).toBe(SMALL_LOGO);
+    expect(cloud.get(ownerId)?.logo_data_url).toBe(SMALL_LOGO);
     // The device keeps its original; only the synced copy is smaller.
     expect((await getStudioProfile()).logoDataUrl).toBe(HUGE_LOGO);
   });
 
   it("si un logo no se puede reducir, sincroniza el resto y conserva el de la nube", async () => {
-    signIn();
-    cloud.set("owner", row({ logo_data_url: LOGO }));
+    await signIn();
+    cloud.set(ownerId, row({ logo_data_url: LOGO }));
     auth.compress.mockResolvedValue(null);
     await saveStudioProfile({ fullName: "Ana", logoDataUrl: HUGE_LOGO });
     expect((await syncNow()).status).toBe("ok");
     expect(patches.at(-1)).not.toHaveProperty("logo_data_url");
-    expect(cloud.get("owner")).toMatchObject({ full_name: "Ana", logo_data_url: LOGO });
+    expect(cloud.get(ownerId)).toMatchObject({ full_name: "Ana", logo_data_url: LOGO });
   });
 
   it("sin la migración avisa qué falta y deja el perfil en cola", async () => {
-    signIn();
+    await signIn();
     missingColumns = true;
     await saveStudioProfile({ fullName: "Ana" });
     const result = await syncNow();
@@ -365,13 +368,14 @@ describe("sincronización del perfil con Supabase", () => {
   });
 
   it("al cerrar sesión conserva los datos y al volver no pierde nada", async () => {
-    signIn();
+    await signIn();
     await saveStudioProfile({ fullName: "Ana", avatarDataUrl: PHOTO });
     await syncNow();
     auth.session = null;
+    await activateWorkspace(GUEST_WORKSPACE);
     expect((await syncNow()).status).toBe("signed-out");
-    expect((await getStudioProfile()).avatarDataUrl).toBe(PHOTO);
-    signIn();
+    expect((await getStudioProfile()).avatarDataUrl).toBeNull();
+    await signIn();
     expect((await syncNow()).status).toBe("ok");
     expect(await getStudioProfile()).toMatchObject({ fullName: "Ana", avatarDataUrl: PHOTO });
   });
@@ -380,9 +384,9 @@ describe("sincronización del perfil con Supabase", () => {
     vi.stubGlobal("window", new EventTarget());
     vi.stubGlobal("document", Object.assign(new EventTarget(), { visibilityState: "hidden" }));
     const stop = startOnlineSync();
-    signIn();
-    auth.onAuth?.("SIGNED_IN", auth.session);
-    expect(auth.channelFilter).toBe("id=eq.owner");
+    await signIn();
+    scheduleSync(0);
+    expect(auth.channelFilter).toBe("id=eq." + ownerId);
     await vi.runAllTimersAsync();
     await vi.waitFor(async () => expect(await getSyncStatus()).toMatchObject({ pending: 0 }));
 
@@ -393,7 +397,7 @@ describe("sincronización del perfil con Supabase", () => {
       logo_data_url: LOGO,
       profile_updated_at: new Date(Date.now() + 5_000).toISOString(),
     });
-    cloud.set("owner", desktop);
+    cloud.set(ownerId, desktop);
     auth.onProfileChange?.({ new: { ...desktop } });
     await vi.runAllTimersAsync();
     await vi.waitFor(async () =>

@@ -1,38 +1,22 @@
-import "fake-indexeddb/auto";
 import Dexie from "dexie";
+import { indexedDB, IDBKeyRange } from "fake-indexeddb";
 import { createClient as createSupabase } from "@supabase/supabase-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 type TestSession = { user: { id: string }; access_token: string } | null;
 const auth = vi.hoisted(() => ({
   session: null as TestSession,
-  onChange: undefined as ((event: string, session: TestSession) => void) | undefined,
   fetch: vi.fn<typeof fetch>(),
   configured: true,
 }));
 
-vi.mock("./db", async (load) => {
-  const actual = await load<typeof import("./db")>();
-  return { ...actual, db: new actual.TrazzoDB() };
-});
+vi.hoisted(() => vi.stubGlobal("window", {}));
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () =>
     auth.configured
       ? {
           auth: {
             getSession: async () => ({ data: { session: auth.session }, error: null }),
-            onAuthStateChange: (callback: typeof auth.onChange) => {
-              auth.onChange = callback;
-              return {
-                data: {
-                  subscription: {
-                    unsubscribe: () => {
-                      auth.onChange = undefined;
-                    },
-                  },
-                },
-              };
-            },
           },
         }
       : null,
@@ -62,7 +46,11 @@ import {
   updateProjectPhotoCaption,
 } from "./project-hub";
 import { deleteSiteLog, saveSiteLog } from "./site-logs";
-import { getSyncActivity, getSyncStatus, startOnlineSync, syncNow } from "./sync";
+import { getSyncActivity, getSyncStatus, scheduleSync, startOnlineSync, syncNow } from "./sync";
+import { activateWorkspace, GUEST_WORKSPACE, workspaceDbName } from "./workspace";
+
+const ownerId = "10000000-0000-4000-a000-000000000001";
+const otherId = "10000000-0000-4000-a000-000000000002";
 
 type CloudRow = Record<string, unknown> & { id: string; updated_at: string };
 const database = db!;
@@ -77,9 +65,10 @@ function table(name: string): Map<string, CloudRow> {
   return cloud.get(name)!;
 }
 
-function signIn(id = "owner") {
+async function signIn(id = ownerId) {
   auth.session = { user: { id }, access_token: "session-" + id };
-  auth.onChange?.("SIGNED_IN", auth.session);
+  await activateWorkspace(id);
+  scheduleSync(0);
 }
 
 const draft = {
@@ -90,7 +79,9 @@ const draft = {
 } as const;
 
 beforeEach(async () => {
-  await database.open();
+  Dexie.dependencies.indexedDB = indexedDB;
+  Dexie.dependencies.IDBKeyRange = IDBKeyRange;
+  await activateWorkspace(GUEST_WORKSPACE);
   cloud = new Map();
   failNextWrite = false;
   connection = { onLine: false };
@@ -138,7 +129,10 @@ afterEach(async () => {
   stop();
   vi.clearAllTimers();
   vi.useRealTimers();
+  await activateWorkspace(GUEST_WORKSPACE);
   await database.delete();
+  await Dexie.delete(workspaceDbName(ownerId));
+  await Dexie.delete(workspaceDbName(otherId));
   vi.unstubAllGlobals();
 });
 
@@ -178,8 +172,18 @@ describe("sincronización con datos de campo", () => {
     ]);
   });
 
+  it("nunca sincroniza datos sin cuenta, incluso con una sesión disponible", async () => {
+    connection.onLine = true;
+    auth.session = { user: { id: ownerId }, access_token: "session-owner" };
+    await saveProject(draft);
+    expect((await syncNow()).status).toBe("signed-out");
+    expect(await database.outbox.count()).toBe(1);
+    expect(auth.fetch).not.toHaveBeenCalled();
+    expect(await database.meta.get("sync:owner")).toBeUndefined();
+  });
+
   it("encola sin conexión y reintenta automáticamente al fallar la primera subida", async () => {
-    signIn();
+    await signIn();
     const project = await saveProject(draft);
     const note = await saveProjectNote(project.id, {
       kind: "calculo",
@@ -208,7 +212,7 @@ describe("sincronización con datos de campo", () => {
 
     await vi.advanceTimersByTimeAsync(2_500);
     await waitUntilBackedUp();
-    expect(table("projects").get(project.id)).toMatchObject({ name: draft.name, user_id: "owner" });
+    expect(table("projects").get(project.id)).toMatchObject({ name: draft.name, user_id: ownerId });
     expect(table("project_records").get(note.id)).toMatchObject({ kind: "note" });
     expect(table("project_records").get(photo.id)).toMatchObject({
       kind: "photo",
@@ -225,7 +229,7 @@ describe("sincronización con datos de campo", () => {
   });
 
   it("reconcilia ediciones y borrados contra la versión más reciente", async () => {
-    signIn();
+    await signIn();
     const project = await saveProject(draft);
     connection.onLine = true;
     const newer = new Date(Date.parse(project.updatedAt) + 1).toISOString();
@@ -261,7 +265,7 @@ describe("sincronización con datos de campo", () => {
   });
 
   it("protege ediciones de bitácora pendientes y aplica tombstones de visitas independientes", async () => {
-    signIn();
+    await signIn();
     const project = await saveProject(draft);
     const log = await saveSiteLog({
       projectId: project.id,
@@ -279,7 +283,7 @@ describe("sincronización con datos de campo", () => {
     expect((await syncNow()).status).toBe("ok");
     const remote = table("site_logs").get(log.id)!;
     expect(remote).toMatchObject({
-      user_id: "owner",
+      user_id: ownerId,
       project_id: project.id,
       data: { findings: "Original" },
     });
@@ -312,12 +316,10 @@ describe("sincronización con datos de campo", () => {
   });
 
   it("sincroniza al iniciar sesión o volver al primer plano y protege la cuenta original", async () => {
-    connection.onLine = true;
+    await signIn();
     const project = await saveProject(draft);
-    expect((await syncNow()).status).toBe("signed-out");
-    expect(await database.outbox.count()).toBe(1);
-
-    signIn();
+    connection.onLine = true;
+    window.dispatchEvent(new Event("online"));
     await waitUntilBackedUp();
     const remote = table("projects").get(project.id)!;
     table("projects").set(project.id, {
@@ -332,9 +334,12 @@ describe("sincronización con datos de campo", () => {
     );
     await waitUntilBackedUp();
 
-    signIn("another-account");
+    auth.session = { user: { id: otherId }, access_token: "another-account" };
     await saveProject({ ...draft, id: project.id, name: "Edición privada" });
-    expect((await syncNow()).status).toBe("account-mismatch");
+    auth.fetch.mockClear();
+    expect((await syncNow()).status).toBe("signed-out");
+    expect(auth.fetch).not.toHaveBeenCalled();
+    expect(getSyncActivity().accountMismatch).toBe(false);
     expect(await database.outbox.count()).toBe(1);
     expect(table("projects").get(project.id)?.name).toBe("Cambio remoto");
 
@@ -447,7 +452,7 @@ describe("project details and takeoff edits", () => {
       }
       return handle(input, init);
     });
-    signIn();
+    await signIn();
     const project = await saveProject({ ...draft, client: "Cliente", builtArea: 120 });
     const second = await saveProject({ ...draft, name: "Otro", client: "Otro cliente" });
     connection.onLine = true;

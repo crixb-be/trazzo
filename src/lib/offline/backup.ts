@@ -11,6 +11,7 @@ import {
   type ProjectPhoto,
   type StudioProfile,
   type Takeoff,
+  type TrazzoDB,
 } from "./db";
 import { siteLogSchema } from "@/lib/projects/site-log";
 import { scheduleSync } from "./sync";
@@ -231,7 +232,7 @@ export async function importBackup(
   backup: BackupFile,
   plan: Plan,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const localDb = db;
+  const localDb = db?.projects.db as TrazzoDB | undefined;
   if (!localDb) return { ok: false, error: "La base local no está disponible." };
   const existing = (await localDb.projects.toCollection().primaryKeys()) as string[];
   const limit = checkProjectLimit(plan, existing, backup);

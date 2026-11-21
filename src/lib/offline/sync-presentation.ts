@@ -4,8 +4,8 @@ import type { SyncStatus } from "./sync";
 export function syncPresentation(status: SyncStatus) {
   if (status.accountMismatch)
     return {
-      long: "Datos de otra cuenta en este dispositivo",
-      short: "Otra cuenta",
+      long: "La cuenta no coincide con el espacio activo",
+      short: "Revisa tu sesión",
       icon: CloudAlert,
       backedUp: false,
     };

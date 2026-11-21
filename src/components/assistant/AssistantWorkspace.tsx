@@ -87,10 +87,11 @@ export function AssistantWorkspace({ limits }: { limits: Record<Plan, number> })
   useEffect(() => {
     if (history !== "ready" || chat.status !== "ready") return;
     const value = JSON.stringify(chat.messages.slice(-100));
+    const meta = db?.meta;
     writeQueue.current = writeQueue.current
       .catch(() => {})
       .then(async () => {
-        await db?.meta.put({ key: "assistant-history", value });
+        await meta?.put({ key: "assistant-history", value });
       })
       .catch(() => setHistoryNotice("No se pudo guardar el historial."));
   }, [chat.messages, chat.status, history]);

@@ -7,7 +7,7 @@ import { linkQuoteToProject, useQuoteProjectId } from "@/lib/offline/project-hub
 export function QuoteProjectLink({ quoteId }: { quoteId: string }) {
   const projects = useProjects();
   const linked = useQuoteProjectId(quoteId);
-  if (projects.length === 0) return null;
+  if (!projects?.length) return null;
 
   return (
     <label className="quote-project-link">

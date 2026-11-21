@@ -1,4 +1,5 @@
 import Dexie, { type Table } from "dexie";
+import { getActiveDatabase } from "./workspace";
 import { MATERIALS, RNE_CARDS, SEED_VERSION, type Material, type RneCard } from "@/data/seed-rne";
 import type {
   FeeQuoteInput,
@@ -174,8 +175,8 @@ export class TrazzoDB extends Dexie {
   /** Site photos taken for a project. */
   project_photos!: Table<ProjectPhoto, string>;
   site_logs!: Table<SiteLog, string>;
-  constructor() {
-    super("TrazzoDB");
+  constructor(name = "TrazzoDB") {
+    super(name);
     this.version(10)
       .stores({ project_options: null })
       .upgrade(async (transaction) => {
@@ -280,7 +281,18 @@ export class TrazzoDB extends Dexie {
   }
 }
 
-export const db: TrazzoDB | null = typeof window === "undefined" ? null : new TrazzoDB();
+export const db: TrazzoDB | null =
+  typeof window === "undefined"
+    ? null
+    : new Proxy(Object.create(TrazzoDB.prototype) as TrazzoDB, {
+        get(_target, property) {
+          // Operations inside a transaction stay bound to its database across awaits.
+          const transactionDb = Dexie.currentTransaction?.db;
+          const local = transactionDb instanceof TrazzoDB ? transactionDb : getActiveDatabase();
+          const value = Reflect.get(local, property);
+          return typeof value === "function" ? value.bind(local) : value;
+        },
+      });
 
 export function createLocalUuid(): string {
   return crypto.randomUUID();
@@ -292,16 +304,15 @@ export function nextUpdatedAt(previous?: string): string {
   return new Date(Math.max(Date.now(), Number.isFinite(time) ? time + 1 : 0)).toISOString();
 }
 
-export async function ensureSeeded(): Promise<void> {
-  if (!db) return;
-  const current = await db.meta.get("seedVersion");
-  if (Number(current?.value ?? 0) >= SEED_VERSION) return;
-
-  await db.transaction("rw", [db.rneCards, db.materials, db.meta], async () => {
-    await db.rneCards.clear();
-    await db.materials.clear();
-    await db.rneCards.bulkPut(RNE_CARDS);
-    await db.materials.bulkPut(MATERIALS);
-    await db.meta.put({ key: "seedVersion", value: String(SEED_VERSION) });
+export async function ensureSeeded(local = db): Promise<void> {
+  if (!local) return;
+  await local.transaction("rw", [local.rneCards, local.materials, local.meta], async () => {
+    const current = await local.meta.get("seedVersion");
+    if (Number(current?.value ?? 0) >= SEED_VERSION) return;
+    await local.rneCards.clear();
+    await local.materials.clear();
+    await local.rneCards.bulkPut(RNE_CARDS);
+    await local.materials.bulkPut(MATERIALS);
+    await local.meta.put({ key: "seedVersion", value: String(SEED_VERSION) });
   });
 }

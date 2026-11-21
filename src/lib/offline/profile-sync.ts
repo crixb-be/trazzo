@@ -174,7 +174,7 @@ export function describeProfileSave(
     case "signed-out":
       return "Perfil guardado en este dispositivo.";
     case "account-mismatch":
-      return "Perfil guardado aquí. Este dispositivo tiene datos de otra cuenta: no se respaldó.";
+      return "Perfil guardado aquí. Vuelve a ingresar a tu cuenta para respaldarlo.";
     default:
       return "Perfil guardado en este dispositivo. No se pudo respaldar; se reintentará solo.";
   }
