@@ -25,3 +25,4 @@ ios/
 
 # Normas en PDF: copias locales de consulta, no se versionan (archivos pesados)
 /docs/rne/*.pdf
+/docs/biblioteca/*.pdf
