@@ -8,28 +8,60 @@ interface RoomPart {
   name: string;
   chapter: string;
   area: number;
+  /** Layer thickness in metres, when the recipe depends on it (falso piso / contrapiso). */
+  thickness?: number;
 }
+
+/** Default falso piso / contrapiso thickness: 5 cm. */
+export const DEFAULT_SLAB_THICKNESS_CM = 5;
+/** Quick picks shown next to the thickness field. */
+export const SLAB_THICKNESS_PRESETS = [
+  { cm: 10, label: "Falso piso" },
+  { cm: 5, label: "Contrapiso" },
+  { cm: 2, label: "Fino" },
+] as const;
+const MAX_SLAB_THICKNESS_CM = 30;
 
 export function rectangularRoomParts({
   length,
   width,
   height,
+  slabThicknessCm = DEFAULT_SLAB_THICKNESS_CM,
 }: {
   length: number;
   width: number;
   height: number;
+  /** Falso piso / contrapiso thickness in centimetres. */
+  slabThicknessCm?: number;
 }): RoomPart[] {
   if (![length, width, height].every((value) => Number.isFinite(value) && value > 0)) {
     throw new Error("Ingresa largo, ancho y altura mayores que cero.");
+  }
+  if (
+    !Number.isFinite(slabThicknessCm) ||
+    slabThicknessCm <= 0 ||
+    slabThicknessCm > MAX_SLAB_THICKNESS_CM
+  ) {
+    throw new Error(
+      "Ingresa un espesor de falso piso / contrapiso entre 0 y " + MAX_SLAB_THICKNESS_CM + " cm.",
+    );
   }
   const floor = length * width;
   const walls = 2 * (length + width) * height;
   if (![floor, walls].every((area) => Number.isFinite(area) && area > 0)) {
     throw new Error("Las áreas están fuera de rango.");
   }
+  const thicknessLabel = slabThicknessCm.toLocaleString("es-PE", { maximumFractionDigits: 1 });
   return [
     { id: "muro", name: "Muro de perímetro", chapter: "Albañilería", area: walls },
-    { id: "contrapiso", name: "Falso piso / contrapiso", chapter: "Pisos", area: floor },
+    {
+      id: "contrapiso",
+      // Non-breaking spaces keep "(e = 5 cm)" on one line in narrow cards.
+      name: `Falso piso / contrapiso (e = ${thicknessLabel} cm)`,
+      chapter: "Pisos",
+      area: floor,
+      thickness: slabThicknessCm / 100,
+    },
     { id: "ceramico", name: "Acabado de piso", chapter: "Acabados", area: floor },
     { id: "losa", name: "Cubierta / losa", chapter: "Estructuras", area: floor },
   ];
@@ -39,7 +71,12 @@ export function roomPartTakeoffs(
   part: RoomPart,
   materials: readonly Material[],
 ): Omit<Takeoff, "id" | "projectId" | "updatedAt" | "syncState">[] {
-  return computeMaterials(part.id, { ...DEFAULT_MATERIAL_INPUT, area: part.area }).map((row) => {
+  const input = {
+    ...DEFAULT_MATERIAL_INPUT,
+    area: part.area,
+    ...(part.thickness !== undefined ? { thickness: part.thickness } : {}),
+  };
+  return computeMaterials(part.id, input).map((row) => {
     const material = materials.find(({ code }) => code === row.code);
     if (!material) throw new Error("Material no disponible: " + row.code);
     const subtotalPen = Math.round(row.quantity * material.ref_price_pen * 100) / 100;

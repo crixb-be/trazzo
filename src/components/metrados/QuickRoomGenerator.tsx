@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { Button, NumberField } from "@/components/ui";
 import { MATERIALS } from "@/data/seed-rne";
-import { rectangularRoomParts, roomPartTakeoffs } from "@/lib/calculators/room";
+import {
+  DEFAULT_SLAB_THICKNESS_CM,
+  SLAB_THICKNESS_PRESETS,
+  rectangularRoomParts,
+  roomPartTakeoffs,
+} from "@/lib/calculators/room";
 import { db } from "@/lib/offline/db";
 import { saveTakeoff } from "@/lib/offline/repositories";
 
@@ -15,12 +20,13 @@ const dimensions = [
 
 export function QuickRoomGenerator({ projectId }: { projectId: string }) {
   const [size, setSize] = useState({ length: 4, width: 3, height: 2.6 });
+  const [slabThicknessCm, setSlabThicknessCm] = useState<number>(DEFAULT_SLAB_THICKNESS_CM);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
   let parts: ReturnType<typeof rectangularRoomParts> = [];
   let error = "";
   try {
-    parts = rectangularRoomParts(size);
+    parts = rectangularRoomParts({ ...size, slabThicknessCm });
   } catch (cause) {
     error = cause instanceof Error ? cause.message : "Revisa las dimensiones.";
   }
@@ -57,6 +63,26 @@ export function QuickRoomGenerator({ projectId }: { projectId: string }) {
             value={size[key]}
             onValueChange={(value) => setSize((previous) => ({ ...previous, [key]: value ?? NaN }))}
           />
+        ))}
+      </div>
+      <NumberField
+        id="quick-room-slab-thickness"
+        label="Espesor falso piso / contrapiso"
+        unit="cm"
+        value={slabThicknessCm}
+        onValueChange={(value) => setSlabThicknessCm(value ?? NaN)}
+      />
+      <div className="site-log-chips" role="group" aria-label="Espesores frecuentes">
+        {SLAB_THICKNESS_PRESETS.map(({ cm, label }) => (
+          <button
+            type="button"
+            className="btn btn-sm"
+            key={cm}
+            aria-pressed={slabThicknessCm === cm}
+            onClick={() => setSlabThicknessCm(cm)}
+          >
+            {cm} cm {label.toLowerCase()}
+          </button>
         ))}
       </div>
       {error ? (
