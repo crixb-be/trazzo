@@ -5,12 +5,12 @@ import { Button, NumberField } from "@/components/ui";
 import { MATERIALS } from "@/data/seed-rne";
 import {
   DEFAULT_SLAB_THICKNESS_CM,
-  SLAB_THICKNESS_PRESETS,
   rectangularRoomParts,
   roomPartTakeoffs,
 } from "@/lib/calculators/room";
 import { db } from "@/lib/offline/db";
 import { saveTakeoff } from "@/lib/offline/repositories";
+import { SlabThicknessField } from "./SlabThicknessField";
 
 const dimensions = [
   ["length", "Largo"],
@@ -65,26 +65,7 @@ export function QuickRoomGenerator({ projectId }: { projectId: string }) {
           />
         ))}
       </div>
-      <NumberField
-        id="quick-room-slab-thickness"
-        label="Espesor falso piso / contrapiso"
-        unit="cm"
-        value={slabThicknessCm}
-        onValueChange={(value) => setSlabThicknessCm(value ?? NaN)}
-      />
-      <div className="site-log-chips" role="group" aria-label="Espesores frecuentes">
-        {SLAB_THICKNESS_PRESETS.map(({ cm, label }) => (
-          <button
-            type="button"
-            className="btn btn-sm"
-            key={cm}
-            aria-pressed={slabThicknessCm === cm}
-            onClick={() => setSlabThicknessCm(cm)}
-          >
-            {cm} cm {label.toLowerCase()}
-          </button>
-        ))}
-      </div>
+      <SlabThicknessField value={slabThicknessCm} onChange={setSlabThicknessCm} />
       {error ? (
         <p role="status">{error}</p>
       ) : (

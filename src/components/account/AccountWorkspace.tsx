@@ -742,6 +742,8 @@ export function AccountWorkspace() {
             <img
               className="developer-avatar"
               src={APP_INFO.developer.photoSrc}
+              width={48}
+              height={48}
               alt="Foto de Cristhian Bustamante"
             />
           ) : (

@@ -22,6 +22,36 @@ export const SLAB_THICKNESS_PRESETS = [
 ] as const;
 const MAX_SLAB_THICKNESS_CM = 30;
 
+function assertSlabThickness(cm: number): void {
+  if (!Number.isFinite(cm) || cm <= 0 || cm > MAX_SLAB_THICKNESS_CM) {
+    throw new Error(
+      "Ingresa un espesor de falso piso / contrapiso entre 0 y " + MAX_SLAB_THICKNESS_CM + " cm.",
+    );
+  }
+}
+
+/** Adds the thickness (in metres) to a falso piso / contrapiso part and shows it in its name. */
+function withSlabThickness(part: Omit<RoomPart, "thickness">, cm: number): RoomPart {
+  assertSlabThickness(cm);
+  const label = cm.toLocaleString("es-PE", { maximumFractionDigits: 1 });
+  // Non-breaking spaces keep "(e = 5 cm)" on one line in narrow cards.
+  return { ...part, name: `${part.name} (e\u00a0=\u00a0${label}\u00a0cm)`, thickness: cm / 100 };
+}
+
+/**
+ * One recipe from the "Partida con receta" picker. Contrapiso uses the thickness
+ * entered by the user instead of the 1.5 cm default meant for tarrajeo.
+ */
+export function recipePart(
+  partida: { id: MaterialMode; name: string; chapter: string },
+  area: number,
+  slabThicknessCm: number = DEFAULT_SLAB_THICKNESS_CM,
+): RoomPart {
+  if (!Number.isFinite(area) || area <= 0) throw new Error("Ingresa un área mayor que cero.");
+  const part = { id: partida.id, name: partida.name, chapter: partida.chapter, area };
+  return partida.id === "contrapiso" ? withSlabThickness(part, slabThicknessCm) : part;
+}
+
 export function rectangularRoomParts({
   length,
   width,
@@ -37,31 +67,18 @@ export function rectangularRoomParts({
   if (![length, width, height].every((value) => Number.isFinite(value) && value > 0)) {
     throw new Error("Ingresa largo, ancho y altura mayores que cero.");
   }
-  if (
-    !Number.isFinite(slabThicknessCm) ||
-    slabThicknessCm <= 0 ||
-    slabThicknessCm > MAX_SLAB_THICKNESS_CM
-  ) {
-    throw new Error(
-      "Ingresa un espesor de falso piso / contrapiso entre 0 y " + MAX_SLAB_THICKNESS_CM + " cm.",
-    );
-  }
+  assertSlabThickness(slabThicknessCm);
   const floor = length * width;
   const walls = 2 * (length + width) * height;
   if (![floor, walls].every((area) => Number.isFinite(area) && area > 0)) {
     throw new Error("Las áreas están fuera de rango.");
   }
-  const thicknessLabel = slabThicknessCm.toLocaleString("es-PE", { maximumFractionDigits: 1 });
   return [
     { id: "muro", name: "Muro de perímetro", chapter: "Albañilería", area: walls },
-    {
-      id: "contrapiso",
-      // Non-breaking spaces keep "(e = 5 cm)" on one line in narrow cards.
-      name: `Falso piso / contrapiso (e = ${thicknessLabel} cm)`,
-      chapter: "Pisos",
-      area: floor,
-      thickness: slabThicknessCm / 100,
-    },
+    withSlabThickness(
+      { id: "contrapiso", name: "Falso piso / contrapiso", chapter: "Pisos", area: floor },
+      slabThicknessCm,
+    ),
     { id: "ceramico", name: "Acabado de piso", chapter: "Acabados", area: floor },
     { id: "losa", name: "Cubierta / losa", chapter: "Estructuras", area: floor },
   ];

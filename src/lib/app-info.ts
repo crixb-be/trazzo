@@ -7,7 +7,7 @@ export const APP_INFO = {
   developer: {
     name: "Cristhian Billy Bustamante Espinoza",
     subtitle: "Arq. Cristhian Bustamante · B & E Arquitectura",
-    photoSrc: null as string | null,
+    photoSrc: "/brand/developer.webp" as string | null,
     githubUrl: "https://github.com/crixb-be",
   },
 };

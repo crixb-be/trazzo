@@ -5,9 +5,10 @@ import { db, type Project, type Takeoff } from "@/lib/offline/db";
 import { saveProject, saveTakeoff } from "@/lib/offline/repositories";
 import { MATERIALS } from "@/data/seed-rne";
 import { PARTIDAS } from "@/data/partidas";
-import { roomPartTakeoffs } from "@/lib/calculators/room";
+import { DEFAULT_SLAB_THICKNESS_CM, recipePart, roomPartTakeoffs } from "@/lib/calculators/room";
 import { shoppingList, chapterFor } from "@/lib/calculators/takeoff";
 import { NumberField } from "@/components/ui";
+import { SlabThicknessField } from "./SlabThicknessField";
 export function TakeoffExtras({
   project,
   lines,
@@ -23,6 +24,15 @@ export function TakeoffExtras({
     [recipe, setRecipe] = useState(0),
     [notice, setNotice] = useState("");
   const [busy, setBusy] = useState(false);
+  const [slabThicknessCm, setSlabThicknessCm] = useState<number>(DEFAULT_SLAB_THICKNESS_CM);
+  const selected = PARTIDAS[recipe];
+  // Same validation as when adding: an invalid area or thickness disables the button.
+  let recipeError = "";
+  try {
+    recipePart(selected, area, slabThicknessCm);
+  } catch (cause) {
+    recipeError = cause instanceof Error ? cause.message : "Revisa los datos de la receta.";
+  }
   const options = useLiveQuery(() => db?.project_options.get(project.id), [project.id]);
   const gross = lines.reduce((s, l) => s + l.subtotalPen, 0);
   async function duplicate() {
@@ -52,11 +62,10 @@ export function TakeoffExtras({
     }
   }
   async function addRecipe() {
-    if (!db || busy || !Number.isFinite(area) || area <= 0) return;
+    if (!db || busy || recipeError) return;
     setBusy(true);
     try {
-      const r = PARTIDAS[recipe];
-      const rows = roomPartTakeoffs({ ...r, area }, MATERIALS);
+      const rows = roomPartTakeoffs(recipePart(selected, area, slabThicknessCm), MATERIALS);
       await db.transaction("rw", [db.takeoffs, db.outbox], async () => {
         for (const row of rows) await saveTakeoff({ ...row, projectId: project.id });
       });
@@ -110,11 +119,11 @@ export function TakeoffExtras({
         value={area}
         onValueChange={(v) => setArea(v ?? NaN)}
       />
-      <button
-        className="btn"
-        disabled={busy || !Number.isFinite(area) || area <= 0}
-        onClick={() => void addRecipe()}
-      >
+      {selected.id === "contrapiso" && (
+        <SlabThicknessField value={slabThicknessCm} onChange={setSlabThicknessCm} />
+      )}
+      {recipeError && <p role="status">{recipeError}</p>}
+      <button className="btn" disabled={busy || !!recipeError} onClick={() => void addRecipe()}>
         Agregar receta al proyecto
       </button>
       <h3>Capítulos</h3>
