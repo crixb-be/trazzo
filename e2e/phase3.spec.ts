@@ -51,7 +51,7 @@ test.describe("bienvenida e instalación", () => {
     const tiles = page.locator(".calculator-tile strong");
     await expect(tiles).toHaveText([
       "Calculadoras técnicas",
-      "Proyectos y metrados",
+      "Proyectos de obra",
       "Normativa RNE",
       "Medidas de bolsillo",
     ]);
@@ -108,6 +108,7 @@ test("el proyecto reúne cálculos y la copia de seguridad los restaura", async 
   page,
 }, testInfo) => {
   await createProject(page, "Casa eje");
+  await page.getByRole("link", { name: "Cálculos y bitácora" }).click();
   await expect(page.getByRole("heading", { name: "Cálculos guardados" })).toBeVisible();
 
   await page.goto("/calculadoras?tab=escaleras");
@@ -115,7 +116,7 @@ test("el proyecto reúne cálculos y la copia de seguridad los restaura", async 
   await page.getByRole("button", { name: "Guardar", exact: true }).click();
   await expect(page.getByText("Cálculo guardado en Casa eje.")).toBeVisible();
 
-  await page.goto("/metrados");
+  await page.goto("/metrados?tab=vinculos");
   const hub = page.locator(".project-hub");
   await expect(hub.getByText(/\d+ contrapasos/)).toBeVisible();
 
@@ -140,7 +141,7 @@ test("el proyecto reúne cálculos y la copia de seguridad los restaura", async 
   // La recarga solo empieza después de que Dexie termina de borrar la base.
   await Promise.all([
     page.waitForEvent("framenavigated", (frame) => frame === page.mainFrame()),
-    page.getByRole("alertdialog").getByRole("button", { name: "Restablecer", exact: true }).click(),
+    page.getByRole("dialog").getByRole("button", { name: "Restablecer", exact: true }).click(),
   ]);
   await page.goto("/metrados");
   await expect(page.getByRole("heading", { name: "Sin proyectos" })).toBeVisible();
@@ -148,12 +149,12 @@ test("el proyecto reúne cálculos y la copia de seguridad los restaura", async 
 
   await page.goto("/cuenta");
   await page.getByLabel("Archivo de copia de seguridad").setInputFiles(backupPath);
-  const restore = page.getByRole("alertdialog", { name: "¿Restaurar esta copia?" });
+  const restore = page.getByRole("dialog", { name: "¿Restaurar esta copia?" });
   await expect(restore).toContainText("1 proyecto(s)");
   await restore.getByRole("button", { name: "Restaurar", exact: true }).click();
   await expect(page.getByText("Copia restaurada.")).toBeVisible();
 
-  await page.goto("/metrados");
+  await page.goto("/metrados?tab=vinculos");
   await expect(page.getByRole("heading", { name: "Casa eje" })).toBeVisible();
   await expect(page.locator(".project-hub").getByText(/\d+ contrapasos/)).toBeVisible();
 

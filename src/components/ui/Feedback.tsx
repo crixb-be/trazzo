@@ -1,7 +1,8 @@
 "use client";
 
 import { AlertTriangle, CheckCircle2, Info, X } from "lucide-react";
-import { useEffect, useRef, useSyncExternalStore } from "react";
+import { useSyncExternalStore } from "react";
+import { Modal } from "./Modal";
 
 /**
  * App-wide feedback: floating notices (toast) and a confirmation dialog that
@@ -32,8 +33,11 @@ export interface ConfirmOptions {
   danger?: boolean;
 }
 
+type ConfirmAnswer = boolean | "alternate";
+
 interface ConfirmRequest extends ConfirmOptions {
-  resolve: (confirmed: boolean) => void;
+  alternateLabel?: string;
+  resolve: (confirmed: ConfirmAnswer) => void;
 }
 
 interface FeedbackState {
@@ -74,14 +78,20 @@ export function toast(message: string, kind: ToastKind = "info", action?: ToastA
 }
 
 /** Asks the user to confirm; resolves to true only when they accept. */
-export function confirmDialog(options: ConfirmOptions): Promise<boolean> {
+export function confirmDialog(
+  options: ConfirmOptions & { alternateLabel: string },
+): Promise<ConfirmAnswer>;
+export function confirmDialog(options: ConfirmOptions): Promise<boolean>;
+export function confirmDialog(
+  options: ConfirmOptions & { alternateLabel?: string },
+): Promise<ConfirmAnswer> {
   return new Promise((resolve) => {
     state.confirm?.resolve(false);
     setState({ ...state, confirm: { ...options, resolve } });
   });
 }
 
-function answer(confirmed: boolean): void {
+function answer(confirmed: ConfirmAnswer): void {
   const request = state.confirm;
   if (!request) return;
   setState({ ...state, confirm: null });
@@ -96,18 +106,7 @@ export function FeedbackHost() {
     () => state,
     () => EMPTY,
   );
-  const confirmButton = useRef<HTMLButtonElement>(null);
   const request = current.confirm;
-
-  useEffect(() => {
-    if (!request) return;
-    confirmButton.current?.focus();
-    const onKey = (event: KeyboardEvent): void => {
-      if (event.key === "Escape") answer(false);
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [request]);
 
   return (
     <>
@@ -144,32 +143,40 @@ export function FeedbackHost() {
       </div>
 
       {request && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={() => answer(false)}>
-          <div
-            className="modal confirm-modal"
-            role="alertdialog"
-            aria-modal="true"
-            aria-labelledby="confirm-title"
-            aria-describedby={request.message ? "confirm-message" : undefined}
-            onMouseDown={(event) => event.stopPropagation()}
-          >
-            <h2 id="confirm-title">{request.title}</h2>
-            {request.message && <p id="confirm-message">{request.message}</p>}
-            <div className="confirm-actions">
-              <button type="button" className="btn btn-secondary" onClick={() => answer(false)}>
-                {request.cancelLabel ?? "Cancelar"}
-              </button>
+        <Modal
+          className="confirm-modal"
+          title={request.title}
+          description={request.message}
+          onClose={() => answer(false)}
+        >
+          <div className="confirm-actions">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              data-initial-focus={request.danger ? true : undefined}
+              onClick={() => answer(false)}
+            >
+              {request.cancelLabel ?? "Cancelar"}
+            </button>
+            {request.alternateLabel && (
               <button
-                ref={confirmButton}
                 type="button"
-                className={"btn " + (request.danger ? "btn-danger" : "btn-primary")}
-                onClick={() => answer(true)}
+                className="btn btn-secondary"
+                onClick={() => answer("alternate")}
               >
-                {request.confirmLabel ?? "Aceptar"}
+                {request.alternateLabel}
               </button>
-            </div>
+            )}
+            <button
+              data-initial-focus={!request.danger ? true : undefined}
+              type="button"
+              className={"btn " + (request.danger ? "btn-danger" : "btn-primary")}
+              onClick={() => answer(true)}
+            >
+              {request.confirmLabel ?? "Aceptar"}
+            </button>
           </div>
-        </div>
+        </Modal>
       )}
     </>
   );

@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Input } from "./Input";
-import { formatNumberRaw, parseNumberRaw, sanitizeNumberRaw } from "@/lib/ui/number-input";
+import { formatNumberRaw, validateNumberRaw } from "@/lib/ui/number-input";
 
 export interface NumberFieldProps {
   label: string;
   value: number | null;
-  onValueChange: (value: number | null) => void;
+  onValueChange: (value: number | null, empty: boolean) => void;
   unit?: string;
   hint?: string;
+  error?: string;
+  placeholder?: string;
   step?: number | string;
   min?: number;
   max?: number;
@@ -26,7 +28,8 @@ export function NumberField({
   onValueChange,
   unit,
   hint,
-  step = 0.01,
+  error,
+  placeholder,
   min,
   max,
   disabled,
@@ -35,30 +38,44 @@ export function NumberField({
   onBlur,
   id,
 }: NumberFieldProps) {
+  const generatedId = useId();
+  const inputId = id ?? generatedId;
   const [raw, setRaw] = useState(() => formatNumberRaw(value));
+  const emitted = useRef(value);
   const focused = useRef(false);
-  const hintId = hint ? `${id ?? label.replace(/\s+/g, "-").toLowerCase()}-hint` : undefined;
+  const validate = (text: string) => validateNumberRaw(text, { allowNegative, min, max });
+  const message = validate(raw).error ?? error;
 
   useEffect(() => {
-    if (!focused.current) setRaw(formatNumberRaw(value));
+    if (Object.is(value, emitted.current) || focused.current) return;
+    emitted.current = value;
+    setRaw(formatNumberRaw(value));
   }, [value]);
 
   return (
     <div className="field">
-      <label htmlFor={id}>
+      <label htmlFor={inputId}>
         {label}
-        {unit && <span className="mono muted"> · {unit}</span>}
+        {unit && (
+          <span aria-hidden="true" className="mono muted">
+            {" "}
+            · {unit}
+          </span>
+        )}
       </label>
       <div className="number-field">
         <Input
-          id={id}
+          id={inputId}
           type="text"
           inputMode="decimal"
           value={raw}
+          placeholder={placeholder}
           onChange={(event) => {
-            const next = sanitizeNumberRaw(event.target.value, allowNegative);
+            const next = event.target.value;
+            const parsed = validate(next);
             setRaw(next);
-            onValueChange(parseNumberRaw(next));
+            emitted.current = parsed.value;
+            onValueChange(parsed.value, next === "");
           }}
           onFocus={(event) => {
             focused.current = true;
@@ -67,21 +84,30 @@ export function NumberField({
           }}
           onBlur={() => {
             focused.current = false;
-            const parsed = parseNumberRaw(raw);
-            if (parsed !== null) setRaw(formatNumberRaw(parsed));
             onBlur?.();
           }}
-          step={step}
-          min={min}
-          max={max}
           disabled={disabled}
-          aria-label={label}
-          aria-describedby={hintId}
+          aria-invalid={message ? true : undefined}
+          aria-describedby={
+            [unit && inputId + "-unit", hint && inputId + "-hint", message && inputId + "-error"]
+              .filter(Boolean)
+              .join(" ") || undefined
+          }
         />
       </div>
+      {unit && (
+        <span className="sr-only" id={inputId + "-unit"}>
+          Unidad: {unit}
+        </span>
+      )}
       {hint && (
-        <span className="field-hint muted small" id={hintId}>
+        <span className="field-hint muted small" id={inputId + "-hint"}>
           {hint}
+        </span>
+      )}
+      {message && (
+        <span className="field-error small" id={inputId + "-error"}>
+          {message}
         </span>
       )}
     </div>

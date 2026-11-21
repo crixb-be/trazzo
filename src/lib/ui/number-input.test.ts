@@ -1,26 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { formatNumberRaw, parseNumberRaw, sanitizeNumberRaw } from "./number-input";
+import { formatNumberRaw, parseNumberRaw, validateNumberRaw } from "./number-input";
 
-describe("number input helpers", () => {
-  it("sanitizes leading zeros and separators while typing", () => {
-    expect(sanitizeNumberRaw("01")).toBe("1");
-    expect(sanitizeNumberRaw("007.5")).toBe("7.5");
-    expect(sanitizeNumberRaw("0.5")).toBe("0.5");
-    expect(sanitizeNumberRaw("0.")).toBe("0.");
-    expect(sanitizeNumberRaw(".")).toBe(".");
-    expect(sanitizeNumberRaw("1,25")).toBe("1.25");
-  });
-
-  it("parses incomplete values as null", () => {
+describe("decimal input", () => {
+  it("accepts either decimal separator and distinguishes zero from empty", () => {
+    expect(parseNumberRaw("007,5")).toBe(7.5);
+    expect(parseNumberRaw(".5")).toBe(0.5);
+    expect(parseNumberRaw("0.")).toBe(0);
     expect(parseNumberRaw("")).toBeNull();
-    expect(parseNumberRaw(".")).toBeNull();
-    expect(parseNumberRaw("-")).toBeNull();
-    expect(parseNumberRaw("1.5")).toBe(1.5);
+    expect(formatNumberRaw(null)).toBe("");
   });
 
-  it("formats values without a trailing decimal", () => {
-    expect(formatNumberRaw(null)).toBe("");
-    expect(formatNumberRaw(Number.NaN)).toBe("");
-    expect(formatNumberRaw(1)).toBe("1");
+  it.each(["1,234.50", "1.234,50", "1.2.3", "1 200", "3x"])("rejects %s", (raw) => {
+    expect(validateNumberRaw(raw)).toEqual({
+      value: null,
+      error: "Usa un solo separador decimal, sin separadores de miles",
+    });
+  });
+
+  it("reports bounds without clamping", () => {
+    expect(validateNumberRaw("-1").error).toBe("Solo valores positivos");
+    expect(validateNumberRaw("-1", { allowNegative: true }).value).toBe(-1);
+    expect(validateNumberRaw("1", { min: 2 }).value).toBeNull();
+    expect(validateNumberRaw("3", { max: 2 }).value).toBeNull();
   });
 });

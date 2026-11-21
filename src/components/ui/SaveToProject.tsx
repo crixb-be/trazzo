@@ -23,7 +23,10 @@ export function SaveToProject({ sheet }: { sheet: ResultSheet }) {
       setOpen(false);
       toast("Cálculo guardado en " + chosen.name + ".", "ok", {
         label: "Ver proyecto",
-        run: () => window.location.assign("/metrados?project=" + chosen.id),
+        run: () =>
+          window.location.assign(
+            "/metrados?project=" + encodeURIComponent(chosen.id) + "&tab=vinculos",
+          ),
       });
     } catch {
       toast("No se pudo guardar el cálculo.", "error");

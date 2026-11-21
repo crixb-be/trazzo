@@ -73,6 +73,13 @@ export function searchCatalog(
       terms: "bitacora visita obra acta hallazgos residente supervisor",
     },
     {
+      id: "proyectos",
+      title: "Proyectos de obra",
+      kind: "Herramienta",
+      href: "/metrados",
+      terms: "metrados presupuesto expediente partidas",
+    },
+    {
       id: "honorarios",
       title: "Honorarios y propuestas",
       kind: "Estudio",
@@ -84,7 +91,7 @@ export function searchCatalog(
       title: p.name,
       kind: "Proyecto",
       href: "/metrados?project=" + encodeURIComponent(p.id),
-      terms: p.location + " " + p.typology,
+      terms: [p.location, p.typology, p.client].join(" "),
     })),
     ...quotes.map((q) => ({
       id: "q:" + q.id,

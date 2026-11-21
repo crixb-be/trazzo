@@ -6,9 +6,6 @@
 .home-hero .page-title {
   font-size: clamp(24px, 4vw, 36px);
 }
-.calculator-selector {
-  display: none;
-}
 .calculator-result-bar {
   position: fixed;
   bottom: 16px;
@@ -44,14 +41,6 @@
   .calculator-result-bar > span {
     display: none;
   }
-  .calculator-selector {
-    display: grid;
-    gap: 6px;
-    margin-bottom: 12px;
-  }
-  .calculator-tabs {
-    display: none;
-  }
   .detail-layout {
     display: flex;
     flex-direction: column;
@@ -82,40 +71,6 @@
 }
 .matrix-controls .field-grid > * {
   min-width: 0;
-}
-@media (max-width: 700px) {
-  .takeoff-table thead {
-    display: none;
-  }
-  .takeoff-table,
-  .takeoff-table tbody,
-  .takeoff-table tr,
-  .takeoff-table td {
-    display: block;
-    width: 100%;
-  }
-  .takeoff-table tr {
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 12px;
-    margin-block: 12px;
-  }
-  .takeoff-table td {
-    border: 0;
-    padding: 4px;
-  }
-  .takeoff-table td:nth-child(8)::before {
-    content: "P. unit.: ";
-  }
-  .takeoff-table td:nth-child(9)::before {
-    content: "Cantidad total: ";
-  }
-  .takeoff-table td:nth-child(10)::before {
-    content: "Subtotal: ";
-  }
-  .takeoff-table td:nth-child(n + 3):nth-child(-n + 7) {
-    display: none;
-  }
 }
 .quote-steps {
   display: flex;

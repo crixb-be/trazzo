@@ -15,6 +15,8 @@ export interface Project {
   name: string;
   location: string;
   typology: string;
+  client: string;
+  builtArea: number | null;
   status: ProjectStatus;
   updatedAt: string;
   syncState: SyncState;
@@ -164,8 +166,6 @@ export class TrazzoDB extends Dexie {
   fee_quotes!: Table<FeeQuote, string>;
   studio_profile!: Table<StudioProfile, string>;
 
-  project_options!: Table<{ projectId: string; area: number }, string>;
-
   library_activity!: Table<{ slug: string; favorite: boolean; visitedAt: string }, string>;
   /** Calculator results saved inside a project. */
   project_notes!: Table<ProjectNote, string>;
@@ -176,6 +176,38 @@ export class TrazzoDB extends Dexie {
   site_logs!: Table<SiteLog, string>;
   constructor() {
     super("TrazzoDB");
+    this.version(10)
+      .stores({ project_options: null })
+      .upgrade(async (transaction) => {
+        const options = await transaction
+          .table<{ projectId: string; area: number }>("project_options")
+          .toArray();
+        const areas = new Map(options.map(({ projectId, area }) => [projectId, area]));
+        const projects = transaction.table<Project>("projects");
+        const outbox = transaction.table<Outbox>("outbox");
+        for (const project of await projects.toArray()) {
+          const area = areas.get(project.id);
+          const fromOptions = typeof area === "number" && Number.isFinite(area) && area > 0;
+          const row: Project = {
+            ...project,
+            client: project.client ?? "",
+            builtArea: fromOptions ? area : null,
+            ...(fromOptions && {
+              syncState: "pending",
+              updatedAt: nextUpdatedAt(project.updatedAt),
+            }),
+          };
+          await projects.put(row);
+          if (fromOptions) {
+            await outbox.add({
+              table: "projects",
+              op: "upsert",
+              payload: row,
+              createdAt: row.updatedAt,
+            });
+          }
+        }
+      });
     this.version(9).stores({ site_logs: "id,projectId,visitDate,updatedAt,syncState" });
     this.version(1).stores({
       rneCards: "slug,norm_code,category,*keywords",

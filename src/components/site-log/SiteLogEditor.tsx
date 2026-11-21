@@ -1,7 +1,7 @@
 "use client";
 
 import { Download, Trash2 } from "lucide-react";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Button, Card, confirmDialog, toast } from "@/components/ui";
 import type { Project, SiteLog, SiteLogTopic, SiteVisitType } from "@/lib/offline/db";
 import { deleteSiteLog, saveSiteLog, type SiteLogDraft } from "@/lib/offline/site-logs";
@@ -9,6 +9,13 @@ import { getStudioProfile } from "@/lib/offline/profile";
 import { canExportPdf } from "@/lib/plans/plans";
 import { useCurrentPlan } from "@/lib/plans/use-current-plan";
 import { SITE_LOG_SECTIONS, SITE_LOG_TOPICS, VISIT_TYPES } from "@/lib/projects/site-log";
+import {
+  clearSiteLogDraft,
+  readSiteLogDraft,
+  siteLogDraftKey,
+  storeSiteLogDraft,
+  type SiteLogEdit,
+} from "@/lib/projects/site-log-drafts";
 import { appendTranscript } from "@/lib/speech/dictation";
 import { DictationButton } from "./DictationButton";
 import { SiteLogPhotos } from "./SiteLogPhotos";
@@ -43,20 +50,22 @@ export function SiteLogEditor({
   projects,
   onSaved,
   onDeleted,
-  onDirtyChange,
 }: {
   log: SiteLog | null;
   projectId: string | null;
   projects: Project[];
   onSaved: (id: string) => void;
   onDeleted: () => void;
-  onDirtyChange: (dirty: boolean) => void;
 }) {
   const groupId = useId();
   const { plan } = useCurrentPlan();
   const [initial] = useState(() => newVisit(projectId));
   const [saved, setSaved] = useState<SiteLog | null>(null);
-  const [edit, setEdit] = useState<{ draft: SiteLogDraft; version?: string } | null>(null);
+  const draftKey = siteLogDraftKey(log?.id, projectId);
+  const [edit, setEdit] = useState<SiteLogEdit | null>(null);
+  const [recovered, setRecovered] = useState(false);
+  const pending = useRef<SiteLogEdit | null>(null);
+  const timer = useRef<number>(undefined);
   const [busy, setBusy] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
   const latest =
@@ -77,23 +86,47 @@ export function SiteLogEditor({
   }
 
   useEffect(() => {
-    onDirtyChange(dirty);
-    if (!dirty) return;
-    const preventClose = (event: BeforeUnloadEvent) => event.preventDefault();
-    window.addEventListener("beforeunload", preventClose);
+    const restored = readSiteLogDraft(draftKey);
+    if (restored) {
+      setEdit(restored);
+      setRecovered(true);
+    }
+    function flush() {
+      if (pending.current) storeSiteLogDraft(draftKey, pending.current);
+      pending.current = null;
+    }
+    window.addEventListener("pagehide", flush);
     return () => {
-      onDirtyChange(false);
-      window.removeEventListener("beforeunload", preventClose);
+      window.clearTimeout(timer.current);
+      flush();
+      window.removeEventListener("pagehide", flush);
     };
-  }, [dirty, onDirtyChange]);
+  }, [draftKey]);
+
+  useEffect(() => {
+    if (!edit) return;
+    pending.current = edit;
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => {
+      if (pending.current) storeSiteLogDraft(draftKey, pending.current);
+      pending.current = null;
+    }, 400);
+  }, [draftKey, edit]);
+
+  function discard() {
+    window.clearTimeout(timer.current);
+    pending.current = null;
+    clearSiteLogDraft(draftKey);
+    setEdit(null);
+    setRecovered(false);
+  }
 
   async function save() {
     setBusy(true);
     try {
       const row = await saveSiteLog({ ...draft, id: latest?.id }, edit?.version);
       setSaved(row);
-      setEdit(null);
-      onDirtyChange(false);
+      discard();
       onSaved(row.id);
       toast("Visita guardada.", "ok");
     } catch (cause) {
@@ -117,7 +150,7 @@ export function SiteLogEditor({
       )
         return;
       await deleteSiteLog(latest.id);
-      onDirtyChange(false);
+      discard();
       onDeleted();
       toast("Visita eliminada.", "ok");
     } catch {
@@ -157,6 +190,14 @@ export function SiteLogEditor({
             {dirty ? "Cambios sin guardar" : latest ? "Guardado" : ""}
           </span>
         </div>
+        {recovered && (
+          <div className="inline-actions">
+            <span role="status">Recuperamos cambios sin guardar</span>
+            <Button type="button" size="sm" variant="ghost" onClick={discard}>
+              Descartar
+            </Button>
+          </div>
+        )}
         <fieldset className="site-log-form" disabled={busy || photoBusy}>
           <fieldset className="site-log-visit-types">
             <legend>Tipo de visita</legend>
@@ -287,6 +328,11 @@ export function SiteLogEditor({
           >
             <Download size={16} aria-hidden="true" /> Exportar Informe PDF
           </Button>
+          {dirty && !recovered && (
+            <Button type="button" variant="ghost" disabled={busy || photoBusy} onClick={discard}>
+              Descartar cambios
+            </Button>
+          )}
           {latest && (
             <Button
               type="button"

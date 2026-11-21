@@ -33,7 +33,7 @@ test("comparte y guarda materiales, campo, matriz y medidas", async ({ page }) =
   await shareAndSave("/matriz", "main");
   await shareAndSave("/normativa?tab=medidas", ".measure-card");
 
-  await page.goto("/metrados");
+  await page.goto("/metrados?tab=vinculos");
   await expect(page.locator(".project-hub .project-hub-list li")).toHaveCount(4);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,

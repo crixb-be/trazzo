@@ -72,7 +72,7 @@ function FieldExtraCard({
       </div>
       {note && <p className="muted small">{note}</p>}
       {sheet && (
-        <div className="hero-actions" aria-label="Acciones del resultado">
+        <div className="calculator-result-actions" role="group" aria-label="Acciones del resultado">
           <CopyResultButton text={copyText} />
           <SaveToProject sheet={sheet} />
           <ShareResult sheet={sheet} />

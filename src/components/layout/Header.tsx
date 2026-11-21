@@ -3,6 +3,7 @@
 import { Search, Sparkles, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { handleSearchShortcut } from "@/lib/ui/search-shortcut";
 import { useEffect, useRef, useState } from "react";
 import { BrandMark } from "@/components/brand/BrandMark";
 import { GlobalSearch, OfflineBadge, ThemeToggle } from "@/components/ui";
@@ -16,7 +17,7 @@ const titles: Record<string, string> = {
   "/calculadoras": "Calculadoras técnicas",
   "/bitacora": "Bitácora de obra",
   "/estudio": "Estudio profesional",
-  "/metrados": "Proyectos y metrados",
+  "/metrados": "Proyectos de obra",
   "/honorarios": "Honorarios y propuestas",
   "/asistente": "Asistente IA",
   "/cuenta": "Cuenta y planes",
@@ -44,13 +45,8 @@ export function Header() {
 
   useEffect(() => {
     function openMobileSearch(event: KeyboardEvent): void {
-      const shortcut =
-        event.key === "/" || ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k");
-      if (!shortcut || mobileSearchOpen || !mobileSearchTrigger.current?.getClientRects().length) {
-        return;
-      }
-      event.preventDefault();
-      setMobileSearchOpen(true);
+      if (mobileSearchOpen || !mobileSearchTrigger.current?.getClientRects().length) return;
+      handleSearchShortcut(event, () => setMobileSearchOpen(true));
     }
     window.addEventListener("keydown", openMobileSearch);
     return () => window.removeEventListener("keydown", openMobileSearch);

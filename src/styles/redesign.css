@@ -1061,3 +1061,35 @@ textarea.input {
     transform: none;
   }
 }
+
+.home-assistant {
+  margin-top: 20px;
+  padding: var(--space-5);
+  background: linear-gradient(120deg, var(--accent-soft), transparent 65%), var(--surface);
+}
+.home-assistant-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}
+.home-assistant-heading > div {
+  flex: 1 1 230px;
+  min-width: 0;
+}
+.home-assistant h2 {
+  font-size: calc(20px * var(--font-scale));
+  font-weight: 700;
+}
+.home-assistant .tile-icon {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.home-assistant .quick-chips {
+  margin-top: var(--space-3);
+}
+.home-assistant .quick-chip {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}

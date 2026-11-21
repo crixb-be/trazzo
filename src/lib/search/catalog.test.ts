@@ -22,6 +22,8 @@ it("busca proyectos locales sin confundir identificadores", () => {
         name: "Obra Norte",
         location: "Lima",
         typology: "vivienda",
+        client: "",
+        builtArea: null,
         status: "activo",
         updatedAt: "",
         syncState: "local",

@@ -3,22 +3,29 @@
 import { Download, FileText, RefreshCw } from "lucide-react";
 import type { jsPDF } from "jspdf";
 
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Button, Card, confirmDialog, EmptyState, PaywallModal, toast } from "@/components/ui";
 import { MATERIALS } from "@/data/seed-rne";
-import { computeProjectTotals, computeTakeoffLine } from "@/lib/calculators/takeoff";
-import { type Project, type Takeoff } from "@/lib/offline/db";
+import { chapterFor, computeProjectTotals, shoppingList } from "@/lib/calculators/takeoff";
+import { db, type Project, type Takeoff } from "@/lib/offline/db";
 import { useMaterials, useProjects, useTakeoffs, useSyncStatus } from "@/lib/offline/hooks";
 import { ProjectHub } from "./ProjectHub";
-import { deleteProject, deleteTakeoff, saveProject, saveTakeoff } from "@/lib/offline/repositories";
+import {
+  deleteProject,
+  deleteTakeoff,
+  saveProject,
+  saveTakeoff,
+  StaleTakeoffError,
+} from "@/lib/offline/repositories";
 import { describeSyncResult, describeSyncStatus, syncNow as runSync } from "@/lib/offline/sync";
 import { canCreateProject, canExportPdf } from "@/lib/plans/plans";
 import { useCurrentPlan } from "@/lib/plans/use-current-plan";
-import { ProjectStageStepper } from "./ProjectStageStepper";
+import { ProjectOverview } from "./ProjectOverview";
 import { QuickRoomGenerator } from "./QuickRoomGenerator";
 import { TakeoffExtras } from "./TakeoffExtras";
-import { ProjectList } from "./ProjectList";
+import { ProjectDialog, ProjectList, type ProjectForm } from "./ProjectList";
 import { TakeoffTable, type TakeoffDraft } from "./TakeoffTable";
 
 const emptyDraft: TakeoffDraft = {
@@ -32,33 +39,53 @@ const emptyDraft: TakeoffDraft = {
   unitPricePen: MATERIALS[0]?.ref_price_pen ?? 0,
 };
 
+const projectTabs = [
+  ["resumen", "Resumen y etapas"],
+  ["metrados", "Metrados y presupuesto"],
+  ["vinculos", "Cálculos y bitácora"],
+] as const;
+
 export function MetradosWorkspace() {
   const projects = useProjects();
   const materials = useMaterials();
   const searchParams = useSearchParams();
   const sync = useSyncStatus();
-  const [selectedId, setSelectedId] = useState<string | null>(searchParams.get("project"));
-  const [draft, setDraft] = useState<TakeoffDraft>({ ...emptyDraft });
+  const selectedId = searchParams.get("project");
+  const tab = projectTabs.find(([id]) => id === searchParams.get("tab"))?.[0] ?? "resumen";
+  const [editor, setEditor] = useState<{ projectId: string; draft: TakeoffDraft }>();
+  const [projectDialog, setProjectDialog] = useState<{ project: Project | null }>();
   const [paywall, setPaywall] = useState(false);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [duplicating, setDuplicating] = useState(false);
   const { plan } = useCurrentPlan();
 
   const activeProject =
     projects.find((project) => project.id === selectedId) ?? projects[0] ?? null;
-  const takeoffs = useTakeoffs(activeProject?.id ?? "");
+  const activeId = activeProject?.id ?? "";
+  const projectTakeoffs = useTakeoffs(activeId);
+  const takeoffs = useMemo(
+    () => projectTakeoffs.filter((row) => row.projectId === activeId),
+    [projectTakeoffs, activeId],
+  );
   const catalog = materials.length ? materials : MATERIALS;
+  const draft = editor?.projectId === activeId ? editor.draft : emptyDraft;
+  const setDraft = (draft: TakeoffDraft) => setEditor({ projectId: activeId, draft });
+
+  function projectHref(projectId: string | null, panel = tab) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (projectId) params.set("project", projectId);
+    else params.delete("project");
+    params.set("tab", panel);
+    return "/metrados?" + params.toString();
+  }
+
+  function selectProject(id: string | null) {
+    setEditor(undefined);
+    window.history.replaceState(null, "", projectHref(id));
+  }
 
   useEffect(() => {
-    if (activeProject && activeProject.id !== selectedId) {
-      setSelectedId(activeProject.id);
-    }
-  }, [activeProject, selectedId]);
-
-  useEffect(() => {
-    if (selectedId) {
-      window.history.replaceState(null, "", "/metrados?project=" + selectedId);
-    }
-  }, [selectedId]);
+    setEditor((current) => (current && current.projectId !== activeId ? undefined : current));
+  }, [activeId]);
 
   const totalLines = useMemo(
     () =>
@@ -78,29 +105,55 @@ export function MetradosWorkspace() {
   );
   const totals = computeProjectTotals(totalLines);
 
-  async function createProject(input: {
-    name: string;
-    location: string;
-    typology: string;
-    status: Project["status"];
-  }): Promise<void> {
+  function openNewProject() {
+    if (!canCreateProject(plan, projects.length)) setPaywall(true);
+    else setProjectDialog({ project: null });
+  }
+
+  async function saveProjectDetails(input: ProjectForm) {
+    const editing = projectDialog?.project;
+    const project = await saveProject(editing ? { ...input, id: editing.id } : input);
+    if (!editing) selectProject(project.id);
+  }
+
+  async function duplicateProject() {
     if (!canCreateProject(plan, projects.length)) {
       setPaywall(true);
       return;
     }
-
-    const project = await saveProject(input);
-    setSelectedId(project.id);
-  }
-
-  async function updateProject(project: Project): Promise<void> {
-    await saveProject({
-      id: project.id,
-      name: project.name,
-      location: project.location,
-      typology: project.typology,
-      status: project.status,
-    });
+    const localDb = db;
+    if (!activeProject || !localDb || duplicating) return;
+    setDuplicating(true);
+    try {
+      const { name, location, typology, status, client, builtArea } = activeProject;
+      const copy = await localDb.transaction(
+        "rw",
+        [localDb.projects, localDb.takeoffs, localDb.outbox],
+        async () => {
+          const project = await saveProject({
+            name: name + " (copia)",
+            location,
+            typology,
+            status,
+            client,
+            builtArea,
+          });
+          const lines = await localDb.takeoffs
+            .where("projectId")
+            .equals(activeProject.id)
+            .toArray();
+          for (const line of lines)
+            await saveTakeoff({ ...line, id: undefined, projectId: project.id });
+          return project;
+        },
+      );
+      selectProject(copy.id);
+      toast("Proyecto duplicado.", "ok");
+    } catch {
+      toast("No se pudo duplicar el proyecto.", "error");
+    } finally {
+      setDuplicating(false);
+    }
   }
 
   async function removeProject(project: Project): Promise<void> {
@@ -113,55 +166,41 @@ export function MetradosWorkspace() {
     if (!confirmed) return;
 
     await deleteProject(project.id);
-    setSelectedId(null);
+    if (project.id === activeId) selectProject(null);
   }
 
-  async function saveDraft(): Promise<void> {
-    if (!activeProject || !draft.partName.trim()) {
-      setNotice("Completa el nombre de la partida y selecciona un proyecto.");
-      return;
+  async function saveDraft(line: Omit<Parameters<typeof saveTakeoff>[0], "projectId">) {
+    if (!activeProject || (line.id && editor?.projectId !== activeId)) return false;
+    try {
+      await saveTakeoff({ ...line, projectId: activeId });
+      const material = catalog.find((item) => item.code === line.materialCode);
+      if (material)
+        setEditor((current) =>
+          current?.projectId === activeId && current.draft === draft
+            ? {
+                projectId: activeId,
+                draft: {
+                  ...emptyDraft,
+                  materialCode: material.code,
+                  wastePct: material.default_waste_pct,
+                  unitPricePen: material.ref_price_pen,
+                },
+              }
+            : current,
+        );
+      toast(line.id ? "Cambios guardados." : "Partida agregada.", "ok");
+      return true;
+    } catch (error) {
+      if (error instanceof StaleTakeoffError) {
+        setEditor((current) =>
+          current?.projectId === activeId && current.draft === draft ? undefined : current,
+        );
+        toast("La partida ya no está disponible en este proyecto.");
+      } else {
+        toast("No se pudo guardar la partida.", "error");
+      }
+      return false;
     }
-
-    const material = catalog.find((item) => item.code === draft.materialCode);
-    if (!material) {
-      setNotice("Selecciona un material del catálogo.");
-      return;
-    }
-
-    const line = computeTakeoffLine({
-      materialCode: material.code,
-      unit: material.unit,
-      length: draft.length,
-      width: draft.width,
-      height: draft.height,
-      quantity: draft.quantity,
-      yieldFactor: material.yield_factor,
-      wastePct: draft.wastePct,
-      unitPrice: draft.unitPricePen,
-    }).values;
-
-    await saveTakeoff({
-      id: draft.id,
-      projectId: activeProject.id,
-      partName: draft.partName.trim(),
-      materialCode: material.code,
-      length: draft.length,
-      width: draft.width,
-      height: draft.height,
-      quantity: line.quantity,
-      wastePct: draft.wastePct,
-      total: line.total,
-      subtotalPen: line.subtotalPen,
-      unitPricePen: draft.unitPricePen,
-    });
-
-    setDraft({
-      ...emptyDraft,
-      materialCode: material.code,
-      wastePct: material.default_waste_pct,
-      unitPricePen: material.ref_price_pen,
-    });
-    setNotice(null);
   }
 
   function editTakeoff(takeoff: Takeoff): void {
@@ -307,13 +346,15 @@ export function MetradosWorkspace() {
 
   return (
     <div className="metrados-page">
-      <div className="eyebrow">Proyectos / Metrados</div>
+      <div className="eyebrow">Proyectos</div>
       <div className="page-heading-row">
         <div>
-          <h1 className="page-title">Metrados</h1>
+          <h1 className="page-title" id="projects-heading">
+            Proyectos de obra
+          </h1>
           <p className="lead">
-            Partidas, rendimientos y precios referenciales en soles. Guarda primero en este
-            dispositivo.
+            Gestiona el expediente de cada obra: ficha, etapas, metrados, presupuesto, cálculos y
+            bitácora.
           </p>
         </div>
         <div className="inline-actions">
@@ -329,12 +370,15 @@ export function MetradosWorkspace() {
         <ProjectList
           projects={projects}
           selectedId={activeProject?.id ?? null}
-          onSelect={setSelectedId}
-          onCreate={createProject}
-          onEdit={updateProject}
+          onSelect={selectProject}
+          onCreate={openNewProject}
+          onEdit={(project) => setProjectDialog({ project })}
           onDelete={(project) => void removeProject(project)}
         />
-        <main className="takeoff-main">
+        <section
+          className="takeoff-main"
+          aria-labelledby={activeProject ? "active-project-heading" : "projects-heading"}
+        >
           {!activeProject ? (
             <EmptyState
               icon={<FileText size={22} />}
@@ -348,10 +392,20 @@ export function MetradosWorkspace() {
                   <div className="eyebrow">
                     {activeProject.typology || "PROYECTO"} · {activeProject.status}
                   </div>
-                  <h2>{activeProject.name}</h2>
+                  <h2 id="active-project-heading">{activeProject.name}</h2>
                   <p className="muted small">
-                    {activeProject.location || "Sin ubicación"} · {takeoffs.length} partidas
+                    {activeProject.location || "Sin ubicación"} ·{" "}
+                    {activeProject.client || "Sin cliente"}
                   </p>
+                  <div className="header-buttons">
+                    <Button
+                      size="sm"
+                      disabled={duplicating}
+                      onClick={() => void duplicateProject()}
+                    >
+                      Duplicar
+                    </Button>
+                  </div>
                 </div>
                 <div className="project-total">
                   <span className="muted small">TOTAL REFERENCIAL</span>
@@ -366,43 +420,94 @@ export function MetradosWorkspace() {
                   </div>
                 </div>
               </div>
-              <ProjectStageStepper
-                key={activeProject.id}
-                projectId={activeProject.id}
-                takeoffsCount={takeoffs.length}
-              />
-              <TakeoffExtras
-                key={activeProject.id}
-                project={activeProject}
-                lines={takeoffs}
-                canDuplicate={canCreateProject(plan, projects.length)}
-                onDuplicate={(p) => setSelectedId(p.id)}
-              />
-              <QuickRoomGenerator key={activeProject.id} projectId={activeProject.id} />
-              <TakeoffTable
-                takeoffs={takeoffs}
-                materials={catalog}
-                draft={draft}
-                setDraft={setDraft}
-                onCancelEdit={() => setDraft({ ...emptyDraft })}
-                onSave={() => void saveDraft()}
-                onEdit={editTakeoff}
-                onDelete={(takeoff) => void removeTakeoff(takeoff)}
-              />
-              <ProjectHub key={"hub-" + activeProject.id} project={activeProject} />
-              {Object.keys(totals.byMaterial).length > 0 && (
-                <Card className="material-totals">
-                  <div className="eyebrow">Totales por material</div>
-                  <div className="totals-grid">
-                    {Object.entries(totals.byMaterial).map(([code, total]) => (
-                      <div key={code}>
-                        <span className="mono small">{code}</span>
-                        <strong>S/ {total.toFixed(2)}</strong>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
+              <nav className="segmented project-tabs" aria-label="Secciones del proyecto">
+                {projectTabs.map(([id, label]) => (
+                  <Link
+                    key={id}
+                    href={projectHref(activeId, id)}
+                    aria-current={tab === id ? "page" : undefined}
+                    scroll={false}
+                  >
+                    {label}
+                  </Link>
+                ))}
+              </nav>
+              {tab === "resumen" && (
+                <ProjectOverview
+                  key={activeId}
+                  project={activeProject}
+                  takeoffs={takeoffs}
+                  takeoffsHref={projectHref(activeId, "metrados")}
+                  onEdit={() => setProjectDialog({ project: activeProject })}
+                />
               )}
+              {tab === "metrados" && (
+                <>
+                  <QuickRoomGenerator key={activeId} projectId={activeId} />
+                  <TakeoffExtras key={activeId} projectId={activeId} />
+                  <TakeoffTable
+                    key={activeId}
+                    takeoffs={takeoffs}
+                    materials={catalog}
+                    draft={draft}
+                    setDraft={setDraft}
+                    onCancelEdit={() => setEditor(undefined)}
+                    onSave={saveDraft}
+                    onEdit={editTakeoff}
+                    onDelete={(takeoff) => void removeTakeoff(takeoff)}
+                  />
+                  <Card className="project-budget">
+                    <h3>Capítulos y compras</h3>
+                    {takeoffs.length === 0 ? (
+                      <p className="muted">Agrega partidas para ver capítulos y compras.</p>
+                    ) : (
+                      <>
+                        <h4>Capítulos</h4>
+                        {[...new Set(takeoffs.map((row) => chapterFor(row.partName)))].map(
+                          (chapter) => (
+                            <p key={chapter}>
+                              {chapter} · S/{" "}
+                              {takeoffs
+                                .filter((row) => chapterFor(row.partName) === chapter)
+                                .reduce((sum, row) => sum + row.subtotalPen, 0)
+                                .toFixed(2)}
+                            </p>
+                          ),
+                        )}
+                        <h4>Lista de compras</h4>
+                        {shoppingList(takeoffs).map((row) => {
+                          const material = catalog.find((item) => item.code === row.code);
+                          return (
+                            <p key={row.code}>
+                              {material?.name ?? row.code} · {row.quantity.toFixed(3)}{" "}
+                              {material?.unit} · S/ {row.cost.toFixed(2)}
+                              {material && (
+                                <small className="mono muted material-code">{row.code}</small>
+                              )}
+                            </p>
+                          );
+                        })}
+                        <h4>Totales por material</h4>
+                        <div className="totals-grid">
+                          {Object.entries(totals.byMaterial).map(([code, total]) => {
+                            const material = catalog.find((item) => item.code === code);
+                            return (
+                              <div key={code}>
+                                {material?.name ?? code}
+                                {material && (
+                                  <small className="mono muted material-code">{code}</small>
+                                )}
+                                <strong>S/ {total.toFixed(2)}</strong>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </Card>
+                </>
+              )}
+              {tab === "vinculos" && <ProjectHub key={activeId} project={activeProject} />}
               <div className="sync-strip">
                 <RefreshCw size={14} />
                 <span>
@@ -413,9 +518,15 @@ export function MetradosWorkspace() {
               </div>
             </>
           )}
-          {notice && <p className="warning">{notice}</p>}
-        </main>
+        </section>
       </div>
+      {projectDialog && (
+        <ProjectDialog
+          project={projectDialog.project}
+          onClose={() => setProjectDialog(undefined)}
+          onSave={saveProjectDetails}
+        />
+      )}
       {paywall && (
         <PaywallModal onClose={() => setPaywall(false)} title="Función de plan superior">
           <p>

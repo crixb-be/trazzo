@@ -14,6 +14,8 @@ const project: Project = {
   name: "Casa Miraflores",
   location: "Lima",
   typology: "Vivienda",
+  client: "Constructora",
+  builtArea: 122.5,
   status: "activo",
   updatedAt: "2026-06-01T10:00:00.000Z",
   syncState: "pending",
@@ -44,6 +46,8 @@ describe("sync mappers", () => {
       name: "Casa Miraflores",
       location: "Lima",
       typology: "Vivienda",
+      client: "Constructora",
+      built_area: 122.5,
       status: "activo",
       updated_at: "2026-06-01T10:00:00.000Z",
     });
@@ -69,6 +73,15 @@ describe("sync mappers", () => {
       rowToTakeoff({ id: "t2", project_id: "p1", length: "3.50", subtotal_pen: "12.30" }),
     ).toMatchObject({ length: 3.5, subtotalPen: 12.3 });
     expect(rowToProject({ name: "sin id" })).toBeNull();
+    expect(rowToProject({ id: "p1", client: 42, built_area: "-1" })).toMatchObject({
+      client: "",
+      builtArea: null,
+    });
+    expect(rowToProject({ id: "p1", client: "Cliente", built_area: "120.50" })).toMatchObject({
+      client: "Cliente",
+      builtArea: 120.5,
+    });
+    expect(rowToProject({ id: "p1" })).toMatchObject({ client: "", builtArea: null });
   });
 });
 

@@ -1,17 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import {
-  ArrowUpRight,
-  BookOpen,
-  Cloud,
-  CloudOff,
-  Compass,
-  FolderOpen,
-  Library,
-  NotebookPen,
-  Plus,
-} from "lucide-react";
+import { ArrowUpRight, BookOpen, Compass, FolderOpen, Library, Sparkles, Plus } from "lucide-react";
 import { disciplineVisual, HOME_SHORTCUTS } from "./tool-visuals";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useState } from "react";
@@ -19,7 +9,7 @@ import { GlobalSearch, Badge } from "@/components/ui";
 import { RNE_CARDS, type RneCategory } from "@/data/seed-rne";
 import { db, type Project } from "@/lib/offline/db";
 import { useCards, useProjects, useSyncStatus } from "@/lib/offline/hooks";
-import { describeSyncStatus } from "@/lib/offline/sync";
+import { syncPresentation } from "@/lib/offline/sync-presentation";
 import { useLibraryActivity } from "@/lib/offline/library";
 const categories: Array<{ name: RneCategory; label: string }> = [
   { name: "Accesibilidad", label: "Accesibilidad" },
@@ -67,15 +57,7 @@ export function HomeDashboard() {
     .slice(0, 4);
   const allActive = projects.filter((project) => project.status === "activo");
   const activeProjects = allActive.slice(0, 3);
-  const backedUp = Boolean(sync.signedIn && sync.lastSync && !sync.pending && !sync.error);
-  // Phones show the three states side by side: each needs a one-word value.
-  const syncShort = sync.syncing
-    ? "Sincronizando"
-    : sync.pending || sync.error
-      ? "Pendiente"
-      : backedUp
-        ? "En la nube"
-        : "Local";
+  const { long, short, icon: SyncIcon, backedUp } = syncPresentation(sync);
   const nothingYet = activeProjects.length === 0 && recentCards.length === 0;
 
   return (
@@ -129,13 +111,13 @@ export function HomeDashboard() {
             className={"status-card-icon " + (backedUp ? "is-ok" : "is-pending")}
             aria-hidden="true"
           >
-            {sync.online ? <Cloud size={17} /> : <CloudOff size={17} />}
+            <SyncIcon size={17} />
           </span>
           <span className="status-card-body">
             <small>Respaldo</small>
             <strong>
-              <span className="status-full">{describeSyncStatus(sync)}</span>
-              <span className="status-short">{syncShort}</span>
+              <span className="status-full">{long}</span>
+              <span className="status-short">{short}</span>
             </strong>
           </span>
         </Link>
@@ -156,16 +138,37 @@ export function HomeDashboard() {
         </Link>
       </div>
 
-      <Link href="/bitacora" className="surface-card site-log-featured" data-family="arena">
-        <span className="tile-icon">
-          <NotebookPen size={20} aria-hidden="true" />
-        </span>
-        <span>
-          <strong>Bitácora de obra</strong>
-          <small className="muted">Visitas, hallazgos y fotos por proyecto</small>
-        </span>
-        <ArrowUpRight size={18} aria-hidden="true" />
-      </Link>
+      <section className="surface-card home-assistant" aria-labelledby="home-assistant-title">
+        <div className="home-assistant-heading">
+          <span className="tile-icon">
+            <Sparkles size={22} aria-hidden="true" />
+          </span>
+          <div>
+            <h2 id="home-assistant-title">Pregunta al Asistente RNE</h2>
+            <p className="muted">
+              Respuestas con citas del RNE, también sin señal con las fichas locales.
+            </p>
+          </div>
+          <Link href="/asistente" className="btn btn-primary">
+            Abrir chat
+          </Link>
+        </div>
+        <div className="quick-chips" aria-label="Preguntas de ejemplo">
+          {[
+            "¿Cuál es el ancho mínimo de una rampa?",
+            "¿Cuántos contrapasos admite un tramo?",
+            "¿Cómo se calcula la dotación de agua?",
+          ].map((question) => (
+            <Link
+              className="quick-chip"
+              key={question}
+              href={"/asistente?q=" + encodeURIComponent(question)}
+            >
+              {question}
+            </Link>
+          ))}
+        </div>
+      </section>
 
       <section className="dashboard-section">
         <div className="section-heading">
@@ -248,7 +251,7 @@ export function HomeDashboard() {
                 <div className="eyebrow">Proyectos activos</div>
                 <h2>Tu trabajo local</h2>
               </div>
-              <Link className="icon-btn" href="/metrados" aria-label="Abrir metrados">
+              <Link className="icon-btn" href="/metrados" aria-label="Abrir proyectos de obra">
                 <ArrowUpRight size={17} />
               </Link>
             </div>

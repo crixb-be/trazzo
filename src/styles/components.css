@@ -94,32 +94,6 @@
   font-size: var(--text-xs);
   white-space: nowrap;
 }
-.calculator-tabs {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  overflow-x: auto;
-  scrollbar-width: thin;
-}
-.calculator-tabs button {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  border: 0;
-  border-bottom: 2px solid transparent;
-  background: transparent;
-  color: var(--muted);
-  cursor: pointer;
-  font-size: var(--text-sm);
-  padding: 13px 15px;
-  white-space: nowrap;
-}
-.calculator-tabs button:hover,
-.calculator-tabs button.active {
-  color: var(--text);
-  border-bottom-color: var(--accent);
-}
 .calculator-disclaimer {
   border-left: 2px solid var(--accent);
   color: var(--muted);
@@ -419,6 +393,7 @@
 }
 .project-sidebar-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
@@ -440,6 +415,10 @@
 .project-item-actions button:hover,
 .row-actions button:hover {
   color: var(--accent);
+}
+.project-item-actions,
+.project-list-item > button > svg {
+  flex: none;
 }
 .project-list-item > button {
   display: flex;
@@ -794,9 +773,11 @@
   color: var(--accent);
 }
 .project-dialog {
+  width: min(100%, 480px);
+}
+.project-dialog form {
   display: grid;
   gap: 14px;
-  width: min(100%, 480px);
 }
 .pro-calculator-card {
   position: relative;

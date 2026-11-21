@@ -4,7 +4,7 @@ import { LoadingState } from "@/components/ui/LoadingState";
 
 export default function MetradosPage() {
   return (
-    <Suspense fallback={<LoadingState label="Cargando metrados…" />}>
+    <Suspense fallback={<LoadingState label="Cargando proyectos…" />}>
       <MetradosWorkspace />
     </Suspense>
   );

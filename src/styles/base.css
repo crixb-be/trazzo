@@ -300,7 +300,8 @@ button {
   background: transparent;
 }
 .input,
-.select {
+.select,
+textarea {
   width: 100%;
   border: 1px solid var(--border);
   background: var(--surface-2);
@@ -310,7 +311,8 @@ button {
   outline: 0;
 }
 .input:focus,
-.select:focus {
+.select:focus,
+textarea:focus {
   border-color: var(--accent);
 }
 .field {
@@ -410,15 +412,6 @@ button {
   height: auto;
   max-height: 560px;
   background: var(--surface);
-}
-.tabs {
-  display: flex;
-  gap: 6px;
-  border-bottom: 1px solid var(--border);
-  margin: 20px 0;
-}
-.tab.active {
-  border-color: var(--accent);
 }
 .check {
   display: flex;
@@ -626,4 +619,8 @@ button {
 }
 .search-results button.active {
   background: var(--surface-2);
+}
+
+.field-error {
+  color: var(--danger);
 }

@@ -160,33 +160,6 @@
 }
 
 /* Spans the whole Estudio grid so the remaining tools pair up below it. */
-.site-log-featured {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
-  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
-}
-
-/* Home only: 20 px between the status cards and Bitácora so they never touch. */
-.home-dashboard .site-log-featured {
-  margin-top: var(--space-5);
-  padding: var(--space-4);
-  color: var(--text);
-  text-decoration: none;
-}
-
-.site-log-featured > span:nth-child(2) {
-  display: grid;
-  gap: var(--space-1);
-}
-
-.site-log-featured > svg {
-  margin-inline-start: auto;
-  color: var(--accent);
-  flex-shrink: 0;
-}
 
 .project-stage-list > li,
 .site-log-metrics > div {

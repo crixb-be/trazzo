@@ -1,6 +1,7 @@
 "use client";
 
 import { Search } from "lucide-react";
+import { handleSearchShortcut } from "@/lib/ui/search-shortcut";
 import { useEffect, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { RNE_CARDS } from "@/data/seed-rne";
@@ -40,15 +41,11 @@ export function GlobalSearch({
     void ensureSeeded();
 
     function handleShortcut(event: KeyboardEvent): void {
-      if (
-        variant === "header" &&
-        inputRef.current?.getClientRects().length &&
-        (event.key === "/" || ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k"))
-      ) {
-        event.preventDefault();
+      if (variant !== "header" || !inputRef.current?.getClientRects().length) return;
+      handleSearchShortcut(event, () => {
         setOpen(true);
         window.setTimeout(() => inputRef.current?.focus(), 0);
-      }
+      });
     }
 
     window.addEventListener("keydown", handleShortcut);

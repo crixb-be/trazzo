@@ -32,7 +32,6 @@ export interface BackupFile {
   projects: Project[];
   takeoffs: Takeoff[];
   feeQuotes: FeeQuote[];
-  projectOptions: Array<{ projectId: string; area: number }>;
   projectNotes: ProjectNote[];
   projectLinks: ProjectLink[];
   projectPhotos: ProjectPhoto[];
@@ -117,6 +116,7 @@ export function parseBackup(text: string): ParsedBackup {
   ) {
     return { ok: false, error: "La copia está incompleta o dañada." };
   }
+  const areas = new Map(projectOptions.map(({ projectId, area }) => [projectId, area]));
   const studio = isRecord(data.studioProfile) ? data.studioProfile : null;
   return {
     ok: true,
@@ -124,10 +124,22 @@ export function parseBackup(text: string): ParsedBackup {
       format: BACKUP_FORMAT,
       version: data.version,
       exportedAt: typeof data.exportedAt === "string" ? data.exportedAt : "",
-      projects: projects as unknown as Project[],
+      projects: (projects as unknown as Project[]).map((project) => {
+        const area = project.builtArea === undefined ? areas.get(project.id) : project.builtArea;
+        return {
+          ...project,
+          client: typeof project.client === "string" ? project.client : "",
+          builtArea:
+            typeof area === "number" &&
+            Number.isFinite(area) &&
+            area >= 0 &&
+            (project.builtArea !== undefined || area > 0)
+              ? area
+              : null,
+        };
+      }),
       takeoffs: takeoffs as unknown as Takeoff[],
       feeQuotes: feeQuotes as unknown as FeeQuote[],
-      projectOptions: projectOptions as unknown as BackupFile["projectOptions"],
       projectNotes: projectNotes as unknown as ProjectNote[],
       projectLinks: projectLinks as unknown as ProjectLink[],
       projectPhotos: (projectPhotos as unknown as ProjectPhoto[]).filter((photo) =>
@@ -182,7 +194,6 @@ export async function exportBackup(): Promise<BackupFile> {
     projects,
     takeoffs,
     feeQuotes,
-    projectOptions,
     projectNotes,
     projectLinks,
     projectPhotos,
@@ -194,7 +205,6 @@ export async function exportBackup(): Promise<BackupFile> {
     db.projects.toArray(),
     db.takeoffs.toArray(),
     db.fee_quotes.toArray(),
-    db.project_options.toArray(),
     db.project_notes.toArray(),
     db.project_links.toArray(),
     db.project_photos.toArray(),
@@ -207,7 +217,6 @@ export async function exportBackup(): Promise<BackupFile> {
     projects,
     takeoffs,
     feeQuotes,
-    projectOptions,
     projectNotes,
     projectLinks,
     projectPhotos,
@@ -246,7 +255,6 @@ export async function importBackup(
       localDb.projects,
       localDb.takeoffs,
       localDb.fee_quotes,
-      localDb.project_options,
       localDb.project_notes,
       localDb.project_links,
       localDb.project_photos,
@@ -260,7 +268,6 @@ export async function importBackup(
       await localDb.projects.bulkPut(projects);
       await localDb.takeoffs.bulkPut(takeoffs);
       await localDb.fee_quotes.bulkPut(quotes);
-      await localDb.project_options.bulkPut(backup.projectOptions);
       await localDb.project_notes.bulkPut(notes);
       await localDb.project_links.bulkPut(backup.projectLinks);
       await localDb.project_photos.bulkPut(photos);

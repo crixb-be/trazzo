@@ -312,9 +312,82 @@
   max-width: 100%;
   margin-bottom: var(--space-5);
 }
-.normativa-tabs a {
+.segmented a {
   display: grid;
   place-items: center;
   text-align: center;
   text-decoration: none;
+  border-radius: var(--radius-pill);
+  padding-inline: var(--space-3);
+}
+
+.calculator-navigation {
+  position: relative;
+  margin: var(--space-5) 0;
+}
+.calculator-pills {
+  display: flex;
+  flex-wrap: wrap;
+}
+.calculator-pills a {
+  white-space: nowrap;
+}
+@media (max-width: 699px) {
+  .calculator-pills {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+    padding-inline-end: 18px;
+  }
+  .calculator-pills::-webkit-scrollbar {
+    display: none;
+  }
+  .calculator-pills a {
+    flex: none;
+    scroll-snap-align: center;
+  }
+  .calculator-navigation::after {
+    content: "";
+    position: absolute;
+    inset: 0 0 0 auto;
+    width: 20px;
+    border-radius: 0 var(--radius-pill) var(--radius-pill) 0;
+    background: linear-gradient(to right, transparent, var(--bg));
+    pointer-events: none;
+  }
+}
+.project-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  width: fit-content;
+  max-width: 100%;
+}
+/* Phones: three equal columns instead of a pill that drops to a second row. */
+@media (max-width: 640px) {
+  .project-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+  }
+  .project-tabs a {
+    display: grid;
+    place-items: center;
+    text-align: center;
+    line-height: 1.2;
+  }
+}
+.calculator-result-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+}
+.calculator-result-actions .share-result {
+  display: contents;
+}
+.calculator-result-actions > .save-to-project {
+  flex-basis: 100%;
+  order: 1;
 }

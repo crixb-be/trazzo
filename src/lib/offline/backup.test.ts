@@ -16,6 +16,8 @@ const contents: BackupContents = {
       name: "Casa Lima",
       location: "",
       typology: "",
+      client: "",
+      builtArea: null,
       status: "activo",
       updatedAt: "2026-11-16T00:00:00.000Z",
       syncState: "synced",
@@ -23,7 +25,6 @@ const contents: BackupContents = {
   ],
   takeoffs: [],
   feeQuotes: [],
-  projectOptions: [{ projectId: "p1", area: 120 }],
   projectNotes: [
     {
       id: "n1",

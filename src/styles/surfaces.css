@@ -350,22 +350,6 @@
   color: var(--text);
   cursor: pointer;
 }
-.calculator-tabs {
-  margin: 22px 0;
-  border-bottom: 1px solid var(--border);
-}
-.tab {
-  border: 0;
-  border-bottom: 2px solid transparent;
-  background: transparent;
-  color: var(--muted);
-  padding: 12px 14px;
-  white-space: nowrap;
-}
-.tab.active {
-  color: var(--text);
-  border-bottom-color: var(--accent);
-}
 .calculator-layout {
   grid-template-columns: minmax(260px, 0.7fr) minmax(0, 1.3fr);
   align-items: start;
@@ -443,7 +427,7 @@
   align-items: end;
 }
 .metrados-layout {
-  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-columns: minmax(208px, 246px) minmax(0, 1fr);
   align-items: start;
 }
 .project-sidebar,
@@ -458,7 +442,11 @@
   font-size: var(--text-field);
   margin: 6px 0 14px;
 }
+.project-sidebar .project-list {
+  grid-template-columns: minmax(0, 1fr);
+}
 .project-list-item {
+  min-width: 0;
   width: 100%;
   border: 1px solid transparent;
   background: transparent;
@@ -475,32 +463,79 @@
   background: var(--surface-2);
   border-color: var(--border);
 }
+/* Keep the takeoff table readable within the project column. */
 .takeoff-table-wrap {
-  overflow-x: auto;
   border: 1px solid var(--border);
   margin-top: 14px;
 }
 .takeoff-table {
   width: 100%;
-  min-width: 800px;
+  table-layout: fixed;
   border-collapse: collapse;
   font-size: var(--text-xs);
 }
 .takeoff-table th,
 .takeoff-table td {
-  padding: 11px 10px;
+  padding: 8px 4px;
   border-bottom: 1px solid var(--border);
   text-align: left;
-  white-space: nowrap;
+  vertical-align: top;
+  overflow-wrap: anywhere;
 }
 .takeoff-table th {
   color: var(--muted);
-  font: 12px "JetBrains Mono";
-  text-transform: uppercase;
+  font-weight: 600;
 }
-.takeoff-table td:last-child,
+.takeoff-table th:nth-child(1),
+.takeoff-table th:nth-child(2) {
+  width: 17%;
+}
+.takeoff-table th:nth-child(3) {
+  width: 13%;
+}
 .takeoff-table th:last-child {
-  text-align: right;
+  width: 56px;
+}
+.takeoff-table .row-actions {
+  gap: 0;
+}
+.takeoff-table tr:last-child td {
+  border-bottom: 0;
+}
+.takeoff-table td:last-child {
+  vertical-align: middle;
+}
+.material-code {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.takeoff-mobile-list {
+  display: none;
+}
+@media (max-width: 699px) {
+  .takeoff-table-wrap {
+    display: none;
+  }
+  .takeoff-mobile-list {
+    display: grid;
+    gap: var(--space-2);
+    padding: 0;
+    margin: var(--space-4) 0 0;
+    list-style: none;
+  }
+  .takeoff-mobile-list > li {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-3);
+    overflow-wrap: anywhere;
+  }
+  .takeoff-mobile-list strong {
+    min-width: 0;
+  }
+  .takeoff-mobile-list summary {
+    cursor: pointer;
+    color: var(--accent);
+  }
 }
 .takeoff-item-fields,
 .takeoff-number-fields {
@@ -514,9 +549,6 @@
 }
 .takeoff-number-fields {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 105px), 1fr));
-}
-.material-totals {
-  margin-top: 14px;
 }
 .totals-grid {
   display: grid;
@@ -794,6 +826,11 @@
     align-items: flex-start;
     flex-direction: column;
   }
+  /* Stacked header: the total lines up with the project name, not to the right. */
+  .project-header-card .project-total {
+    justify-items: start;
+    text-align: left;
+  }
 }
 @media (max-width: 375px) {
   .page-content {
@@ -822,5 +859,46 @@
   }
   .water-row button {
     grid-column: 2;
+  }
+}
+
+.project-header-card {
+  flex-wrap: wrap;
+  overflow-wrap: anywhere;
+}
+.project-header-card .header-buttons {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  margin-top: var(--space-2);
+}
+.project-overview h3,
+.project-budget h3 {
+  font-size: var(--text-field);
+  font-weight: 700;
+}
+.project-overview > .field {
+  max-width: 220px;
+}
+.project-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 135px), 1fr));
+  gap: var(--space-3);
+  margin-block: var(--space-3);
+}
+.project-details dt {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+.project-details dd {
+  overflow-wrap: anywhere;
+  font-weight: 600;
+}
+.project-budget h4 {
+  font-weight: 650;
+  margin-top: var(--space-4);
+}
+@media (min-width: 1024px) and (max-width: 1199px) {
+  .metrados-layout {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

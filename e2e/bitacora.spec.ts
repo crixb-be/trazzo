@@ -16,6 +16,7 @@ test("registra una visita de obra y agrega un ambiente a los metrados desde un m
     errors.push(message);
   });
   await createProject(page, "Casa Barranco");
+  await page.getByRole("link", { name: "Cálculos y bitácora" }).click();
   await page.getByRole("link", { name: "Nueva visita" }).click();
   await expect(page).toHaveURL(/bitacora\?project=/);
   await expect(page.getByRole("heading", { name: "Bitácora de obra", exact: true })).toBeVisible();
@@ -73,15 +74,18 @@ test("registra una visita de obra y agrega un ambiente a los metrados desde un m
     "step",
   );
   await expect(stages.getByRole("link", { name: /Obra y Bitácora/ })).toHaveText(/Completada/);
+  await page.getByRole("link", { name: "Cálculos y bitácora" }).click();
   await expect(page.getByRole("link", { name: /Visita de obra/ })).toHaveAttribute(
     "href",
     /bitacora\?log=/,
   );
+  await page.getByRole("link", { name: "Metrados y presupuesto" }).click();
   await page.getByText("Generar ambiente rectangular rápido").click();
   await page.getByLabel("Largo").fill("5");
   await expect(page.getByRole("definition").filter({ hasText: /^15 m²$/ })).toHaveCount(3);
   await page.getByRole("button", { name: "Agregar 4 partidas" }).click();
   await expect(page.getByText(/Se agregaron 4 partidas/)).toBeVisible();
+  await page.getByRole("link", { name: "Resumen y etapas" }).click();
   await expect(stages.getByRole("link", { name: /Costos y Metrados/ })).toHaveText(/Completada/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   expect(errors).toEqual([]);

@@ -47,7 +47,14 @@ vi.mock("@/lib/plans/plan-store", () => ({
 }));
 
 import { db } from "./db";
-import { saveProject, deleteProject } from "./repositories";
+import {
+  saveProject,
+  deleteProject,
+  deleteTakeoff,
+  saveTakeoff,
+  StaleTakeoffError,
+} from "./repositories";
+import { BACKUP_FORMAT, importBackup, parseBackup } from "./backup";
 import {
   addProjectPhoto,
   deleteProjectNote,
@@ -154,6 +161,7 @@ describe("sincronización con datos de campo", () => {
       fee_quotes: "id,code,updatedAt,syncState",
       project_notes: "id,projectId,createdAt",
       project_photos: "id,projectId,createdAt",
+      project_options: "projectId",
       outbox: "++id,table,createdAt",
     });
     const createdAt = "2026-11-17T13:00:00.000Z";
@@ -333,5 +341,128 @@ describe("sincronización con datos de campo", () => {
     auth.configured = false;
     expect((await syncNow()).status).toBe("not-configured");
     expect(await database.projects.get(project.id)).toMatchObject({ name: "Edición privada" });
+  });
+});
+
+describe("project details and takeoff edits", () => {
+  it("upgrades a v9 database and queues only migrated positive areas", async () => {
+    await database.delete();
+    const old = new Dexie("TrazzoDB");
+    old.version(9).stores({
+      projects: "id,updatedAt,syncState",
+      project_options: "projectId",
+      outbox: "++id,table,createdAt",
+    });
+    const updatedAt = "2026-11-01T12:00:00.000Z";
+    await old.table("projects").bulkPut(
+      ["migrated", "empty", "missing"].map((id) => ({
+        ...draft,
+        id,
+        updatedAt,
+        syncState: "synced",
+      })),
+    );
+    await old.table("project_options").bulkPut([
+      { projectId: "migrated", area: 120.5 },
+      { projectId: "empty", area: 0 },
+      { projectId: "orphan", area: 73 },
+    ]);
+    old.close();
+
+    await database.open();
+    const row = await database.projects.get("migrated");
+    expect(row).toMatchObject({ client: "", builtArea: 120.5, syncState: "pending" });
+    expect(row!.updatedAt > updatedAt).toBe(true);
+    for (const id of ["empty", "missing"]) {
+      expect(await database.projects.get(id)).toMatchObject({
+        client: "",
+        builtArea: null,
+        updatedAt,
+        syncState: "synced",
+      });
+    }
+    expect(await database.outbox.toArray()).toMatchObject([
+      { table: "projects", op: "upsert", payload: row, createdAt: row!.updatedAt },
+    ]);
+    expect(database.tables.map((table) => table.name)).not.toContain("project_options");
+  });
+
+  it("imports legacy backup options into the project and its outbox row", async () => {
+    const parsed = parseBackup(
+      JSON.stringify({
+        format: BACKUP_FORMAT,
+        version: 1,
+        projects: [{ ...draft, id: "legacy" }],
+        projectOptions: [{ projectId: "legacy", area: 115 }],
+      }),
+    );
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) throw new Error(parsed.error);
+
+    expect(await importBackup(parsed.backup, "free")).toEqual({ ok: true });
+    expect(await database.projects.get("legacy")).toMatchObject({ client: "", builtArea: 115 });
+    expect(await database.outbox.toArray()).toMatchObject([
+      { table: "projects", op: "upsert", payload: { id: "legacy", builtArea: 115 } },
+    ]);
+  });
+
+  it("rejects edits from a different project and edits to deleted takeoffs", async () => {
+    const project = await saveProject(draft);
+    const other = await saveProject({ ...draft, name: "Otra obra" });
+    const line = await saveTakeoff({
+      projectId: project.id,
+      partName: "Muro",
+      materialCode: "cemento",
+      length: 1,
+      width: 1,
+      height: 0,
+      quantity: 1,
+      total: 1,
+      wastePct: 0,
+      unitPricePen: 0,
+      subtotalPen: 0,
+    });
+    await expect(saveTakeoff({ ...line, projectId: other.id })).rejects.toBeInstanceOf(
+      StaleTakeoffError,
+    );
+    expect(await database.takeoffs.get(line.id)).toEqual(line);
+
+    await deleteTakeoff(line.id);
+    const count = await database.outbox.count();
+    await expect(saveTakeoff(line)).rejects.toBeInstanceOf(StaleTakeoffError);
+    expect(await database.takeoffs.get(line.id)).toBeUndefined();
+    expect(await database.outbox.count()).toBe(count);
+  });
+
+  it("retries an older PostgREST schema once per session without discarding local details", async () => {
+    const handle = auth.fetch.getMockImplementation()!;
+    const payloads: CloudRow[] = [];
+    auth.fetch.mockImplementation(async (input, init) => {
+      if (new URL(String(input)).pathname.endsWith("/projects") && init?.method === "POST") {
+        const payload = JSON.parse(String(init.body)) as CloudRow;
+        payloads.push(payload);
+        if ("built_area" in payload || "client" in payload) {
+          return Response.json({ code: "PGRST204", message: "Column not found" }, { status: 400 });
+        }
+      }
+      return handle(input, init);
+    });
+    signIn();
+    const project = await saveProject({ ...draft, client: "Cliente", builtArea: 120 });
+    const second = await saveProject({ ...draft, name: "Otro", client: "Otro cliente" });
+    connection.onLine = true;
+    expect(await syncNow()).toMatchObject({ status: "ok" });
+    expect(payloads).toHaveLength(3);
+    expect(payloads[0]).toMatchObject({ id: project.id, client: "Cliente", built_area: 120 });
+    expect(payloads[1]).toMatchObject({ id: project.id });
+    expect(payloads[2]).toMatchObject({ id: second.id });
+    for (const payload of payloads.slice(1)) {
+      expect(payload).not.toHaveProperty("client");
+      expect(payload).not.toHaveProperty("built_area");
+    }
+    expect(await database.projects.get(project.id)).toMatchObject({
+      client: "Cliente",
+      builtArea: 120,
+    });
   });
 });

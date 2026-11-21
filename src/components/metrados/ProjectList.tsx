@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Check, Edit3, FolderOpen, Plus, Trash2 } from "lucide-react";
-import { Button, Card, EmptyState, Input, Select } from "@/components/ui";
+import { Button, EmptyState, Input, Select } from "@/components/ui";
+import { Modal } from "@/components/ui/Modal";
 import { toast } from "@/components/ui/Feedback";
 import type { Project, ProjectStatus } from "@/lib/offline/db";
 
@@ -10,14 +11,8 @@ export interface ProjectListProps {
   projects: Project[];
   selectedId: string | null;
   onSelect: (id: string) => void;
-  /** Resolves once the project is stored on the device; the dialog waits for it. */
-  onCreate: (input: {
-    name: string;
-    location: string;
-    typology: string;
-    status: ProjectStatus;
-  }) => void | Promise<void>;
-  onEdit: (project: Project) => void | Promise<void>;
+  onCreate: () => void;
+  onEdit: (project: Project) => void;
   onDelete: (project: Project) => void;
 }
 
@@ -43,63 +38,6 @@ export function ProjectList({
   onEdit,
   onDelete,
 }: ProjectListProps) {
-  const [open, setOpen] = useState(false);
-  const [editing, setEditing] = useState<Project | null>(null);
-  const [name, setName] = useState("");
-  const [location, setLocation] = useState("Lima, Perú");
-  const [typology, setTypology] = useState("vivienda");
-  const [status, setStatus] = useState<ProjectStatus>("activo");
-  const [saving, setSaving] = useState(false);
-
-  function openCreate(): void {
-    setEditing(null);
-    setName("");
-    setLocation("Lima, Perú");
-    setTypology("vivienda");
-    setStatus("activo");
-    setOpen(true);
-  }
-
-  function openEdit(project: Project): void {
-    setEditing(project);
-    setName(project.name);
-    setLocation(project.location);
-    setTypology(project.typology);
-    setStatus(project.status);
-    setOpen(true);
-  }
-
-  function closeDialog(): void {
-    setOpen(false);
-    setEditing(null);
-  }
-
-  // The dialog closes only after IndexedDB confirms the write: leaving the page
-  // right after a tap must not abort a project that was never stored.
-  async function submit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
-    event.preventDefault();
-    if (!name.trim() || saving) return;
-    setSaving(true);
-    try {
-      if (editing) {
-        await onEdit({
-          ...editing,
-          name: name.trim(),
-          location,
-          typology,
-          status,
-        });
-      } else {
-        await onCreate({ name: name.trim(), location, typology, status });
-      }
-      closeDialog();
-    } catch {
-      toast("No se pudo guardar el proyecto en este dispositivo. Inténtalo de nuevo.", "error");
-    } finally {
-      setSaving(false);
-    }
-  }
-
   return (
     <aside className="project-sidebar">
       <div className="project-sidebar-header">
@@ -107,7 +45,7 @@ export function ProjectList({
           <div className="eyebrow">Espacios locales</div>
           <h2>Proyectos</h2>
         </div>
-        <Button size="sm" variant="secondary" type="button" onClick={openCreate}>
+        <Button size="sm" variant="secondary" type="button" onClick={onCreate}>
           <Plus size={14} aria-hidden="true" /> Nuevo proyecto
         </Button>
       </div>
@@ -117,7 +55,7 @@ export function ProjectList({
           title="Sin proyectos"
           description="Crea uno para empezar a ordenar partidas."
           action={
-            <Button size="sm" onClick={openCreate}>
+            <Button size="sm" onClick={onCreate}>
               <Plus size={14} /> Crear
             </Button>
           }
@@ -142,7 +80,7 @@ export function ProjectList({
               <div className="project-item-actions">
                 <button
                   type="button"
-                  onClick={() => openEdit(project)}
+                  onClick={() => onEdit(project)}
                   aria-label={"Editar " + project.name}
                 >
                   <Edit3 size={13} />
@@ -159,52 +97,107 @@ export function ProjectList({
           ))}
         </div>
       )}
-      {open && (
-        <div className="modal-backdrop" role="presentation">
-          <form className="modal project-dialog" onSubmit={(event) => void submit(event)}>
-            <div className="eyebrow">{editing ? "EDITAR PROYECTO" : "NUEVO PROYECTO"}</div>
-            <h2>{editing ? "Actualiza la obra" : "Organiza una obra"}</h2>
-            <div className="field">
-              <label htmlFor="project-name">Nombre</label>
-              <Input
-                id="project-name"
-                autoFocus
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                placeholder="Casa Miraflores"
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="project-location">Ubicación</label>
-              <Input
-                id="project-location"
-                value={location}
-                onChange={(event) => setLocation(event.target.value)}
-              />
-            </div>
-            <Select
-              label="Tipología"
-              value={typology}
-              onChange={(event) => setTypology(event.target.value)}
-              options={typologies}
-            />
-            <Select
-              label="Estado"
-              value={status}
-              onChange={(event) => setStatus(event.target.value as ProjectStatus)}
-              options={statuses}
-            />
-            <div className="dialog-actions">
-              <Button type="button" variant="ghost" onClick={closeDialog}>
-                Cancelar
-              </Button>
-              <Button type="submit" variant="primary" disabled={saving}>
-                <Check size={15} /> {editing ? "Guardar cambios" : "Crear proyecto"}
-              </Button>
-            </div>
-          </form>
-        </div>
-      )}
     </aside>
+  );
+}
+
+export type ProjectForm = Pick<Project, "name" | "location" | "typology" | "status" | "client">;
+
+export function ProjectDialog({
+  project,
+  onClose,
+  onSave,
+}: {
+  project: Project | null;
+  onClose: () => void;
+  onSave: (input: ProjectForm) => Promise<void>;
+}) {
+  const [name, setName] = useState(project?.name ?? "");
+  const [client, setClient] = useState(project?.client ?? "");
+  const [location, setLocation] = useState(project?.location ?? "Lima, Perú");
+  const [typology, setTypology] = useState(project?.typology ?? "vivienda");
+  const [status, setStatus] = useState<ProjectStatus>(project?.status ?? "activo");
+  const [saving, setSaving] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const nameError = submitted && !name.trim();
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSubmitted(true);
+    if (!name.trim() || saving) return;
+    setSaving(true);
+    try {
+      await onSave({ name: name.trim(), client: client.trim(), location, typology, status });
+      onClose();
+    } catch {
+      toast("No se pudo guardar el proyecto en este dispositivo. Inténtalo de nuevo.", "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Modal
+      className="project-dialog"
+      title={project ? "Editar ficha" : "Nuevo proyecto"}
+      onClose={onClose}
+    >
+      <form onSubmit={(event) => void submit(event)}>
+        <div className="field">
+          <label htmlFor="project-name">Nombre</label>
+          <Input
+            id="project-name"
+            data-initial-focus
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            placeholder="Casa Miraflores"
+            aria-required="true"
+            aria-invalid={nameError || undefined}
+            aria-describedby={nameError ? "project-name-error" : undefined}
+          />
+          {nameError && (
+            <span className="field-error small" id="project-name-error">
+              Ingresa el nombre del proyecto.
+            </span>
+          )}
+        </div>
+        <div className="field">
+          <label htmlFor="project-client">Cliente</label>
+          <Input
+            id="project-client"
+            value={client}
+            onChange={(event) => setClient(event.target.value)}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="project-location">Ubicación</label>
+          <Input
+            id="project-location"
+            value={location}
+            onChange={(event) => setLocation(event.target.value)}
+          />
+        </div>
+        <Select
+          label="Tipología"
+          value={typology}
+          onChange={(event) => setTypology(event.target.value)}
+          options={typologies}
+        />
+        <Select
+          label="Estado"
+          value={status}
+          onChange={(event) => setStatus(event.target.value as ProjectStatus)}
+          options={statuses}
+        />
+        <div className="dialog-actions">
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="submit" variant="primary" disabled={saving}>
+            <Check size={15} /> {project ? "Guardar cambios" : "Crear proyecto"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }

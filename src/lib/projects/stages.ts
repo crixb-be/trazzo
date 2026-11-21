@@ -36,7 +36,9 @@ export function projectStages(input: ProjectStageInput) {
       id: "cost",
       label: "Costos y Metrados",
       done: input.takeoffsCount > 0 || input.quotesCount > 0,
-      href: "#partidas",
+      href: input.projectId
+        ? "?project=" + encodeURIComponent(input.projectId) + "&tab=metrados#partidas"
+        : "#partidas",
       secondaryHref: "/honorarios",
       secondaryLabel: "Honorarios",
       hint: "Agrega partidas o vincula una cotización.",

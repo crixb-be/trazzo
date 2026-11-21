@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { ArrowRight, KeyRound, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { BrandMark } from "@/components/brand/BrandMark";
 import { Badge, Button, Card, Input } from "@/components/ui";
 import { createClient } from "@/lib/supabase/client";
@@ -14,53 +14,58 @@ export function AuthCard({ mode }: { mode: "login" | "register" }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [notice, setNotice] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState<"password" | "link" | null>(null);
+  const running = useRef(false);
+  const emailField = useRef<HTMLInputElement>(null);
   const isLogin = mode === "login";
 
-  async function submit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
-    event.preventDefault();
+  async function authenticate(action: "password" | "link") {
+    if (running.current) return;
     const client = createClient();
     if (!client) {
-      setNotice(
-        "Las cuentas aún no están activas en esta instalación. Puedes usar TRAZZO sin cuenta.",
-      );
+      setNotice("Las cuentas aún no están activas. Puedes usar TRAZZO sin cuenta.");
       return;
     }
-    setBusy(true);
-    const result = isLogin
-      ? await client.auth.signInWithPassword({ email, password })
-      : await client.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: window.location.origin + "/auth/callback" },
-        });
-    setBusy(false);
-    if (result.error) {
-      setNotice(result.error.message);
+    if (!emailField.current?.validity.valid) {
+      setNotice("Ingresa un correo válido para recibir el enlace.");
+      emailField.current?.focus();
       return;
     }
-    if (isLogin) {
-      router.push("/");
-    } else {
-      setNotice("Cuenta creada. Revisa tu correo para confirmar la dirección.");
+    running.current = true;
+    setPending(action);
+    setNotice("");
+    const address = email.trim();
+    const redirect = window.location.origin + "/auth/callback";
+    const failure =
+      action === "link"
+        ? "No se pudo enviar el enlace. Inténtalo de nuevo."
+        : isLogin
+          ? "No se pudo ingresar. Revisa tu correo y contraseña."
+          : "No se pudo crear la cuenta. Revisa tus datos e inténtalo de nuevo.";
+    try {
+      const result =
+        action === "link"
+          ? await client.auth.signInWithOtp({
+              email: address,
+              options: { emailRedirectTo: redirect },
+            })
+          : isLogin
+            ? await client.auth.signInWithPassword({ email: address, password })
+            : await client.auth.signUp({
+                email: address,
+                password,
+                options: { emailRedirectTo: redirect },
+              });
+      if (result.error) setNotice(failure);
+      else if (action === "link") setNotice("Revisa tu correo. Te enviamos un enlace de acceso.");
+      else if (isLogin) router.push("/");
+      else setNotice("Cuenta creada. Revisa tu correo para confirmar la dirección.");
+    } catch {
+      setNotice(failure);
+    } finally {
+      running.current = false;
+      setPending(null);
     }
-  }
-
-  async function magicLink(): Promise<void> {
-    const client = createClient();
-    if (!client) {
-      setNotice("El acceso por enlace aún no está activo en esta instalación.");
-      return;
-    }
-    if (!email) {
-      setNotice("Escribe tu correo para recibir el enlace.");
-      return;
-    }
-    const result = await client.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: window.location.origin + "/auth/callback" },
-    });
-    setNotice(result.error?.message ?? "Revisa tu correo: te enviamos un enlace de acceso.");
   }
 
   return (
@@ -89,13 +94,20 @@ export function AuthCard({ mode }: { mode: "login" | "register" }) {
           <Mail size={16} /> Las cuentas aún no están activas. Puedes usar TRAZZO sin cuenta.
         </div>
       )}
-      <form className="auth-form" onSubmit={(event) => void submit(event)}>
+      <form
+        className="auth-form"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void authenticate("password");
+        }}
+      >
         <div className="field">
           <label htmlFor="auth-email">Correo</label>
           <div className="input-with-icon">
             <Mail size={16} />
             <Input
               id="auth-email"
+              ref={emailField}
               type="email"
               required
               value={email}
@@ -121,8 +133,9 @@ export function AuthCard({ mode }: { mode: "login" | "register" }) {
             />
           </div>
         </div>
-        <Button type="submit" variant="primary" disabled={!configured || busy}>
-          {busy ? "Procesando…" : isLogin ? "Ingresar" : "Crear cuenta"} <ArrowRight size={15} />
+        <Button type="submit" variant="primary" disabled={!configured || !!pending}>
+          {pending === "password" ? "Procesando…" : isLogin ? "Ingresar" : "Crear cuenta"}{" "}
+          <ArrowRight size={15} />
         </Button>
       </form>
       <div className="auth-divider">
@@ -131,12 +144,15 @@ export function AuthCard({ mode }: { mode: "login" | "register" }) {
       <Button
         className="auth-magic"
         variant="secondary"
-        disabled={!configured}
-        onClick={() => void magicLink()}
+        disabled={!configured || !!pending}
+        onClick={() => void authenticate("link")}
       >
-        <Mail size={15} /> Enviarme un magic link
+        <Mail size={15} />{" "}
+        {pending === "link" ? "Enviando enlace…" : "Enviarme un enlace de acceso"}
       </Button>
-      {notice && <p className="warning auth-notice">{notice}</p>}
+      <p className="auth-notice" role="status">
+        {notice}
+      </p>
       <footer className="auth-links">
         <p className="auth-switch">
           {isLogin ? "¿Aún no tienes cuenta?" : "¿Ya tienes una cuenta?"}{" "}

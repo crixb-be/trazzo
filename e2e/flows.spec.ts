@@ -13,7 +13,7 @@ test("una cotización guardada se vincula a su proyecto", async ({ page }) => {
     .getByRole("combobox", { name: "Proyecto de esta cotización" })
     .selectOption({ label: "Casa vinculada" });
 
-  await page.goto("/metrados");
+  await page.goto("/metrados?tab=vinculos");
   const hub = page.locator(".project-hub");
   await expect(hub.getByRole("link", { name: /COT-\d{4}-\d+/ })).toBeVisible();
   await hub.getByRole("link", { name: /COT-\d{4}-\d+/ }).click();
@@ -38,7 +38,7 @@ test("todas las pantallas principales abren sin conexión", async ({ page, conte
     ["/medidas", "Medidas"],
     ["/matriz", "Matriz"],
     ["/estudio", "Estudio profesional"],
-    ["/metrados", "Metrados"],
+    ["/metrados", "Proyectos de obra"],
     ["/bitacora", "Bitácora de obra"],
     ["/honorarios", "Honorarios"],
     ["/asistente", "Consulta el RNE"],
@@ -64,6 +64,7 @@ test("todas las pantallas principales abren sin conexión", async ({ page, conte
 
 test("las fotos de obra se guardan en el proyecto", async ({ page }) => {
   await createProject(page, "Obra con fotos");
+  await page.getByRole("link", { name: "Cálculos y bitácora" }).click();
   await expect(page.getByRole("heading", { name: "Fotos de obra" })).toBeVisible();
 
   // Una imagen grande generada en la página hace de foto de cámara.

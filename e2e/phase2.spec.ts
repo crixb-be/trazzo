@@ -10,9 +10,15 @@ test("medidas filtra y las nuevas calculadoras responden", async ({ page }) => {
   await expect(page.locator("article")).toContainText("Por verificar");
   await page.goto("/calculadoras?tab=cabida");
   await expect(page.locator(".result-main")).toHaveText("560.00 m² techados");
-  await page.getByRole("combobox", { name: "Calculadora", exact: true }).selectOption("aforo");
+  await page
+    .getByRole("navigation", { name: "Calculadoras", exact: true })
+    .getByRole("link", { name: "Aforo", exact: true })
+    .click();
   await expect(page.locator(".result-main")).toHaveText("10 personas");
-  await page.getByRole("combobox", { name: "Calculadora", exact: true }).selectOption("utilidades");
+  await page
+    .getByRole("navigation", { name: "Calculadoras", exact: true })
+    .getByRole("link", { name: "Utilidades de campo", exact: true })
+    .click();
   await expect(page.getByRole("main").getByRole("status")).toContainText("100 cm");
   await page.getByRole("combobox", { name: /^Herramienta/ }).selectOption("area");
   await expect(page.getByRole("main").getByRole("status")).toContainText("80.000 m²");
@@ -28,8 +34,10 @@ test("materiales envía cantidades con merma una sola vez a un proyecto", async 
   await page.getByRole("button", { name: "Enviar a metrado" }).click();
   await expect(page.getByRole("button", { name: "Enviar a metrado" })).toBeDisabled();
   await expect(page.getByRole("main").getByRole("status")).toContainText("Cantidades enviadas");
-  await page.goto("/metrados");
+  await page.goto("/metrados?tab=metrados");
   await expect(
-    page.getByText("Concreto por resistencia · Cemento", { exact: false }),
+    page
+      .locator(".takeoff-mobile-list")
+      .getByText("Concreto por resistencia · Cemento", { exact: false }),
   ).toBeVisible();
 });

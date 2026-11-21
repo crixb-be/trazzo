@@ -24,6 +24,12 @@ const numeric = (value: unknown, fallback = 0): number => {
 };
 const STATUSES: ProjectStatus[] = ["activo", "pausado", "cerrado"];
 
+function projectArea(value: unknown): number | null {
+  if (typeof value !== "number" && !(typeof value === "string" && value.trim())) return null;
+  const area = Number(value);
+  return Number.isFinite(area) && area >= 0 ? area : null;
+}
+
 export function projectToRow(project: Project, userId: string): Row {
   return {
     id: project.id,
@@ -31,6 +37,8 @@ export function projectToRow(project: Project, userId: string): Row {
     name: project.name,
     location: project.location,
     typology: project.typology,
+    client: text(project.client),
+    built_area: projectArea(project.builtArea),
     status: project.status,
     updated_at: project.updatedAt,
   };
@@ -46,6 +54,8 @@ export function rowToProject(row: Row): Project | null {
     name: text(row.name),
     location: text(row.location),
     typology: text(row.typology),
+    client: text(row.client),
+    builtArea: projectArea(row.built_area),
     status,
     updatedAt: text(row.updated_at, new Date(0).toISOString()),
     syncState: "synced",

@@ -87,21 +87,25 @@ export function FeeQuoteWorkspace() {
   const [draft, setDraft] = useState<FeeQuoteDraft>(() => initialDraft());
   const [touched, setTouched] = useState({ deliverables: false, schedule: false });
   const [notice, setNotice] = useState("");
+  const [dirty, setDirty] = useState(false);
+  const [loaded, setLoaded] = useState<{ id: string; updatedAt: string }>();
+  const [changingQuote, setChangingQuote] = useState(false);
+  const [customRates, setCustomRates] = useState<typeof DEFAULT_FEE_RATES>();
   const [saving, setSaving] = useState(false);
   const [preview, setPreview] = useState(false);
   const [paywall, setPaywall] = useState(false);
   const [ratesLoaded, setRatesLoaded] = useState(false);
   const [hasCustomRates, setHasCustomRates] = useState(false);
   const skipRateSave = useRef(true);
+  const quoteNavigation = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
     void loadCustomFeeRates().then((rates) => {
       setHasCustomRates(Boolean(rates));
-      if (rates && !activeQuote)
-        setDraft((current) => ({ ...current, input: { ...current.input, rates } }));
+      if (rates) setCustomRates(rates);
       setRatesLoaded(true);
     });
-  }, [activeQuote]);
+  }, []);
 
   useEffect(() => {
     if (!ratesLoaded) return;
@@ -110,16 +114,46 @@ export function FeeQuoteWorkspace() {
       return;
     }
     setHasCustomRates(true);
+    setCustomRates(draft.input.rates);
     const timer = window.setTimeout(() => void saveCustomFeeRates(draft.input.rates), 400);
     return () => window.clearTimeout(timer);
   }, [draft.input.rates, ratesLoaded]);
 
   useEffect(() => {
-    if (activeQuote) {
-      setDraft(draftFromQuote(activeQuote));
-      setTouched({ deliverables: true, schedule: true });
+    if (!selectedId && customRates && !dirty) {
+      setDraft((current) =>
+        current.input.rates === customRates
+          ? current
+          : {
+              ...current,
+              input: { ...current.input, rates: customRates },
+            },
+      );
     }
-  }, [activeQuote?.id]);
+  }, [customRates, selectedId, dirty]);
+
+  const newerQuote = Boolean(
+    activeQuote &&
+    activeQuote.id === loaded?.id &&
+    Date.parse(activeQuote.updatedAt) > Date.parse(loaded.updatedAt),
+  );
+  useEffect(() => {
+    if (quoteNavigation.current !== undefined) {
+      if (selectedId !== quoteNavigation.current) return;
+      quoteNavigation.current = undefined;
+    }
+    if (!activeQuote || (activeQuote.id === loaded?.id && (dirty || !newerQuote))) return;
+    setDraft(draftFromQuote(activeQuote));
+    setLoaded({ id: activeQuote.id, updatedAt: activeQuote.updatedAt });
+    setTouched({ deliverables: true, schedule: true });
+    setDirty(false);
+  }, [selectedId, activeQuote, loaded, dirty, newerQuote]);
+
+  function editDraft(update: React.SetStateAction<FeeQuoteDraft>) {
+    setDirty(true);
+    setDraft(update);
+  }
+
   const regenerationKey = JSON.stringify({
     typology: draft.input.typology,
     areaM2: draft.input.areaM2,
@@ -160,22 +194,34 @@ export function FeeQuoteWorkspace() {
     updatedAt: activeQuote?.updatedAt ?? "",
     syncState: "local",
   });
-  const selectQuote = (id: string): void =>
-    window.history.replaceState(null, "", "/honorarios?quote=" + id);
-  const newQuote = (): void => {
-    setDraft(initialDraft());
+  function selectQuote(id: string | null) {
+    // Next updates useSearchParams in a transition after replaceState.
+    quoteNavigation.current = id;
+    const params = new URLSearchParams(window.location.search);
+    if (id) params.set("quote", id);
+    else params.delete("quote");
+    window.history.replaceState(null, "", "/honorarios" + (params.size ? "?" + params : ""));
+  }
+
+  function resetQuote() {
+    const fresh = initialDraft();
+    setDraft(customRates ? { ...fresh, input: { ...fresh.input, rates: customRates } } : fresh);
+    setLoaded(undefined);
+    setDirty(false);
     setTouched({ deliverables: false, schedule: false });
     setNotice("");
-    window.history.replaceState(null, "", "/honorarios");
-  };
-  const save = async (): Promise<void> => {
+    selectQuote(null);
+  }
+
+  async function save(selectSaved = true): Promise<boolean> {
+    if (saving) return false;
     if (!draft.projectName.trim()) {
       setNotice("Agrega un nombre de proyecto antes de guardar.");
-      return;
+      return false;
     }
     if (!draft.payment.installments.length || !paymentValidation.ok) {
       setNotice("Corrige la forma de pago: la suma debe ser 100%.");
-      return;
+      return false;
     }
     setSaving(true);
     try {
@@ -185,20 +231,51 @@ export function FeeQuoteWorkspace() {
           ? { id: activeQuote.id, code: activeQuote.code, createdAt: activeQuote.createdAt }
           : undefined,
       );
-      selectQuote(saved.id);
+      if (selectSaved) {
+        setLoaded({ id: saved.id, updatedAt: saved.updatedAt });
+        setTouched({ deliverables: true, schedule: true });
+        setDirty(false);
+        selectQuote(saved.id);
+      }
       setNotice("Cotización guardada localmente.");
+      return true;
     } catch {
       setNotice("No se pudo guardar la cotización.");
+      return false;
     } finally {
       setSaving(false);
     }
-  };
-  const duplicate = async (): Promise<void> => {
-    if (!activeQuote) return;
-    const copy = await duplicateFeeQuote(activeQuote.id);
-    selectQuote(copy.id);
-    setNotice("Cotización duplicada.");
-  };
+  }
+
+  async function changeQuote(id: string | null, copy = false) {
+    if (saving || changingQuote || (id && id === selectedId && !copy)) return;
+    setChangingQuote(true);
+    try {
+      if (dirty) {
+        const choice = await confirmDialog({
+          title: "¿Guardar los cambios de la cotización?",
+          confirmLabel: "Guardar",
+          alternateLabel: "Descartar",
+        });
+        if (choice === false || (choice === true && !(await save(false)))) return;
+      }
+      if (copy && activeQuote) {
+        const duplicate = await duplicateFeeQuote(activeQuote.id);
+        selectQuote(duplicate.id);
+        setNotice("Cotización duplicada.");
+      } else if (id) {
+        selectQuote(id);
+        setNotice("");
+      } else {
+        resetQuote();
+      }
+    } catch {
+      setNotice("No se pudo cambiar de cotización.");
+    } finally {
+      setChangingQuote(false);
+    }
+  }
+
   const remove = async (): Promise<void> => {
     if (!activeQuote) return;
     const confirmed = await confirmDialog({
@@ -209,7 +286,7 @@ export function FeeQuoteWorkspace() {
     });
     if (!confirmed) return;
     await deleteFeeQuote(activeQuote.id);
-    newQuote();
+    resetQuote();
     setNotice("Cotización eliminada.");
   };
   const download = async (): Promise<void> => {
@@ -231,7 +308,9 @@ export function FeeQuoteWorkspace() {
       <div className="page-heading-row">
         <div>
           <div className="eyebrow">Proyectos / Honorarios</div>
-          <h1 className="page-title">Honorarios y propuestas</h1>
+          <h1 className="page-title" id="fee-quote-heading">
+            Honorarios y propuestas
+          </h1>
           <p className="lead">
             Cotiza con claridad, guarda tus condiciones y entrega una propuesta lista para
             conversar.
@@ -243,7 +322,11 @@ export function FeeQuoteWorkspace() {
         <aside className="quote-sidebar">
           <div className="sidebar-heading">
             <div className="eyebrow">Cotizaciones</div>
-            <button className="btn btn-primary" type="button" onClick={newQuote}>
+            <button
+              className="btn btn-primary"
+              type="button"
+              onClick={() => void changeQuote(null)}
+            >
               <Plus size={15} /> Nueva
             </button>
           </div>
@@ -256,7 +339,7 @@ export function FeeQuoteWorkspace() {
                 className={quote.id === selectedId ? "saved-quote active" : "saved-quote"}
                 key={quote.id}
                 type="button"
-                onClick={() => selectQuote(quote.id)}
+                onClick={() => void changeQuote(quote.id)}
               >
                 <strong>{quote.code}</strong>
                 <span>{quote.projectName || "Sin proyecto"}</span>
@@ -268,7 +351,7 @@ export function FeeQuoteWorkspace() {
           {activeQuote && <QuoteProjectLink quoteId={activeQuote.id} />}
           {activeQuote && (
             <div className="sidebar-actions">
-              <Button variant="secondary" onClick={() => void duplicate()}>
+              <Button variant="secondary" onClick={() => void changeQuote(activeQuote.id, true)}>
                 <Copy size={15} /> Duplicar
               </Button>
               <Button variant="danger" onClick={() => void remove()}>
@@ -277,11 +360,16 @@ export function FeeQuoteWorkspace() {
             </div>
           )}
         </aside>
-        <main className="quote-editor">
+        <section className="quote-editor" aria-labelledby="fee-quote-heading">
+          {dirty && newerQuote && (
+            <p className="notice-banner" role="status">
+              Hay una versión más reciente de esta cotización. Tus cambios siguen en el formulario.
+            </p>
+          )}
           <QuoteForm
             draft={draft}
             result={result}
-            onChange={setDraft}
+            onChange={editDraft}
             onTouchDeliverables={() =>
               setTouched((current) => ({ ...current, deliverables: true }))
             }
@@ -293,18 +381,19 @@ export function FeeQuoteWorkspace() {
                 clearCustomFeeRates(),
               );
               setHasCustomRates(false);
-              setDraft((current) => ({
+              setCustomRates(undefined);
+              editDraft((current) => ({
                 ...current,
                 input: { ...current.input, rates: DEFAULT_FEE_RATES },
               }));
             }}
           />
-        </main>
+        </section>
         <QuoteSummary
           result={result}
           tax={draft.input.tax}
           onTaxChange={(tax) =>
-            setDraft((current) => ({ ...current, input: { ...current.input, tax } }))
+            editDraft((current) => ({ ...current, input: { ...current.input, tax } }))
           }
           onSave={() => void save()}
           onPreview={() => setPreview(true)}

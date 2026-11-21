@@ -1,7 +1,7 @@
 "use client";
 
-import type { InputHTMLAttributes } from "react";
+import type { ComponentPropsWithRef } from "react";
 
-export function Input({ className = "", ...props }: InputHTMLAttributes<HTMLInputElement>) {
+export function Input({ className = "", ...props }: ComponentPropsWithRef<"input">) {
   return <input className={"input " + className} {...props} />;
 }

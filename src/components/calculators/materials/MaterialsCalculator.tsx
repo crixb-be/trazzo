@@ -273,7 +273,7 @@ export function MaterialsCalculator() {
           ))}
         </select>
       </label>
-      {!projects.length && <Link href="/metrados">Crear proyecto de metrados</Link>}
+      {!projects.length && <Link href="/metrados">Crear proyecto</Link>}
       <button
         className="btn btn-primary"
         disabled={

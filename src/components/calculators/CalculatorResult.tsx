@@ -43,7 +43,7 @@ export function CopyResultButton({ text }: { text: string }) {
   }
 
   return (
-    <Button variant="ghost" size="sm" onClick={() => void copy()}>
+    <Button size="sm" onClick={() => void copy()}>
       {copied ? <Check size={14} /> : <Copy size={14} />}
       {copied ? "Copiado" : "Copiar resultado"}
     </Button>
@@ -99,7 +99,6 @@ export function CalculatorResult({
         <span ref={probe} className="result-probe" aria-hidden="true" />
         <div className="result-header">
           <div className="eyebrow">{eyebrow}</div>
-          <CopyResultButton text={copyText} />
         </div>
         <strong className="result-main mono">{main}</strong>
         <p className="result-details">{details}</p>
@@ -109,8 +108,11 @@ export function CalculatorResult({
             {warning}
           </p>
         ))}
-        <ShareResult sheet={sheet} diagramScope=".calculator-visual" />
-        <SaveToProject sheet={sheet} />
+        <div className="calculator-result-actions">
+          <CopyResultButton text={copyText} />
+          <SaveToProject sheet={sheet} />
+          <ShareResult sheet={sheet} diagramScope=".calculator-visual" />
+        </div>
       </Card>
     </>
   );

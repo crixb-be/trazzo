@@ -32,6 +32,8 @@ const project: Project = {
   name: "Edificio José María",
   location: "Lima",
   typology: "Vivienda",
+  client: "",
+  builtArea: null,
   status: "activo",
   updatedAt: time,
   syncState: "local",

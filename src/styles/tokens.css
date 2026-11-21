@@ -4,6 +4,7 @@
   --surface: #1c1e24;
   --surface-2: #24272f;
   --border: #2e313a;
+  --input-border: #858894;
   --text: #e9e7e2;
   --muted: #9a9ca5;
   --accent: #d4a359;
@@ -41,6 +42,7 @@ html:not(.dark) {
   --surface: #fff;
   --surface-2: #efede8;
   --border: #e2dfd8;
+  --input-border: #777a84;
   --text: #1a1b1f;
   /* Muted and accent are dark enough to read as text (4.5:1) on every light surface. */
   --muted: #5f6169;

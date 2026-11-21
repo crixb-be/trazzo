@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useEffect, useRef } from "react";
 
 import { useSearchParams } from "next/navigation";
 import { EvacuationCalculator } from "./EvacuationCalculator";
@@ -54,16 +55,18 @@ function normalizeTab(value: string | null): CalculatorTab {
 
 export function CalculatorWorkspace() {
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState<CalculatorTab>(normalizeTab(searchParams.get("tab")));
+  const activeTab = normalizeTab(searchParams.get("tab"));
+  const navigation = useRef<HTMLElement>(null);
+  const activePill = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
-    setActiveTab(normalizeTab(searchParams.get("tab")));
-  }, [searchParams]);
-
-  function selectTab(tab: CalculatorTab): void {
-    setActiveTab(tab);
-    window.history.replaceState(null, "", "/calculadoras?tab=" + tab);
-  }
+    const nav = navigation.current;
+    const pill = activePill.current;
+    if (!nav || !pill || !window.matchMedia("(max-width: 699px)").matches) return;
+    const container = nav.getBoundingClientRect();
+    const current = pill.getBoundingClientRect();
+    nav.scrollLeft += current.left - container.left - (container.width - current.width) / 2;
+  }, [activeTab]);
 
   const fieldExtraTool = FIELD_EXTRA_TOOLS.find(({ id }) => id === activeTab);
 
@@ -77,36 +80,26 @@ export function CalculatorWorkspace() {
             Resultados referenciales para anteproyecto, revisión y coordinación de obra.
           </p>
         </div>
-        <span className="mono small muted">{tabs.length} módulos</span>
       </div>
-      <label className="calculator-selector" htmlFor="calculator-select">
-        Calculadora
-        <select
-          id="calculator-select"
-          className="input"
-          value={activeTab}
-          onChange={(event) => selectTab(event.target.value as CalculatorTab)}
-        >
-          {tabs.map((tab) => (
-            <option key={tab.id} value={tab.id}>
-              {tab.label}
-            </option>
-          ))}
-        </select>
-      </label>
-      <div className="calculator-tabs" role="tablist" aria-label="Calculadoras">
-        {tabs.map((tab) => (
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === tab.id}
-            className={activeTab === tab.id ? "active" : ""}
-            onClick={() => selectTab(tab.id)}
-            key={tab.id}
-          >
-            {tab.label}
-          </button>
-        ))}
+      <div className="calculator-navigation">
+        <nav className="segmented calculator-pills" aria-label="Calculadoras" ref={navigation}>
+          {tabs.map((tab) => {
+            const params = new URLSearchParams(searchParams.toString());
+            params.set("tab", tab.id);
+            const active = activeTab === tab.id;
+            return (
+              <Link
+                href={"/calculadoras?" + params.toString()}
+                key={tab.id}
+                ref={active ? activePill : undefined}
+                scroll={false}
+                aria-current={active ? "page" : undefined}
+              >
+                {tab.label}
+              </Link>
+            );
+          })}
+        </nav>
       </div>
       <div className="calculator-disclaimer">
         Valores referenciales según la edición indicada del RNE. Verifica la versión vigente

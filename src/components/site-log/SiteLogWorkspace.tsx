@@ -2,8 +2,8 @@
 
 import { NotebookPen, Plus } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useRef, useState } from "react";
-import { Button, Card, confirmDialog } from "@/components/ui";
+import { useState } from "react";
+import { Button, Card } from "@/components/ui";
 import { LoadingState } from "@/components/ui/LoadingState";
 import { useProjectList } from "@/lib/offline/hooks";
 import { useSiteLog, useSiteLogs } from "@/lib/offline/site-logs";
@@ -27,20 +27,7 @@ export function SiteLogWorkspace() {
   const logs = useSiteLogs(projectFilter ?? undefined);
   const log = useSiteLog(logId);
   const projects = useProjectList();
-  const dirty = useRef(false);
-  const onDirtyChange = useCallback((changed: boolean) => {
-    dirty.current = changed;
-  }, []);
-
-  async function navigate(path: string) {
-    if (
-      dirty.current &&
-      !(await confirmDialog({
-        title: "¿Descartar los cambios de la visita?",
-        confirmLabel: "Descartar cambios",
-      }))
-    )
-      return;
+  function navigate(path: string) {
     if (path === visitUrl(projectId, logId ?? undefined)) setDraftKey((key) => key + 1);
     else window.history.pushState(null, "", path);
   }
@@ -129,7 +116,6 @@ export function SiteLogWorkspace() {
               log={logId ? (log ?? null) : null}
               projectId={projects.some((project) => project.id === projectId) ? projectId : null}
               projects={projects}
-              onDirtyChange={onDirtyChange}
               onSaved={(id) => {
                 if (id !== logId) window.history.replaceState(null, "", visitUrl(projectId, id));
               }}

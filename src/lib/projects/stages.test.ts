@@ -22,7 +22,7 @@ describe("etapas del proyecto", () => {
     expect(stages.map((stage) => stage.href)).toEqual([
       "/calculadoras?tab=cabida",
       "/matriz",
-      "#partidas",
+      "?project=obra&tab=metrados#partidas",
       "/bitacora?project=obra",
     ]);
     expect(stages[1].secondaryHref).toBe("/calculadoras");

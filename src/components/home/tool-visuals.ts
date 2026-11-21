@@ -22,7 +22,7 @@ export const HOME_SHORTCUTS = [
   },
   {
     href: "/metrados",
-    title: "Proyectos y metrados",
+    title: "Proyectos de obra",
     detail: "Partidas y compras",
     icon: FolderOpen,
     family: "terracota",

@@ -103,6 +103,8 @@ function remoteTable(table: OutboxTable): string {
   return table;
 }
 
+let legacyProjectColumns = false;
+
 async function writeRemote(client: Client, userId: string, item: Outbox, id: string) {
   const table = remoteTable(item.table);
   if (item.op === "delete" && item.table === "site_logs") {
@@ -144,7 +146,21 @@ async function writeRemote(client: Client, userId: string, item: Outbox, id: str
                 item.payload as ProjectNote | ProjectPhoto,
                 item.table === "project_notes" ? "note" : "photo",
               );
-  const { error } = await client.from(table).upsert({ ...row, deleted_at: null });
+  const payload: Record<string, unknown> = { ...row, deleted_at: null };
+  if (item.table === "projects") {
+    const legacyPayload = { ...payload };
+    delete legacyPayload.client;
+    delete legacyPayload.built_area;
+    const result = await client.from(table).upsert(legacyProjectColumns ? legacyPayload : payload);
+    if (!result.error) return;
+    if (legacyProjectColumns || !["PGRST204", "42703"].includes(result.error.code))
+      throw result.error;
+    legacyProjectColumns = true;
+    const { error } = await client.from(table).upsert(legacyPayload);
+    if (error) throw error;
+    return;
+  }
+  const { error } = await client.from(table).upsert(payload);
   if (error) throw error;
 }
 
@@ -278,7 +294,7 @@ async function pullPrivate(local: TrazzoDB, client: Client): Promise<number> {
     fetchVersionedRecords(client, "site_logs", local.site_logs.toArray()),
   ]);
   const activeProjectIds = new Set(projects.filter((row) => !row.deleted_at).map((row) => row.id));
-  const projectVersions = projects.map((row) => versionFromRow(row, rowToProject));
+
   const takeoffVersions = takeoffs
     .filter((row) => activeProjectIds.has(row.project_id as string))
     .map((row) => versionFromRow(row, rowToTakeoff));
@@ -324,6 +340,19 @@ async function pullPrivate(local: TrazzoDB, client: Client): Promise<number> {
           local.project_photos.toArray(),
           local.fee_quotes.toArray(),
         ]);
+      const previousProjects = new Map(deviceProjects.map((project) => [project.id, project]));
+      const projectVersions = projects.map((row) =>
+        versionFromRow(row, (data) => {
+          const previous = previousProjects.get(row.id);
+          const project = rowToProject(data);
+          if (!project || !previous) return project;
+          return {
+            ...project,
+            client: "client" in data ? project.client : previous.client,
+            builtArea: "built_area" in data ? project.builtArea : previous.builtArea,
+          };
+        }),
+      );
       const pendingProjects = pending.get("projects") ?? new Set<string>();
       const latestChild = new Map<string, number>();
       for (const row of [...deviceTakeoffs, ...deviceNotes, ...devicePhotos]) {

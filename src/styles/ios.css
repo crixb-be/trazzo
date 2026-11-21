@@ -217,12 +217,12 @@ html .account-avatar:focus-visible {
   }
 }
 
-/* Filled fields (Material 3): tone instead of a frame, the accent on focus. */
-html :is(.input, .select, textarea.input) {
-  border-color: transparent;
+/* Tonal fields with a visible boundary and accent focus ring. */
+html :is(.input, .select, textarea) {
+  border-color: var(--input-border);
   background: var(--fill-tonal);
 }
-html :is(.input, .select):focus {
+html :is(.input, .select, textarea):focus {
   border-color: var(--accent);
   background: var(--surface);
 }

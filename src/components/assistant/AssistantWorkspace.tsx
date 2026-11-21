@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Send, Square } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { DefaultChatTransport } from "ai";
+import { DefaultChatTransport, safeValidateUIMessages } from "ai";
 import { useChat } from "@ai-sdk/react";
 import { Card, Button } from "@/components/ui";
 import type { UIMessage } from "ai";
@@ -42,30 +42,50 @@ export function AssistantWorkspace({ limits }: { limits: Record<Plan, number> })
   });
   const cards = useCards();
   const { plan } = useCurrentPlan();
-  const [historyReady, setHistoryReady] = useState(false);
+  const [history, setHistory] = useState<"loading" | "ready" | "failed">("loading");
   const [historyNotice, setHistoryNotice] = useState("");
   const writeQueue = useRef(Promise.resolve());
+
+  async function readHistory(isActive = () => true) {
+    try {
+      if (!db) throw new Error("IndexedDB");
+      const row = await db.meta.get("assistant-history");
+      if (row) {
+        const result = await safeValidateUIMessages<UIMessage>({ messages: JSON.parse(row.value) });
+        if (!result.success) throw result.error;
+        if (isActive())
+          chat.setMessages((temporary) => {
+            const known = new Set(result.data.map((message) => message.id));
+            return [...result.data, ...temporary.filter((message) => !known.has(message.id))];
+          });
+      }
+      if (isActive()) setHistory("ready");
+    } catch {
+      if (isActive()) setHistory("failed");
+    }
+  }
+
   useEffect(() => {
     let active = true;
-    void db?.meta
-      .get("assistant-history")
-      .then((row) => {
-        if (!active) return;
-        if (row) {
-          const messages = JSON.parse(row.value) as UIMessage[];
-          chat.setMessages(messages);
-        }
-        setHistoryReady(true);
-      })
-      .catch(() => {
-        setHistoryNotice("No se pudo abrir el historial local.");
-      });
+    void readHistory(() => active);
     return () => {
       active = false;
     };
   }, []);
+
+  async function resetHistory() {
+    setHistory("loading");
+    try {
+      if (!db) throw new Error("IndexedDB");
+      await db.meta.delete("assistant-history");
+      setHistoryNotice("");
+      setHistory("ready");
+    } catch {
+      setHistory("failed");
+    }
+  }
   useEffect(() => {
-    if (!historyReady || chat.status !== "ready") return;
+    if (history !== "ready" || chat.status !== "ready") return;
     const value = JSON.stringify(chat.messages.slice(-100));
     writeQueue.current = writeQueue.current
       .catch(() => {})
@@ -73,9 +93,9 @@ export function AssistantWorkspace({ limits }: { limits: Record<Plan, number> })
         await db?.meta.put({ key: "assistant-history", value });
       })
       .catch(() => setHistoryNotice("No se pudo guardar el historial."));
-  }, [chat.messages, chat.status, historyReady]);
+  }, [chat.messages, chat.status, history]);
   async function sendPrompt(prompt: string) {
-    if (!prompt.trim() || busy || !historyReady) return;
+    if (!prompt.trim() || busy || history === "loading") return;
     setInput("");
     if (online) {
       await chat.sendMessage({ text: prompt });
@@ -95,7 +115,11 @@ export function AssistantWorkspace({ limits }: { limits: Record<Plan, number> })
 
   useEffect(() => {
     const query = searchParams.get("q");
-    if (query) setInput(query);
+    if (query === null) return;
+    setInput(query);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("q");
+    window.history.replaceState(null, "", url.pathname + url.search + url.hash);
   }, [searchParams]);
 
   async function submit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
@@ -122,10 +146,40 @@ export function AssistantWorkspace({ limits }: { limits: Record<Plan, number> })
       </div>
       <div className="assistant-layout">
         <Card className="chat-card">
-          <p role="status">{historyNotice}</p>
-          <Button disabled={!historyReady || busy} onClick={() => chat.setMessages([])}>
-            Borrar historial de este dispositivo
-          </Button>
+          {history === "failed" && (
+            <div className="chat-history-notice">
+              <span role="status">
+                No se pudo leer el historial. Puedes continuar con un chat temporal.
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={busy}
+                onClick={() => {
+                  setHistory("loading");
+                  void readHistory();
+                }}
+              >
+                Reintentar
+              </Button>
+              <Button size="sm" variant="ghost" disabled={busy} onClick={() => void resetHistory()}>
+                Restablecer
+              </Button>
+            </div>
+          )}
+          {historyNotice && <p role="status">{historyNotice}</p>}
+          {history === "ready" && chat.messages.length > 0 && (
+            <div className="chat-history-actions">
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={busy}
+                onClick={() => chat.setMessages([])}
+              >
+                Borrar historial de este dispositivo
+              </Button>
+            </div>
+          )}
           {chat.messages.length === 0 ? (
             <div className="chat-empty">
               <BrandMark size={48} className="assistant-mark" />
@@ -155,7 +209,7 @@ export function AssistantWorkspace({ limits }: { limits: Record<Plan, number> })
                   ? "Ej. ¿qué ancho debe tener un pasadizo?"
                   : "Pregunta sin conexión: responde la biblioteca local"
               }
-              disabled={!historyReady || busy}
+              disabled={history === "loading" || busy}
               aria-label="Pregunta al asistente RNE"
             />
             {busy ? (
@@ -171,7 +225,7 @@ export function AssistantWorkspace({ limits }: { limits: Record<Plan, number> })
               <Button
                 type="submit"
                 variant="primary"
-                disabled={!historyReady || !input.trim()}
+                disabled={history === "loading" || !input.trim()}
                 aria-label="Enviar consulta"
               >
                 <Send size={16} />
@@ -202,7 +256,6 @@ export function AssistantWorkspace({ limits }: { limits: Record<Plan, number> })
               el dato no está, lo dice.
             </p>
           </Card>
-          <SuggestedPrompts onSelect={choosePrompt} />
         </aside>
       </div>
     </div>
