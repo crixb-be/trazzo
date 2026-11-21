@@ -12,13 +12,15 @@ async function main(): Promise<void> {
   }
 
   // Seed rows carry no id: match existing rows by their natural unique keys.
+  // defaultToNull: false — rows that omit a column (e.g. updated_at) get the column
+  // default instead of null; a bulk upsert otherwise fills missing keys with null.
   const { error: cardsError } = await client
     .from("rne_cards")
-    .upsert(RNE_CARDS, { onConflict: "slug" });
+    .upsert(RNE_CARDS, { onConflict: "slug", defaultToNull: false });
   if (cardsError) throw cardsError;
   const { error: materialsError } = await client
     .from("materials_catalog")
-    .upsert(MATERIALS, { onConflict: "code" });
+    .upsert(MATERIALS, { onConflict: "code", defaultToNull: false });
   if (materialsError) throw materialsError;
 
   console.log(`Seed cargado: ${RNE_CARDS.length} fichas, ${MATERIALS.length} materiales.`);
