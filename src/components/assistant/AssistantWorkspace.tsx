@@ -37,11 +37,13 @@ export function AssistantWorkspace({ limits }: { limits: Record<Plan, number> })
   const chat = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
-      prepareSendMessagesRequest: ({ messages }) => ({ body: { messages: messages.slice(-6) } }),
+      prepareSendMessagesRequest: ({ messages, body }) => ({
+        body: { ...body, messages: messages.slice(-6) },
+      }),
     }),
   });
   const cards = useCards();
-  const { plan } = useCurrentPlan();
+  const { plan, ownerPreviewFree } = useCurrentPlan();
   const [history, setHistory] = useState<"loading" | "ready" | "failed">("loading");
   const [historyNotice, setHistoryNotice] = useState("");
   const writeQueue = useRef(Promise.resolve());
@@ -99,7 +101,7 @@ export function AssistantWorkspace({ limits }: { limits: Record<Plan, number> })
     if (!prompt.trim() || busy || history === "loading") return;
     setInput("");
     if (online) {
-      await chat.sendMessage({ text: prompt });
+      await chat.sendMessage({ text: prompt }, { body: { previewFree: ownerPreviewFree } });
       return;
     }
     const accessible = (cards.length ? cards : RNE_CARDS).filter(

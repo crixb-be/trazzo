@@ -23,6 +23,7 @@ import {
 import { retrieve } from "@/lib/rag/retrieve";
 import { expandColloquialQuery } from "@/lib/search/colloquial";
 import { buildLocalAnswer, buildSystemPrompt, NO_RESULT_ANSWER } from "@/lib/rag/prompt";
+import { isOwnerAccount } from "@/lib/plans/owner";
 import { queriesUsedToday, resolveEffectivePlan, usageDay } from "@/lib/plans/plans";
 
 export const runtime = "nodejs";
@@ -43,6 +44,7 @@ const messageSchema = z.object({
 
 const requestSchema = z.object({
   messages: z.array(messageSchema).min(1).max(40),
+  previewFree: z.boolean().optional(),
 });
 
 type SourceData = {
@@ -72,6 +74,8 @@ function getMessageText(message: z.infer<typeof messageSchema>): string {
 async function reserveAccountQuota(
   admin: NonNullable<ReturnType<typeof createAdminClient>>,
   userId: string,
+  owner: boolean,
+  previewFree: boolean,
 ): Promise<Response | undefined> {
   const limits = dailyLimits();
   for (let attempt = 0; attempt < 6; attempt++) {
@@ -84,7 +88,8 @@ async function reserveAccountQuota(
 
     const now = new Date();
     const count = queriesUsedToday(profile, now);
-    if (count >= limits[resolveEffectivePlan(profile, now)]) {
+    const planLimit = limits[owner ? "pro" : resolveEffectivePlan(profile, now)];
+    if (count >= (previewFree ? Math.min(limits.free, planLimit) : planLimit)) {
       return dailyQuotaExceeded(now.getTime());
     }
 
@@ -108,10 +113,12 @@ async function reserveDailyQuota(
   key: string,
   userId: string | undefined,
   supabase: Awaited<ReturnType<typeof createClient>>,
+  owner: boolean,
+  previewFree: boolean,
 ): Promise<Response | undefined> {
   const admin = createAdminClient();
   const limits = dailyLimits();
-  if (admin && userId) return reserveAccountQuota(admin, userId);
+  if (admin && userId) return reserveAccountQuota(admin, userId, owner, previewFree);
   if (admin) {
     const { data, error } = await admin.rpc("consume_anonymous_ai_query", {
       p_key: key.slice(3), // Keep using the existing anonymous hash format.
@@ -127,7 +134,11 @@ async function reserveDailyQuota(
       .eq("id", userId)
       .maybeSingle();
     if (error) throw error;
-    return aiRateLimiter.consumeDaily(key, limits[resolveEffectivePlan(data)]);
+    const planLimit = limits[owner ? "pro" : resolveEffectivePlan(data)];
+    return aiRateLimiter.consumeDaily(
+      key,
+      previewFree ? Math.min(limits.free, planLimit) : planLimit,
+    );
   }
   return aiRateLimiter.consumeDaily(key, limits.free);
 }
@@ -198,7 +209,11 @@ export async function POST(request: Request): Promise<Response> {
   try {
     const provider = selectProvider();
     const supabase = provider === "local" ? null : await createClient();
-    const userId = supabase ? (await supabase.auth.getUser()).data.user?.id : undefined;
+    const user = supabase ? (await supabase.auth.getUser()).data.user : null;
+    const userId = user?.id;
+    const owner =
+      !!user &&
+      isOwnerAccount({ email: user.email, signedIn: true }, process.env.TRAZZO_OWNER_EMAILS);
     const key = quotaKey(request, userId);
     if (provider !== "local") {
       const blocked = aiRateLimiter.checkMinute(key);
@@ -218,7 +233,13 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     // Only answers written by a model count against the daily quota.
-    const blocked = await reserveDailyQuota(key, userId, supabase);
+    const blocked = await reserveDailyQuota(
+      key,
+      userId,
+      supabase,
+      owner,
+      parsed.previewFree === true,
+    );
     if (blocked) return blocked;
 
     const system = buildSystemPrompt(chunks, expandColloquialQuery(query).technicalTerms);

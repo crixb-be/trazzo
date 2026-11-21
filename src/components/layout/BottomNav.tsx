@@ -19,7 +19,7 @@ export function BottomNav() {
             className={active ? "active" : undefined}
             aria-current={active ? "page" : undefined}
           >
-            <Icon size={18} aria-hidden="true" />
+            <Icon size={20} aria-hidden="true" />
             <span>{mobileLabel}</span>
           </Link>
         );

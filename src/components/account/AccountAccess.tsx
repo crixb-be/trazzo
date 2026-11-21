@@ -7,6 +7,7 @@ import { useWorkspace } from "@/components/layout/WorkspaceProvider";
 import { deleteLocalCopy } from "@/lib/offline/delete-local-copy";
 import { getActiveDatabase, GUEST_WORKSPACE } from "@/lib/offline/workspace";
 import { describeGuestData, prepareGuestWorkspace } from "@/lib/offline/workspace-migration";
+import { setOwnerPreviewFree } from "@/lib/plans/plan-store";
 import { useCurrentPlan } from "@/lib/plans/use-current-plan";
 import { Badge, Button, Card, confirmDialog, Input, toast } from "@/components/ui";
 import { useSyncStatus } from "@/lib/offline/hooks";
@@ -21,6 +22,12 @@ export interface AccountAccessProps {
 function callbackUrl(): string {
   return window.location.origin + "/auth/callback";
 }
+
+const ownerReasons = {
+  email: "tu correo coincide con la lista de propietarios",
+  cap: "el CAP de tu perfil de estudio coincide con el del propietario",
+  ruc: "el RUC de tu perfil de estudio coincide con el del propietario",
+};
 
 export function AccountAccess({ onSessionChange }: AccountAccessProps) {
   const sync = useSyncStatus();
@@ -164,6 +171,24 @@ export function AccountAccess({ onSessionChange }: AccountAccessProps) {
         Espacio activo: {signedIn ? sessionEmail || "cuenta" : "sin cuenta"}
       </p>
       <div className="account-grid account-access">
+        {signedIn && plan.owner && plan.ownerReason && (
+          <Card>
+            <h2>Acceso de propietario</h2>
+            <Badge variant="ok">Acceso total</Badge>
+            <p className="muted small">
+              Detectamos tu acceso de propietario porque {ownerReasons[plan.ownerReason]}.
+            </p>
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                role="switch"
+                checked={plan.ownerPreviewFree}
+                onChange={(event) => setOwnerPreviewFree(event.target.checked)}
+              />
+              Ver la app como usuario Gratis
+            </label>
+          </Card>
+        )}
         {!signedIn && (
           <Card className="guest-card">
             <div className="eyebrow">Modo invitado / Local</div>

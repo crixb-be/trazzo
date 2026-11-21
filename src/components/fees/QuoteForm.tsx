@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Card, Input, NumberField, Select } from "@/components/ui";
 import {
@@ -1044,16 +1044,20 @@ export function QuoteForm({
           type="button"
           disabled={step === 0}
           onClick={() => setStep(step - 1)}
+          aria-label="Anterior"
         >
-          Anterior
+          <ChevronLeft className="quote-step-icon" size={18} aria-hidden="true" />
+          <span className="quote-step-label">Anterior</span>
         </button>
         <button
           className="btn"
           type="button"
           disabled={step === QUOTE_STEPS.length - 1}
           onClick={() => setStep(step + 1)}
+          aria-label="Siguiente"
         >
-          Siguiente
+          <ChevronRight className="quote-step-icon" size={18} aria-hidden="true" />
+          <span className="quote-step-label">Siguiente</span>
         </button>
       </div>
     </div>

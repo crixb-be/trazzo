@@ -179,6 +179,7 @@ export function AccountWorkspace() {
   /** Saves on the device first, then backs the profile up at once when signed in. */
   async function saveAndBackUp(patch: Partial<StudioProfile>): Promise<string> {
     await saveStudioProfile(patch);
+    if (patch.capNumber !== undefined || patch.ruc !== undefined) invalidatePlanSnapshot();
     const result = await syncNow();
     const notice = describeProfileSave(result.status);
     // A failed backup names its cause (e.g. a missing migration) instead of hiding it.

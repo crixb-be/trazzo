@@ -4,13 +4,16 @@ import { Lock } from "lucide-react";
 import { Button, Card, PaywallModal } from "@/components/ui";
 import { useState } from "react";
 import { computeEvacuationWidth } from "@/lib/calculators/evacuation";
+import { canUseProCards } from "@/lib/plans/plans";
+import { useCurrentPlan } from "@/lib/plans/use-current-plan";
 import { CalculatorResult } from "./CalculatorResult";
 
-export function EvacuationCalculator({ allowed = false }: { allowed?: boolean }) {
+export function EvacuationCalculator() {
+  const { plan } = useCurrentPlan();
   const [paywall, setPaywall] = useState(false);
   const result = computeEvacuationWidth({ occupants: 100, element: "puerta" });
 
-  if (!allowed) {
+  if (!canUseProCards(plan)) {
     return (
       <>
         <Card className="pro-calculator-card">

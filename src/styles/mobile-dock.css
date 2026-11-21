@@ -1,0 +1,248 @@
+.search-box input,
+.search-box .input {
+  min-width: 0;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none;
+}
+
+html .search-box:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.quote-step-icon {
+  display: none;
+}
+
+@media (max-width: 1023px) {
+  :root {
+    --mobile-glass-bg: rgba(24, 24, 27, 0.78);
+    --mobile-glass-border: rgba(255, 255, 255, 0.12);
+    --mobile-glass-shadow: 0 14px 40px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35);
+  }
+
+  html:not(.dark) {
+    --mobile-glass-bg: rgba(255, 255, 255, 0.78);
+    --mobile-glass-border: rgba(0, 0, 0, 0.08);
+    --mobile-glass-shadow: 0 10px 30px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.06);
+  }
+
+  html :is(.bottom-nav, .calculator-result-bar, .quote-total-fixed, .mobile-search-sheet) {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    background: var(--mobile-glass-bg);
+    border: 1px solid var(--mobile-glass-border);
+    box-shadow: var(--mobile-glass-shadow);
+    -webkit-backdrop-filter: blur(22px) saturate(180%);
+    backdrop-filter: blur(22px) saturate(180%);
+  }
+
+  html .bottom-nav {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    z-index: 30;
+    bottom: calc(env(safe-area-inset-bottom) + 10px);
+    height: auto;
+    min-height: 60px;
+    padding: 6px;
+    border-radius: 9999px;
+  }
+
+  .bottom-nav a {
+    min-width: 0;
+    min-height: 48px;
+    align-content: center;
+    gap: 3px;
+    padding: 3px 2px;
+    border-radius: 9999px;
+    line-height: 1.15;
+  }
+
+  .bottom-nav a svg {
+    margin-top: 0;
+  }
+
+  .bottom-nav a span {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    font-size: calc(11px * var(--font-scale));
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bottom-nav a::before {
+    content: none;
+  }
+
+  .bottom-nav a.active {
+    color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .bottom-nav a:active {
+    transform: scale(0.94);
+  }
+
+  html .main-shell {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 96px);
+  }
+
+  .toast-region {
+    bottom: calc(env(safe-area-inset-bottom) + 84px);
+  }
+
+  .calculator-result-bar,
+  .quote-total-fixed {
+    align-items: center;
+    bottom: calc(env(safe-area-inset-bottom) + 82px);
+    min-height: 58px;
+    padding: 8px 14px;
+    border-radius: 9999px;
+  }
+
+  .calculator-result-bar > div {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .calculator-result-bar > div > :is(.eyebrow, strong),
+  .quote-total-fixed > strong {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .calculator-result-bar strong {
+    font-size: calc(18px * var(--font-scale));
+  }
+
+  .calculator-result-bar small,
+  .calculator-result-bar > span {
+    display: none;
+  }
+
+  .quote-total-fixed {
+    grid-template-columns: minmax(0, 1fr) auto auto auto;
+    gap: 6px;
+  }
+
+  .quote-total-fixed > span {
+    font-size: var(--text-xs);
+  }
+
+  .quote-total-fixed > .btn {
+    width: auto;
+    min-height: 40px;
+    padding: 6px 10px;
+    border-radius: 9999px;
+    font-size: var(--text-sm);
+  }
+
+  .calculators-page,
+  .quote-form {
+    /* The shell already reserves room for the dock. */
+    padding-bottom: 64px;
+  }
+
+  .mobile-search-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.35);
+    touch-action: none;
+  }
+
+  html .mobile-search-sheet {
+    top: calc(env(safe-area-inset-top, 20px) + 56px);
+    z-index: 1001;
+    align-items: flex-start;
+    padding: 8px 10px;
+    border-radius: 20px;
+  }
+
+  .mobile-search-sheet .global-search {
+    min-width: 0;
+  }
+
+  .mobile-search-sheet .search-results {
+    position: static;
+    max-height: calc(100dvh - env(safe-area-inset-top, 20px) - 140px);
+    margin-top: 6px;
+    overflow: auto;
+    overscroll-behavior: contain;
+  }
+
+  .mobile-search-sheet .icon-btn {
+    flex: none;
+  }
+
+  :is(.site-log-form, .quote-form, .metrados-page, .calculators-page)
+    :is(
+      .field,
+      .field-grid,
+      .form-grid,
+      .scope-sub-fields,
+      .inline-rate-grid,
+      .takeoff-item-fields,
+      .takeoff-number-fields
+    )
+    > * {
+    min-width: 0;
+  }
+
+  :is(.site-log-form, .quote-form, .metrados-page, .calculators-page)
+    :is(
+      .field,
+      .field-grid,
+      .form-grid,
+      .scope-sub-fields,
+      .inline-rate-grid,
+      .takeoff-item-fields,
+      .takeoff-number-fields
+    )
+    :is(input:not([type="checkbox"], [type="radio"]), select) {
+    min-width: 0;
+    width: 100%;
+  }
+
+  :is(.site-log-form, .quote-form, .metrados-page, .calculators-page) input[type="date"] {
+    -webkit-appearance: none;
+    display: block;
+    width: 100%;
+    min-width: 0;
+    min-height: 44px;
+  }
+}
+
+@media (max-width: 639px) {
+  :is(.site-log-form, .quote-form, .metrados-page, .calculators-page) .field-grid,
+  .quote-form :is(.two-columns, .scope-sub-fields) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .quote-total-fixed > .btn {
+    width: 40px;
+    padding: 0;
+  }
+
+  .quote-step-label {
+    display: none;
+  }
+
+  .quote-step-icon {
+    display: block;
+  }
+}
+
+@media (max-width: 1023px) and (prefers-reduced-motion: reduce) {
+  .bottom-nav a:active {
+    transform: none;
+  }
+}

@@ -8,6 +8,7 @@ import {
   LOCAL_SNAPSHOT,
   peekPlanSnapshot,
   SIGNED_OUT_SNAPSHOT,
+  subscribePlanSnapshot,
   type PlanSnapshot,
 } from "./plan-store";
 
@@ -29,11 +30,14 @@ export function useCurrentPlan(): CurrentPlanState {
 
   useEffect(() => {
     let alive = true;
+    let revision = 0;
     const refresh = (force: boolean): void => {
+      const current = ++revision;
       void loadPlanSnapshot(force).then((snapshot) => {
-        if (alive) setState({ ...snapshot, loading: false });
+        if (alive && current === revision) setState({ ...snapshot, loading: false });
       });
     };
+    const unsubscribe = subscribePlanSnapshot(() => refresh(false));
     refresh(false);
 
     const onOnline = (): void => refresh(true);
@@ -42,13 +46,13 @@ export function useCurrentPlan(): CurrentPlanState {
     const client = createClient();
     const subscription = client?.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      invalidatePlanSnapshot();
       // Supabase warns against calling its API inside this callback.
-      window.setTimeout(() => refresh(true), 0);
+      window.setTimeout(invalidatePlanSnapshot, 0);
     });
 
     return () => {
       alive = false;
+      unsubscribe();
       window.removeEventListener("online", onOnline);
       subscription?.data.subscription.unsubscribe();
     };

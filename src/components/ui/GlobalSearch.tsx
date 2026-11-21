@@ -50,6 +50,12 @@ export function GlobalSearch({
     return () => window.removeEventListener("keydown", handleShortcut);
   }, [variant]);
 
+  useEffect(() => {
+    if (!autoFocus) return;
+    const frame = requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }));
+    return () => cancelAnimationFrame(frame);
+  }, [autoFocus]);
+
   function updateQuery(nextQuery: string): void {
     setQuery(nextQuery);
     setActiveIndex(0);
@@ -80,7 +86,10 @@ export function GlobalSearch({
     }
     if (event.key === "Escape") {
       setOpen(false);
-      onDismiss?.();
+      if (onDismiss) {
+        event.preventDefault();
+        onDismiss();
+      }
     }
   }
 
@@ -90,7 +99,6 @@ export function GlobalSearch({
         <Search size={variant === "inline" ? 20 : 17} aria-hidden="true" />
         <input
           ref={inputRef}
-          autoFocus={autoFocus}
           placeholder="Buscar en TRAZZO…"
           value={query}
           onFocus={() => setOpen(true)}

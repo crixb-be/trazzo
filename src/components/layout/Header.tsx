@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { handleSearchShortcut } from "@/lib/ui/search-shortcut";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { BrandMark } from "@/components/brand/BrandMark";
 import { GlobalSearch, OfflineBadge, ThemeToggle } from "@/components/ui";
 import { useAccountAvatar } from "@/lib/account/use-account-avatar";
@@ -34,9 +35,12 @@ export function Header() {
   const assistantActive = matchesNavItem(pathname, ["/asistente"]);
   const accountActive = pathname.startsWith("/cuenta");
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const mobileSearchTrigger = useRef<HTMLButtonElement>(null);
   // Own photo (synced from profiles) first; the sign-in provider's photo as fallback.
   const avatar = useAccountAvatar();
+
+  useEffect(() => setPortalTarget(document.body), []);
 
   // Close the mobile search sheet whenever the route changes.
   useEffect(() => {
@@ -51,6 +55,26 @@ export function Header() {
     window.addEventListener("keydown", openMobileSearch);
     return () => window.removeEventListener("keydown", openMobileSearch);
   }, [mobileSearchOpen]);
+
+  useEffect(() => {
+    if (!mobileSearchOpen || !portalTarget) return;
+    const previousOverflow = portalTarget.style.overflow;
+    portalTarget.style.overflow = "hidden";
+
+    function closeIfTriggerHidden() {
+      if (!mobileSearchTrigger.current?.getClientRects().length) setMobileSearchOpen(false);
+    }
+    window.addEventListener("resize", closeIfTriggerHidden);
+    return () => {
+      portalTarget.style.overflow = previousOverflow;
+      window.removeEventListener("resize", closeIfTriggerHidden);
+    };
+  }, [mobileSearchOpen, portalTarget]);
+
+  function dismissMobileSearch() {
+    setMobileSearchOpen(false);
+    mobileSearchTrigger.current?.focus({ preventScroll: true });
+  }
 
   return (
     <header className="header">
@@ -71,6 +95,7 @@ export function Header() {
           type="button"
           onClick={() => setMobileSearchOpen(true)}
           aria-label="Buscar en el RNE"
+          aria-haspopup="dialog"
           aria-expanded={mobileSearchOpen}
         >
           <Search size={17} aria-hidden="true" />
@@ -101,19 +126,48 @@ export function Header() {
         </Link>
       </div>
 
-      {mobileSearchOpen && (
-        <div className="mobile-search-sheet" role="dialog" aria-label="Buscar en el RNE">
-          <GlobalSearch autoFocus onDismiss={() => setMobileSearchOpen(false)} />
-          <button
-            className="icon-btn"
-            type="button"
-            onClick={() => setMobileSearchOpen(false)}
-            aria-label="Cerrar búsqueda"
-          >
-            <X size={17} aria-hidden="true" />
-          </button>
-        </div>
-      )}
+      {mobileSearchOpen &&
+        portalTarget &&
+        createPortal(
+          <>
+            <div
+              className="mobile-search-backdrop"
+              aria-hidden="true"
+              onClick={dismissMobileSearch}
+            />
+            <div
+              className="mobile-search-sheet"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Buscar en el RNE"
+              onKeyDown={(event) => {
+                if (event.key === "Escape" && !event.defaultPrevented) {
+                  dismissMobileSearch();
+                  return;
+                }
+                if (event.key !== "Tab") return;
+                const controls = event.currentTarget.querySelectorAll<HTMLElement>("input, button");
+                const first = controls[0];
+                const last = controls[controls.length - 1];
+                const edge = event.shiftKey ? first : last;
+                if (event.target !== edge) return;
+                event.preventDefault();
+                (event.shiftKey ? last : first)?.focus();
+              }}
+            >
+              <GlobalSearch autoFocus onDismiss={dismissMobileSearch} />
+              <button
+                className="icon-btn"
+                type="button"
+                onClick={dismissMobileSearch}
+                aria-label="Cerrar búsqueda"
+              >
+                <X size={17} aria-hidden="true" />
+              </button>
+            </div>
+          </>,
+          portalTarget,
+        )}
     </header>
   );
 }

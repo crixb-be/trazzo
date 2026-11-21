@@ -1,3 +1,4 @@
+import { getStudioProfile } from "@/lib/offline/profile";
 import type { TrazzoDB } from "@/lib/offline/db";
 import {
   getActiveDatabase,
@@ -6,6 +7,7 @@ import {
   subscribeWorkspace,
 } from "@/lib/offline/workspace";
 import { createClient } from "@/lib/supabase/client";
+import { ownerAccountReason, type OwnerReason } from "./owner";
 import { resolveEffectivePlan, type Plan } from "./plans";
 
 /**
@@ -30,6 +32,9 @@ export interface PlanSnapshot {
   /** "local": no backend configured. "account": accounts are available. */
   mode: "local" | "account";
   signedIn: boolean;
+  owner: boolean;
+  ownerReason: OwnerReason | null;
+  ownerPreviewFree: boolean;
   userId: string | null;
   email: string | null;
   studentVerified: boolean;
@@ -39,11 +44,34 @@ export interface PlanSnapshot {
 
 const CACHE_KEY = "plan:profile";
 const MEMO_MS = 30_000;
+const OWNER_PREVIEW_KEY = "trazzo:owner-preview-free";
+let previewOverride: boolean | undefined;
+
+function readOwnerPreview(): boolean {
+  try {
+    return previewOverride ?? window.localStorage.getItem(OWNER_PREVIEW_KEY) === "true";
+  } catch {
+    return previewOverride ?? false;
+  }
+}
+
+export function setOwnerPreviewFree(enabled: boolean): void {
+  try {
+    window.localStorage.setItem(OWNER_PREVIEW_KEY, String(enabled));
+    previewOverride = undefined;
+  } catch {
+    previewOverride = enabled;
+  }
+  invalidatePlanSnapshot();
+}
 
 export const LOCAL_SNAPSHOT: PlanSnapshot = {
   plan: "free",
   mode: "local",
   signedIn: false,
+  owner: false,
+  ownerReason: null,
+  ownerPreviewFree: false,
   userId: null,
   email: null,
   studentVerified: false,
@@ -55,20 +83,31 @@ export const SIGNED_OUT_SNAPSHOT: PlanSnapshot = { ...LOCAL_SNAPSHOT, mode: "acc
 
 export function snapshotFromProfile(
   profile: CachedPlanProfile,
-  source: "network" | "cache",
+  source: PlanSnapshot["source"],
   now = new Date(),
+  studio?: { capNumber: string; ruc: string },
 ): PlanSnapshot {
+  const ownerReason = ownerAccountReason({ ...studio, email: profile.email, signedIn: true });
+  const owner = ownerReason !== null;
+  const ownerPreviewFree = owner && readOwnerPreview();
   return {
-    plan: resolveEffectivePlan(
-      {
-        plan: profile.plan,
-        student_verified: profile.studentVerified,
-        subscription_expires_at: profile.expiresAt,
-      },
-      now,
-    ),
+    plan: owner
+      ? ownerPreviewFree
+        ? "free"
+        : "pro"
+      : resolveEffectivePlan(
+          {
+            plan: profile.plan,
+            student_verified: profile.studentVerified,
+            subscription_expires_at: profile.expiresAt,
+          },
+          now,
+        ),
     mode: "account",
     signedIn: true,
+    owner,
+    ownerReason,
+    ownerPreviewFree,
     userId: profile.userId,
     email: profile.email,
     studentVerified: profile.studentVerified,
@@ -137,7 +176,17 @@ async function fetchSnapshot(workspaceId: string): Promise<PlanSnapshot> {
     if ((sessionFailed || offline) && cached) return snapshotFromProfile(cached, "cache");
     return SIGNED_OUT_SNAPSHOT;
   }
-  if (user.id !== workspaceId) return SIGNED_OUT_SNAPSHOT;
+  if (user.id !== workspaceId || local !== getActiveDatabase()) return SIGNED_OUT_SNAPSHOT;
+
+  const studio = await getStudioProfile().catch(() => undefined);
+  const fallback: CachedPlanProfile = {
+    userId: user.id,
+    email: user.email ?? null,
+    plan: "free",
+    studentVerified: false,
+    expiresAt: null,
+    fetchedAt: "",
+  };
 
   try {
     const { data, error } = await client
@@ -147,8 +196,7 @@ async function fetchSnapshot(workspaceId: string): Promise<PlanSnapshot> {
       .maybeSingle();
     if (error) throw error;
     const profile: CachedPlanProfile = {
-      userId: user.id,
-      email: user.email ?? null,
+      ...fallback,
       plan: typeof data?.plan === "string" ? data.plan : "free",
       studentVerified: data?.student_verified === true,
       expiresAt:
@@ -156,15 +204,21 @@ async function fetchSnapshot(workspaceId: string): Promise<PlanSnapshot> {
       fetchedAt: new Date().toISOString(),
     };
     if (local === getActiveDatabase()) await writeCache(local, profile);
-    return snapshotFromProfile(profile, "network");
+    return snapshotFromProfile(profile, "network", new Date(), studio);
   } catch {
-    if (cached && cached.userId === user.id) return snapshotFromProfile(cached, "cache");
-    return { ...SIGNED_OUT_SNAPSHOT, signedIn: true, userId: user.id, email: user.email ?? null };
+    const profile = cached ? { ...cached, email: fallback.email } : fallback;
+    return snapshotFromProfile(profile, cached ? "cache" : "none", new Date(), studio);
   }
 }
 
 let inflight: Promise<PlanSnapshot> | null = null;
 let memo: { at: number; value: PlanSnapshot } | null = null;
+const listeners = new Set<() => void>();
+
+export function subscribePlanSnapshot(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
 
 export function peekPlanSnapshot(): PlanSnapshot | null {
   return memo?.value ?? null;
@@ -189,6 +243,7 @@ export function loadPlanSnapshot(force = false): Promise<PlanSnapshot> {
 export function invalidatePlanSnapshot(): void {
   memo = null;
   inflight = null;
+  for (const listener of listeners) listener();
 }
 
 subscribeWorkspace(invalidatePlanSnapshot);
